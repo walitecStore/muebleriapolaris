@@ -135,7 +135,7 @@ export default function HeroSection() {
 
         {/* Subheadline */}
         <p className="animate-in-up-delay-2 text-white/80 text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-          Modelos Europeos, conjuntos 3-2-1 y más. Calidad premium, diseños exclusivos y precios justos.
+          Modelos Europeos, conjuntos 3-2-1, 12 piezas y más. Calidad premium, diseños exclusivos y precios justos.
         </p>
 
         {/* CTAs */}
