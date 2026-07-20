@@ -40,7 +40,7 @@ export default function ContactCTA() {
             </p>
 
             <a
-              href="https://wa.me/15550000000?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20asesor%C3%ADa%20para%20elegir%20un%20sof%C3%A1"
+              href="https://wa.me/916832791?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20asesor%C3%ADa%20para%20elegir%20un%20sof%C3%A1"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-3 px-8 py-4 bg-[#25D366] text-white font-extrabold text-lg rounded-full hover:bg-[#25D366]/90 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#25D366]/30 pulse-ring"
@@ -67,15 +67,15 @@ export default function ContactCTA() {
               <div className="space-y-2 text-sm text-muted-foreground">
                 <div className="flex justify-between">
                   <span>Lunes – Viernes</span>
-                  <span className="font-semibold text-foreground">9:00am – 7:00pm</span>
+                  <span className="font-semibold text-foreground">6:00am – 9:00am</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Sábado</span>
-                  <span className="font-semibold text-foreground">9:00am – 5:00pm</span>
+                  <span className="font-semibold text-foreground">6:00am – 7:30pm</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Domingo</span>
-                  <span className="font-semibold text-foreground">10:00am – 3:00pm</span>
+                  <span className="font-semibold text-foreground">7:00am – 6:00pm</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-border">
                   <span>WhatsApp</span>
@@ -99,17 +99,17 @@ export default function ContactCTA() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span>📞</span>
-                  <a href="tel:+15550000000" className="hover:text-primary transition-colors">+1 (555) 000-0000</a>
+                  <a href="tel:+916832791" className="hover:text-primary transition-colors">+916 832 791</a>
                 </div>
                 <div className="flex items-center gap-2">
                   <WhatsAppIcon className="w-4 h-4 text-[#25D366] shrink-0" />
                   <a
-                    href="https://wa.me/15550000000"
+                    href="https://wa.me/916832791"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#25D366] font-semibold hover:underline"
                   >
-                    +1 (555) 000-0000
+                    +916 832 791
                   </a>
                 </div>
               </div>

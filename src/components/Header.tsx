@@ -70,7 +70,7 @@ export default function Header() {
               </button>
             ))}
             <a
-              href="https://wa.me/15550000000?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
+              href="https://wa.me/916832791?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-secondary text-secondary-foreground px-5 py-2.5 rounded-full text-sm font-bold hover:bg-secondary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-secondary/30"
@@ -120,7 +120,7 @@ export default function Header() {
                 </button>
               ))}
               <a
-                href="https://wa.me/15550000000?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
+                href="https://wa.me/916832791?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setMenuOpen(false)}
@@ -136,7 +136,7 @@ export default function Header() {
 
       {/* Floating WhatsApp Button */}
       <a
-        href="https://wa.me/15550000000?text=Hola!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
+        href="https://wa.me/916832791?text=Hola!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-lg shadow-[#25D366]/40 pulse-ring hover:scale-110 transition-transform duration-300"
