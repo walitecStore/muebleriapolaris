@@ -42,9 +42,9 @@ export const sofaProducts: SofaProduct[] = [
   seats: '3 plazas',
   price: '$1,299',
   description: 'Diseño escandinavo con patas de madera natural',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1f054d569-1764651051733.png",
+  image: "/assets/images/sofa_azul__cama-1784572914608.jpg",
   gallery: [
-    "https://img.rocket.new/generatedImages/rocket_gen_img_1f054d569-1764651051733.png",
+    "/assets/images/sofa_azul__cama-1784572914608.jpg",
     "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
     "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e",
     "https://images.unsplash.com/photo-1567016432779-094069958ea5",
@@ -79,9 +79,9 @@ export const sofaProducts: SofaProduct[] = [
   seats: '3 plazas',
   price: '$1,599',
   description: 'Elegancia atemporal con tapizado en tela premium',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_151dbb945-1784411974460.png",
+  image: "/assets/images/sofa_baul__celeste-1784572929056.jpg",
   gallery: [
-    "https://img.rocket.new/generatedImages/rocket_gen_img_151dbb945-1784411974460.png",
+    "/assets/images/sofa_baul__celeste-1784572929056.jpg",
     "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
     "https://images.unsplash.com/photo-1540574163026-643ea20ade25",
     "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e",
