@@ -146,7 +146,7 @@ export default function HeroSection() {
             Ver Catálogo
           </a>
           <a
-            href="https://wa.me/15550000000?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
+            href="https://wa.me/916832791?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-[#25D366] text-white font-bold text-base rounded-full hover:bg-[#25D366]/90 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#25D366]/30">

@@ -31,15 +31,20 @@ const AppLogo = memo(function AppLogo({
     <div className={containerClassName} onClick={onClick}>
       {/* Show image if src provided, otherwise show icon */}
       {src ? (
-        <AppImage
-          src={src}
-          alt="Logo" 
-          width={size}
-          height={size}
-          className="flex-shrink-0"
-          priority={true}
-          unoptimized={src.endsWith('.svg')}
-        />
+        <div
+          className="flex-shrink-0 rounded-full overflow-hidden ring-2 ring-white/80"
+          style={{ width: size, height: size, minWidth: size, minHeight: size }}
+        >
+          <AppImage
+            src={src}
+            alt="Logo"
+            width={size}
+            height={size}
+            className="w-full h-full object-cover"
+            priority={true}
+            unoptimized={src.endsWith('.svg')}
+          />
+        </div>
       ) : (
         <AppIcon name={iconName} size={size} className="flex-shrink-0" />
       )}
