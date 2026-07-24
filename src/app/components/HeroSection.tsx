@@ -35,6 +35,11 @@ export default function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [nextSlide, setNextSlide] = useState(1);
   const [transitioning, setTransitioning] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -105,7 +110,7 @@ export default function HeroSection() {
       {/* Slide label badge */}
       <div className="absolute top-24 right-6 z-20 hidden sm:flex items-center gap-2 bg-black/30 backdrop-blur-sm border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-700">
         <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
-        {SOFA_SLIDES[currentSlide].label}
+        {mounted ? SOFA_SLIDES[currentSlide].label : SOFA_SLIDES[0].label}
       </div>
 
       {/* Slide dots */}
