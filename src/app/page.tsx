@@ -9,6 +9,7 @@ import CatalogSection from './components/CatalogSection';
 import AboutSection from './components/AboutSection';
 import TestimonialsSection from './components/TestimonialsSection';
 import ContactCTA from './components/ContactCTA';
+import RouletteSection from './components/RouletteSection';
 
 export const metadata: Metadata = {
   title: 'Mueblería Polaris — Sofás de Calidad para tu Hogar',
@@ -55,6 +56,7 @@ export default function HomePage() {
         <CatalogSection />
         <AboutSection />
         <TestimonialsSection />
+        <RouletteSection />
         <ContactCTA />
       </main>
       <Footer />

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AppImage from '@/components/ui/AppImage';
@@ -23,6 +23,33 @@ function StarRating({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md
         >
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
         </svg>
+      ))}
+    </div>
+  );
+}
+
+function InteractiveStarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0);
+  return (
+    <div className="flex items-center gap-1">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onChange(i + 1)}
+          onMouseEnter={() => setHover(i + 1)}
+          onMouseLeave={() => setHover(0)}
+          className="focus:outline-none"
+          aria-label={`${i + 1} estrellas`}
+        >
+          <svg
+            className={`w-7 h-7 transition-colors ${i < (hover || value) ? 'text-yellow-400' : 'text-gray-200'}`}
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        </button>
       ))}
     </div>
   );
@@ -81,18 +108,86 @@ function ReviewCard({ review }: { review: SofaReview }) {
   );
 }
 
+const avatarColors = ['bg-primary', 'bg-secondary', 'bg-accent', 'bg-emerald-500', 'bg-purple-500', 'bg-orange-500'];
+
 export default function ProductPage() {
   const params = useParams();
+  const router = useRouter();
   const productId = Number(params?.id);
   const sofa = sofaProducts.find((p) => p.id === productId);
 
   const [activeImage, setActiveImage] = useState(0);
   const [activeTab, setActiveTab] = useState<'specs' | 'reviews'>('specs');
+  const [detectedColor, setDetectedColor] = useState<string | null>(null);
+  const [localReviews, setLocalReviews] = useState<SofaReview[]>([]);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ name: '', location: '', rating: 5, title: '', text: '' });
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (sofa) {
+      const stored = localStorage.getItem(`reviews_${sofa.id}`);
+      if (stored) setLocalReviews(JSON.parse(stored));
+    }
+  }, [sofa]);
+
+  const detectImageColor = useCallback((imgSrc: string) => {
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      canvas.width = 50;
+      canvas.height = 50;
+      ctx.drawImage(img, 0, 0, 50, 50);
+      const data = ctx.getImageData(0, 0, 50, 50).data;
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let i = 0; i < data.length; i += 16) {
+        r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
+      }
+      r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
+      const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+      setDetectedColor(hex);
+    };
+    img.onerror = () => setDetectedColor(null);
+    img.src = imgSrc;
   }, []);
+
+  useEffect(() => {
+    if (sofa?.image) detectImageColor(sofa.image);
+  }, [sofa, detectImageColor]);
+
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sofa || !reviewForm.name || !reviewForm.text || !reviewForm.rating) return;
+    const initials = reviewForm.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const newReview: SofaReview = {
+      id: Date.now(),
+      name: reviewForm.name,
+      initials,
+      location: reviewForm.location || 'Perú',
+      rating: reviewForm.rating,
+      title: reviewForm.title || 'Mi reseña',
+      text: reviewForm.text,
+      date: 'Hace un momento',
+      verified: false,
+      helpful: 0,
+      tags: [],
+      avatarColor: avatarColors[Math.floor(Math.random() * avatarColors.length)],
+    };
+    const updated = [...localReviews, newReview];
+    setLocalReviews(updated);
+    localStorage.setItem(`reviews_${sofa.id}`, JSON.stringify(updated));
+    setReviewForm({ name: '', location: '', rating: 5, title: '', text: '' });
+    setShowReviewForm(false);
+    setReviewSubmitted(true);
+    setTimeout(() => setReviewSubmitted(false), 4000);
+  };
 
   if (!sofa) {
     return (
@@ -120,7 +215,8 @@ export default function ProductPage() {
   const whatsappMsg = encodeURIComponent(
     `Hola Mueblería Polaris! Me interesa el ${sofa.name} (SKU: ${sofa.sku ?? sofa.id}), precio ${sofa.price}. ¿Pueden darme más información y disponibilidad?`
   );
-  const whatsappUrl = `https://wa.me/15550000000?text=${whatsappMsg}`;
+  const whatsappUrl = `https://wa.me/51916832791?text=${whatsappMsg}`;
+  const allReviews = [...(sofa.reviews ?? []), ...localReviews];
 
   const relatedSofas = sofaProducts
     .filter((p) => p.id !== sofa.id && (p.style === sofa.style || p.color === sofa.color))
@@ -129,9 +225,10 @@ export default function ProductPage() {
   return (
     <>
       <Header />
+      <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
       <main className="pt-20 sm:pt-24 pb-20 min-h-screen bg-background">
-        {/* Breadcrumb */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+        {/* Breadcrumb + Back button */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-primary transition-colors font-medium">Inicio</Link>
             <span>/</span>
@@ -139,6 +236,16 @@ export default function ProductPage() {
             <span>/</span>
             <span className="text-foreground font-semibold truncate max-w-[200px]">{sofa.name}</span>
           </nav>
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-border text-sm font-semibold text-muted-foreground hover:text-primary hover:border-primary bg-white transition-all duration-200 hover:shadow-sm shrink-0"
+            aria-label="Volver atrás"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Atrás
+          </button>
         </div>
 
         {/* Product Hero */}
@@ -166,11 +273,10 @@ export default function ProductPage() {
                     {sofa.seats}
                   </span>
                 </div>
-                {sofa.id === 12 && (
-                  <div className="absolute top-4 right-4">
-                    <span className="bg-secondary text-secondary-foreground text-xs font-bold px-3 py-1.5 rounded-full shadow">
-                      ⭐ Exclusivo
-                    </span>
+                {detectedColor && (
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-full shadow text-xs font-semibold text-foreground">
+                    <span className="w-3 h-3 rounded-full border border-gray-300" style={{ backgroundColor: detectedColor }} />
+                    Color detectado
                   </div>
                 )}
                 {/* Image counter */}
@@ -249,10 +355,13 @@ export default function ProductPage() {
                   <span className="text-sm font-semibold text-muted-foreground">Color:</span>
                   <span
                     className="w-5 h-5 rounded-full border-2 border-white shadow"
-                    style={{ backgroundColor: colorMap[sofa.color] }}
+                    style={{ backgroundColor: detectedColor ?? colorMap[sofa.color] }}
                     title={sofa.color}
                   />
                   <span className="text-sm font-bold text-foreground">{sofa.color}</span>
+                  {detectedColor && (
+                    <span className="text-xs text-muted-foreground">(detectado: {detectedColor})</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-muted-foreground">Plazas:</span>
@@ -295,7 +404,7 @@ export default function ProductPage() {
                   Consultar por WhatsApp
                 </a>
                 <a
-                  href={`https://wa.me/15550000000?text=${encodeURIComponent(`Hola! Quiero comprar el ${sofa.name} (${sofa.price}). ¿Cómo procedo?`)}`}
+                  href={`https://wa.me/51916832791?text=${encodeURIComponent(`Hola! Quiero comprar el ${sofa.name} (${sofa.price}). ¿Cómo procedo?`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 px-6 py-4 bg-secondary text-secondary-foreground font-bold text-base rounded-2xl hover:bg-secondary/90 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
@@ -335,7 +444,7 @@ export default function ProductPage() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {tab === 'specs' ? '📐 Especificaciones' : `⭐ Reseñas (${sofa.reviews?.length ?? 0})`}
+                {tab === 'specs' ? '📐 Especificaciones' : `⭐ Reseñas (${allReviews.length})`}
               </button>
             ))}
           </div>
@@ -365,71 +474,135 @@ export default function ProductPage() {
 
           {/* Reviews Tab */}
           {activeTab === 'reviews' && (
-            <div className="animate-in-up">
-              {sofa.reviews && sofa.reviews.length > 0 ? (
-                <div className="flex flex-col gap-6">
-                  {/* Rating summary */}
-                  <div className="bg-card border border-border rounded-2xl p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                    <div className="flex flex-col items-center gap-2 shrink-0">
-                      <span className="text-6xl font-extrabold text-foreground leading-none">
-                        {sofa.rating?.toFixed(1) ?? '—'}
-                      </span>
-                      <StarRating rating={sofa.rating ?? 0} size="md" />
-                      <span className="text-sm text-muted-foreground">{sofa.reviewCount} reseñas</span>
-                    </div>
-                    <div className="flex-1 w-full">
-                      <div className="flex flex-wrap gap-2">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full">
-                          ✅ Compras verificadas
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full">
-                          🛋️ Clientes reales
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full">
-                          ⚡ Respuesta en &lt;1 hora
-                        </span>
+            <div className="animate-in-up flex flex-col gap-6">
+              {/* Rating summary */}
+              <div className="bg-card border border-border rounded-2xl p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                <div className="flex flex-col items-center gap-2 shrink-0">
+                  <span className="text-6xl font-extrabold text-foreground leading-none">
+                    {sofa.rating?.toFixed(1) ?? '—'}
+                  </span>
+                  <StarRating rating={sofa.rating ?? 0} size="md" />
+                  <span className="text-sm text-muted-foreground">{sofa.reviewCount} reseñas</span>
+                </div>
+                <div className="flex-1 w-full flex flex-col gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full">
+                      ✅ Compras verificadas
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full">
+                      🛋️ Clientes reales
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setShowReviewForm(!showReviewForm)}
+                    className="flex items-center gap-2 w-fit px-5 py-2.5 bg-primary text-primary-foreground font-bold text-sm rounded-xl hover:bg-primary/90 transition-all"
+                  >
+                    ✏️ {showReviewForm ? 'Cancelar' : 'Agregar reseña'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Success message */}
+              {reviewSubmitted && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
+                  <span className="text-2xl">🎉</span>
+                  <div>
+                    <p className="font-bold text-emerald-700">¡Reseña publicada!</p>
+                    <p className="text-emerald-600 text-sm">Gracias por compartir tu experiencia.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Add Review Form */}
+              {showReviewForm && (
+                <div className="bg-card border border-primary/20 rounded-2xl p-6 shadow-sm">
+                  <h3 className="font-extrabold text-foreground text-lg mb-5">✏️ Escribir reseña</h3>
+                  <form onSubmit={handleReviewSubmit} className="flex flex-col gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-foreground mb-1.5">Tu nombre *</label>
+                        <input
+                          type="text"
+                          required
+                          value={reviewForm.name}
+                          onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
+                          placeholder="Ej: María García"
+                          className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-foreground mb-1.5">Ciudad</label>
+                        <input
+                          type="text"
+                          value={reviewForm.location}
+                          onChange={e => setReviewForm(f => ({ ...f, location: e.target.value }))}
+                          placeholder="Ej: Lima, Perú"
+                          className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                        />
                       </div>
                     </div>
-                  </div>
-
-                  {/* Review cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {sofa.reviews.map((review) => (
-                      <ReviewCard key={review.id} review={review} />
-                    ))}
-                  </div>
-
-                  {/* CTA to leave review via WhatsApp */}
-                  <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div>
-                      <p className="font-bold text-foreground">¿Ya compraste este sofá?</p>
-                      <p className="text-muted-foreground text-sm mt-0.5">Comparte tu experiencia y ayuda a otros clientes</p>
+                      <label className="block text-sm font-semibold text-foreground mb-1.5">Calificación *</label>
+                      <InteractiveStarRating value={reviewForm.rating} onChange={v => setReviewForm(f => ({ ...f, rating: v }))} />
                     </div>
-                    <a
-                      href={`https://wa.me/15550000000?text=${encodeURIComponent(`Hola! Quiero dejar una reseña del ${sofa.name} que compré.`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 bg-[#25D366] text-white font-bold text-sm px-5 py-3 rounded-xl hover:bg-[#25D366]/90 transition-all shrink-0"
-                    >
-                      <WhatsAppIcon className="w-4 h-4" />
-                      Dejar reseña
-                    </a>
-                  </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-foreground mb-1.5">Título de tu reseña</label>
+                      <input
+                        type="text"
+                        value={reviewForm.title}
+                        onChange={e => setReviewForm(f => ({ ...f, title: e.target.value }))}
+                        placeholder="Ej: Excelente calidad"
+                        className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-foreground mb-1.5">Tu reseña *</label>
+                      <textarea
+                        required
+                        rows={4}
+                        value={reviewForm.text}
+                        onChange={e => setReviewForm(f => ({ ...f, text: e.target.value }))}
+                        placeholder="Cuéntanos tu experiencia con este producto..."
+                        className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        type="submit"
+                        className="flex-1 px-6 py-3 bg-primary text-primary-foreground font-bold text-sm rounded-xl hover:bg-primary/90 transition-all"
+                      >
+                        Publicar reseña
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowReviewForm(false)}
+                        className="px-6 py-3 border border-border text-muted-foreground font-semibold text-sm rounded-xl hover:border-primary hover:text-primary transition-all"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Review cards */}
+              {allReviews.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {allReviews.map((review) => (
+                    <ReviewCard key={review.id} review={review} />
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-16 bg-card border border-border rounded-2xl">
                   <div className="text-4xl mb-3">💬</div>
                   <p className="font-bold text-foreground mb-1">Sé el primero en opinar</p>
                   <p className="text-muted-foreground text-sm mb-5">Comparte tu experiencia con este sofá</p>
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-[#25D366] text-white font-bold text-sm px-5 py-3 rounded-xl hover:bg-[#25D366]/90 transition-all"
+                  <button
+                    onClick={() => setShowReviewForm(true)}
+                    className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-5 py-3 rounded-xl hover:bg-primary/90 transition-all"
                   >
-                    <WhatsAppIcon className="w-4 h-4" />
-                    Contactar por WhatsApp
-                  </a>
+                    ✏️ Escribir reseña
+                  </button>
                 </div>
               )}
             </div>
