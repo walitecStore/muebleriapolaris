@@ -45,9 +45,9 @@ export const sofaProducts: SofaProduct[] = [
   image: "/assets/images/sofa_azul__cama-1784572914608.jpg",
   gallery: [
   "/assets/images/sofa_azul__cama-1784572914608.jpg",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
-  "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e",
-  "https://images.unsplash.com/photo-1567016432779-094069958ea5"],
+  "/assets/images/euro_crema_2-1784905017426.jpg",
+  "/assets/images/euro_crema-1784905001176.jpg",
+  "/assets/images/9163576e-f483-478e-a4ec-b63753f51e30-1784904958683.jpg"],
 
   specs: {
     'Dimensiones': '220 × 90 × 80 cm',
@@ -82,9 +82,9 @@ export const sofaProducts: SofaProduct[] = [
   image: "/assets/images/sofa_baul__celeste-1784572929056.jpg",
   gallery: [
   "/assets/images/sofa_baul__celeste-1784572929056.jpg",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
+  "/assets/images/euro_crema_2-1784905017426.jpg",
   "https://images.unsplash.com/photo-1540574163026-643ea20ade25",
-  "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e"],
+  "/assets/images/euro_crema-1784905001176.jpg"],
 
   specs: {
     'Dimensiones': '230 × 95 × 90 cm',
@@ -115,12 +115,12 @@ export const sofaProducts: SofaProduct[] = [
   seats: '2 plazas',
   price: '$899',
   description: 'Líneas limpias y comodidad máxima',
-  image: "https://images.unsplash.com/photo-1494608875625-6a44a9aa61f4",
+  image: "/assets/images/285ade2f-b848-4079-aa1b-8af93f20828b-1784897585473.jpg",
   gallery: [
-  "https://images.unsplash.com/photo-1494608875625-6a44a9aa61f4",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
-  "https://images.unsplash.com/photo-1567016432779-094069958ea5",
-  "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e"],
+  "/assets/images/285ade2f-b848-4079-aa1b-8af93f20828b-1784897585473.jpg",
+  "/assets/images/euro_crema_2-1784905017426.jpg",
+  "/assets/images/9163576e-f483-478e-a4ec-b63753f51e30-1784904958683.jpg",
+  "/assets/images/euro_crema-1784905001176.jpg"],
 
   specs: {
     'Dimensiones': '175 × 85 × 75 cm',
@@ -151,11 +151,11 @@ export const sofaProducts: SofaProduct[] = [
   seats: '3 plazas',
   price: '$1,199',
   description: 'Estilo urbano con estructura metálica',
-  image: "https://images.unsplash.com/photo-1680823777846-29b42071d7c2",
+  image: "/assets/images/5277da74-d8b8-4b0b-ab69-67836c72f751-1784897749342.jpg",
   gallery: [
-  "https://images.unsplash.com/photo-1680823777846-29b42071d7c2",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
-  "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e",
+  "/assets/images/5277da74-d8b8-4b0b-ab69-67836c72f751-1784897749342.jpg",
+  "/assets/images/euro_crema_2-1784905017426.jpg",
+  "/assets/images/euro_crema-1784905001176.jpg",
   "https://images.unsplash.com/photo-1540574163026-643ea20ade25"],
 
   specs: {
@@ -187,12 +187,12 @@ export const sofaProducts: SofaProduct[] = [
   seats: 'Chaise Longue',
   price: '$1,499',
   description: 'Máxima comodidad con chaise longue extensible',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1750cc681-1784573097609.png",
+  image: "/assets/images/Source_Salon_de_lujo_de_diseno_moderno_de_muebles___1_-1784897819781.jpg",
   gallery: [
   "https://img.rocket.new/generatedImages/rocket_gen_img_17016fbc1-1784411975687.png",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
-  "https://images.unsplash.com/photo-1567016432779-094069958ea5",
-  "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e"],
+  "/assets/images/euro_crema_2-1784905017426.jpg",
+  "/assets/images/9163576e-f483-478e-a4ec-b63753f51e30-1784904958683.jpg",
+  "/assets/images/euro_crema-1784905001176.jpg"],
 
   specs: {
     'Dimensiones': '280 × 160 × 80 cm',
@@ -223,12 +223,12 @@ export const sofaProducts: SofaProduct[] = [
   seats: '2 plazas',
   price: '$799',
   description: 'Calidez y confort estilo nórdico',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_121c7a096-1784573096164.png",
+  image: "/assets/images/a3bbd7eb-1103-4690-9e6a-df1dc5de34a9-1784897870015.jpg",
   gallery: [
-  "https://img.rocket.new/generatedImages/rocket_gen_img_1a61a08e8-1784411974918.png",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
-  "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e",
-  "https://images.unsplash.com/photo-1567016432779-094069958ea5"],
+  "/assets/images/d17fc9b3-d2bb-4760-97c9-74fe4753383d-1784905103637.jpg",
+  "/assets/images/euro_crema_2-1784905017426.jpg",
+  "/assets/images/euro_crema-1784905001176.jpg",
+  "/assets/images/9163576e-f483-478e-a4ec-b63753f51e30-1784904958683.jpg"],
 
   specs: {
     'Dimensiones': '168 × 82 × 78 cm',
@@ -259,12 +259,12 @@ export const sofaProducts: SofaProduct[] = [
   seats: '3 plazas',
   price: '$1,799',
   description: 'Configurable según tu espacio',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1895067fe-1767953623065.png",
+  image: "/assets/images/Gemini_Generated_Image_m0m7rvm0m7rvm0m7__1_-1784899947033.png",
   gallery: [
-  "https://img.rocket.new/generatedImages/rocket_gen_img_1895067fe-1767953623065.png",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
+  "/assets/images/Gemini_Generated_Image_m0m7rvm0m7rvm0m7__1_-1784899947033.png",
+  "/assets/images/euro_crema_2-1784905017426.jpg",
   "https://images.unsplash.com/photo-1540574163026-643ea20ade25",
-  "https://images.unsplash.com/photo-1567016432779-094069958ea5"],
+  "/assets/images/9163576e-f483-478e-a4ec-b63753f51e30-1784904958683.jpg"],
 
   specs: {
     'Dimensiones': '240 × 95 × 80 cm (configurable)',
@@ -295,11 +295,11 @@ export const sofaProducts: SofaProduct[] = [
   seats: '2 plazas',
   price: '$1,099',
   description: 'Diseño retro con tapizado en terciopelo',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1151b29a8-1784426449774.png",
+  image: "/assets/images/Gemini_Generated_Image_d3fw59d3fw59d3fw__1_-1784902759775.png",
   gallery: [
   "https://images.unsplash.com/photo-1696640608601-715b4729cb7f",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
-  "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e",
+  "/assets/images/euro_crema_2-1784905017426.jpg",
+  "/assets/images/euro_crema-1784905001176.jpg",
   "https://images.unsplash.com/photo-1540574163026-643ea20ade25"],
 
   specs: {
@@ -331,12 +331,12 @@ export const sofaProducts: SofaProduct[] = [
   seats: '3 plazas',
   price: '$1,349',
   description: 'Pureza y elegancia en blanco total',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_140c2e408-1784573095432.png",
+  image: "/assets/images/europeo1-1784904704929.jpg",
   gallery: [
-  "https://img.rocket.new/generatedImages/rocket_gen_img_13020e091-1784411974456.png",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
-  "https://images.unsplash.com/photo-1567016432779-094069958ea5",
-  "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e"],
+  "/assets/images/Gemini_Generated_Image_he1jnjhe1jnjhe1j__1_-1784903707261.png",
+  "/assets/images/euro_crema_2-1784905017426.jpg",
+  "/assets/images/9163576e-f483-478e-a4ec-b63753f51e30-1784904958683.jpg",
+  "/assets/images/euro_crema-1784905001176.jpg"],
 
   specs: {
     'Dimensiones': '210 × 88 × 78 cm',
@@ -366,12 +366,12 @@ export const sofaProducts: SofaProduct[] = [
   seats: 'Chaise Longue',
   price: '$2,199',
   description: 'Espacio para toda la familia',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_19c66c277-1784573097388.png",
+  image: "/assets/images/descarga__3_-1784903840931.jpg",
   gallery: [
   "https://img.rocket.new/generatedImages/rocket_gen_img_1f2f9d933-1775735433932.png",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
+  "/assets/images/euro_crema_2-1784905017426.jpg",
   "https://images.unsplash.com/photo-1540574163026-643ea20ade25",
-  "https://images.unsplash.com/photo-1567016432779-094069958ea5"],
+  "/assets/images/9163576e-f483-478e-a4ec-b63753f51e30-1784904958683.jpg"],
 
   specs: {
     'Dimensiones': '320 × 180 × 85 cm',
@@ -403,12 +403,12 @@ export const sofaProducts: SofaProduct[] = [
   seats: '2 plazas',
   price: '$1,099',
   description: 'Sofá de día, cama de noche',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1859f42bd-1784411975132.png",
+  image: "/assets/images/The_Furniture_World_U_Shape_9_Seater_Fabric_Sofa_Set_with_Tea_Table___4_Puffy_2___2___2___1___1___1-1784903888189.jpg",
   gallery: [
-  "https://img.rocket.new/generatedImages/rocket_gen_img_1859f42bd-1784411975132.png",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
-  "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e",
-  "https://images.unsplash.com/photo-1567016432779-094069958ea5"],
+  "/assets/images/The_Furniture_World_U_Shape_9_Seater_Fabric_Sofa_Set_with_Tea_Table___4_Puffy_2___2___2___1___1___1-1784903888189.jpg",
+  "/assets/images/euro_crema_2-1784905017426.jpg",
+  "/assets/images/euro_crema-1784905001176.jpg",
+  "/assets/images/9163576e-f483-478e-a4ec-b63753f51e30-1784904958683.jpg"],
 
   specs: {
     'Dimensiones sofá': '185 × 90 × 80 cm',
@@ -439,12 +439,12 @@ export const sofaProducts: SofaProduct[] = [
   seats: '3 plazas',
   price: '$1,899',
   description: 'Nuestra pieza estrella, diseño exclusivo Polaris',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_15d7f2ede-1784573098601.png",
+  image: "/assets/images/europeo-1784904634946.jpg",
   gallery: [
-  "https://img.rocket.new/generatedImages/rocket_gen_img_1fa776d5c-1784411975462.png",
-  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
+  "/assets/images/euro_baul_1-1784904859095.jpg",
+  "/assets/images/euro_crema_2-1784905017426.jpg",
   "https://images.unsplash.com/photo-1540574163026-643ea20ade25",
-  "https://images.unsplash.com/photo-1567016432779-094069958ea5"],
+  "/assets/images/9163576e-f483-478e-a4ec-b63753f51e30-1784904958683.jpg"],
 
   specs: {
     'Dimensiones': '225 × 95 × 85 cm',
