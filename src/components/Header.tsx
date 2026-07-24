@@ -205,7 +205,7 @@ export default function Header() {
 
       {/* Floating WhatsApp Button */}
       <a
-        href="https://wa.me/916832791?text=Hola!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
+        href="https://wa.me/51916832791?text=Hola!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-lg shadow-[#25D366]/40 pulse-ring hover:scale-110 transition-transform duration-300"

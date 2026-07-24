@@ -37,7 +37,7 @@ export default function Footer() {
               </a>
               {/* WhatsApp */}
               <a
-                href="https://wa.me/916832791"
+                href="https://wa.me/51916832791"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"
@@ -90,13 +90,13 @@ export default function Footer() {
                 <span>Lun–Vie: 6am – 9am · Sáb: 6am – 7:30pm · Dom: 7am – 6pm</span>
               </div>
               <a
-                href="https://wa.me/916832791"
+                href="https://wa.me/51916832791"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 text-[#25D366] hover:text-[#25D366]/80 font-semibold transition-colors"
               >
                 <WhatsAppIcon className="w-4 h-4 shrink-0" />
-                +916 832 791
+                +51 916 832 791
               </a>
             </div>
             <div className="mt-6 p-3 bg-white/5 rounded-xl border border-white/10 text-xs text-white/40 leading-relaxed">

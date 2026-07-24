@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AppImage from '@/components/ui/AppImage';
 import { catalogCategories } from './catalogoData';
+import AllCatalogsView from './AllCatalogsView';
 
 export const metadata: Metadata = {
   title: 'Catálogo de Sofás — Mueblería Polaris',
@@ -22,13 +23,23 @@ export default function CatalogoPage() {
     <>
       <Header />
       <main className="min-h-screen bg-muted/20 pt-20">
-        {/* Breadcrumb */}
+        {/* Breadcrumb + Back */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-primary transition-colors">Inicio</Link>
             <span>/</span>
             <span className="text-foreground font-semibold">Catálogo</span>
           </nav>
+          {/* Visible back button */}
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200 hover:-translate-x-0.5 mb-6"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+              <path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" />
+            </svg>
+            Volver al Inicio
+          </Link>
         </div>
 
         {/* Hero */}
@@ -40,9 +51,11 @@ export default function CatalogoPage() {
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-4">
               Catálogo <span className="text-gradient-teal">Completo</span>
             </h1>
-            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto mb-8">
               Descubre nuestra colección completa de sofás. Selecciona una categoría para explorar todos los modelos disponibles.
             </p>
+            {/* Ver Catálogo Completo button — opens all catalogs */}
+            <AllCatalogsView />
           </div>
 
           {/* Category Grid */}

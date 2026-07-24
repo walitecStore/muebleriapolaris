@@ -70,9 +70,8 @@ function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: n
   return { h: h * 360, s: s * 100, l: l * 100 };
 }
 
-// ─── Color distance using weighted Lab-like approach ─────────────────────────
+// ─── Color distance using perceptual weighting ────────────────────────────────
 function colorDistance(r1: number, g1: number, b1: number, nc: NamedColor): number {
-  // Weight differences: give more importance to hue similarity for chromatic colors
   const dr = r1 - nc.r;
   const dg = g1 - nc.g;
   const db = b1 - nc.b;
@@ -84,14 +83,14 @@ function colorDistance(r1: number, g1: number, b1: number, nc: NamedColor): numb
 function isExcluded(r: number, g: number, b: number): boolean {
   const { s, l } = rgbToHsl(r, g, b);
 
-  // Skip near-white (walls, backgrounds, white cushions)
-  if (l > 88 && s < 15) return true;
+  // Skip near-white (walls, backgrounds, white cushions) — tighter threshold
+  if (l > 85 && s < 18) return true;
   // Skip near-black (shadows, very dark areas)
-  if (l < 8) return true;
+  if (l < 7) return true;
   // Skip very light grays (light walls, light floors)
-  if (l > 75 && s < 10) return true;
+  if (l > 72 && s < 12) return true;
   // Skip medium-light grays (typical floor/wall colors)
-  if (l > 55 && l < 80 && s < 8) return true;
+  if (l > 52 && l < 78 && s < 9) return true;
 
   return false;
 }
@@ -99,13 +98,13 @@ function isExcluded(r: number, g: number, b: number): boolean {
 // ─── Check if a pixel is chromatic (has real color, not gray/neutral) ─────────
 function isChromatic(r: number, g: number, b: number): boolean {
   const { s, l } = rgbToHsl(r, g, b);
-  // A pixel is chromatic if it has meaningful saturation and is not too dark/light
-  return s > 15 && l > 10 && l < 92;
+  // Tighter chromatic check: meaningful saturation and not too dark/light
+  return s > 18 && l > 12 && l < 90;
 }
 
 // ─── In-memory cache ─────────────────────────────────────────────────────────
 const memCache = new Map<string, NamedColor>();
-const CACHE_KEY_PREFIX = 'polaris_color_v2_'; // v2 to bust old wrong cache
+const CACHE_KEY_PREFIX = 'polaris_color_v3_'; // v3 to bust old wrong cache
 
 function getCached(imageUrl: string): NamedColor | null {
   if (memCache.has(imageUrl)) return memCache.get(imageUrl)!;
@@ -140,7 +139,8 @@ function extractDominantColor(imageUrl: string): Promise<NamedColor> {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        const size = 100;
+        // Larger canvas = more pixel data = more accurate detection
+        const size = 150;
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d');
@@ -171,14 +171,14 @@ function extractDominantColor(imageUrl: string): Promise<NamedColor> {
             // Furniture is typically in the center of product photos
             const cx = px / size - 0.5;
             const cy = py / size - 0.5;
-            // Gaussian-like weight: center pixels count more
-            const distFromCenter = Math.sqrt(cx * cx + cy * cy);
-            const weight = Math.max(0.2, 1 - distFromCenter * 1.8);
+            // Elliptical center zone — wider horizontally (sofas are wide)
+            const distFromCenter = Math.sqrt((cx * cx) / 0.18 + (cy * cy) / 0.14);
+            const weight = Math.max(0.15, 1 - distFromCenter);
 
-            // Quantize to 24-step buckets for better grouping
-            const br = Math.round(r / 24) * 24;
-            const bg = Math.round(g / 24) * 24;
-            const bb = Math.round(b / 24) * 24;
+            // Quantize to 20-step buckets for better grouping
+            const br = Math.round(r / 20) * 20;
+            const bg = Math.round(g / 20) * 20;
+            const bb = Math.round(b / 20) * 20;
             const key = `${br},${bg},${bb}`;
 
             const chromatic = isChromatic(r, g, b);
@@ -204,7 +204,7 @@ function extractDominantColor(imageUrl: string): Promise<NamedColor> {
         let totalAchromaticWeight = 0;
         achromaticBuckets.forEach(v => { totalAchromaticWeight += v.weight; });
 
-        // Strategy: if there are significant chromatic pixels (>8% of non-excluded pixels),
+        // Strategy: if there are significant chromatic pixels (>6% of non-excluded pixels),
         // use the dominant chromatic color. Otherwise fall back to achromatic.
         const totalWeight = totalChromaticWeight + totalAchromaticWeight;
         const chromaticRatio = totalWeight > 0 ? totalChromaticWeight / totalWeight : 0;
@@ -212,7 +212,7 @@ function extractDominantColor(imageUrl: string): Promise<NamedColor> {
         let dominantR = 128, dominantG = 128, dominantB = 128;
         let usedChromatic = false;
 
-        if (chromaticRatio > 0.08 && chromaticBuckets.size > 0) {
+        if (chromaticRatio > 0.06 && chromaticBuckets.size > 0) {
           // Find dominant chromatic bucket by weighted count
           let maxWeight = 0;
           chromaticBuckets.forEach((val) => {
@@ -242,7 +242,7 @@ function extractDominantColor(imageUrl: string): Promise<NamedColor> {
         const candidateColors = usedChromatic
           ? NAMED_COLORS.filter(nc => {
               const { s } = rgbToHsl(nc.r, nc.g, nc.b);
-              return s > 12; // only chromatic named colors
+              return s > 10; // only chromatic named colors
             })
           : NAMED_COLORS;
 

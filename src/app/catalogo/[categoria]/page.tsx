@@ -19,16 +19,19 @@ function ProductCard({ product }: { product: CatalogProduct }) {
   const { color: autoColor, loading: colorLoading } = useAutoColor(isPlaceholder ? '' : product.image);
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const handleAddToCart = () => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      alt: product.alt,
-      measures: product.measures,
-    });
+    for (let i = 0; i < quantity; i++) {
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        alt: product.alt,
+        measures: product.measures,
+      });
+    }
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
@@ -105,6 +108,28 @@ function ProductCard({ product }: { product: CatalogProduct }) {
           {/* Buttons */}
           {!isPlaceholder && (
             <div className="flex flex-col gap-2">
+              {/* Quantity selector */}
+              <div className="flex items-center justify-between bg-muted/50 rounded-xl px-3 py-2 border border-border">
+                <span className="text-xs font-semibold text-muted-foreground">Cantidad:</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    className="w-7 h-7 rounded-full border border-border bg-white flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary transition-all text-base font-bold leading-none"
+                    aria-label="Reducir cantidad"
+                  >
+                    −
+                  </button>
+                  <span className="text-sm font-extrabold text-foreground w-6 text-center">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity((q) => q + 1)}
+                    className="w-7 h-7 rounded-full border border-border bg-white flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary transition-all text-base font-bold leading-none"
+                    aria-label="Aumentar cantidad"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
               {/* Add to Cart */}
               <button
                 onClick={handleAddToCart}
@@ -218,8 +243,6 @@ export default function CategoriaPage() {
   const router = useRouter();
   const rawSlug = Array.isArray(params.categoria) ? params.categoria[0] : (params.categoria as string) ?? '';
 
-  // Determine if this is a subcatalog view: URL pattern /catalogo/[cat]/[sub]
-  // Since this is a single [categoria] segment, subcatalog is handled via query
   const [activeSubSlug, setActiveSubSlug] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterColor, setFilterColor] = useState('');
@@ -230,7 +253,6 @@ export default function CategoriaPage() {
 
   const category = getCategoryBySlug(rawSlug);
 
-  // Determine active product list
   const activeSub = activeSubSlug
     ? category?.subcatalogs.find((s) => s.slug === activeSubSlug)
     : null;
@@ -238,7 +260,6 @@ export default function CategoriaPage() {
     ? activeSub.products
     : category?.products ?? [];
 
-  // Unique filter options
   const colorOptions = useMemo(() => {
     const vals = activeProducts.map((p) => p.color).filter(Boolean) as string[];
     return [...new Set(vals)].sort();
@@ -249,10 +270,9 @@ export default function CategoriaPage() {
     return [...new Set(vals)].sort();
   }, [activeProducts]);
 
-  // Filter + search
   const filtered = useMemo(() => {
     return activeProducts.filter((p) => {
-      if (p.name === 'Próximamente') return true; // always show placeholders
+      if (p.name === 'Próximamente') return true;
       const q = search.toLowerCase();
       const matchSearch =
         !q ||
@@ -275,7 +295,6 @@ export default function CategoriaPage() {
 
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  // Reset page on filter change
   useEffect(() => { setPage(1); }, [search, filterColor, filterMaterial, filterPrice, activeSubSlug]);
 
   const scrollTop = () => topRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -303,7 +322,7 @@ export default function CategoriaPage() {
       <main className="min-h-screen bg-muted/20 pt-20" ref={topRef}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap mb-6" aria-label="Breadcrumb">
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap mb-4" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-primary transition-colors">Inicio</Link>
             <span>/</span>
             <Link href="/catalogo" className="hover:text-primary transition-colors">Catálogo</Link>
@@ -321,13 +340,13 @@ export default function CategoriaPage() {
             )}
           </nav>
 
-          {/* Back button */}
+          {/* Back button — prominent solid style */}
           <button
             onClick={() => {
               if (activeSub) { setActiveSubSlug(null); }
               else { router.push('/catalogo'); }
             }}
-            className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors mb-6"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200 hover:-translate-x-0.5 mb-6"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
               <path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" />
@@ -389,7 +408,6 @@ export default function CategoriaPage() {
 
             {/* Filter Row */}
             <div className="flex flex-wrap gap-3">
-              {/* Color */}
               {colorOptions.length > 0 && (
                 <select
                   value={filterColor}
@@ -401,7 +419,6 @@ export default function CategoriaPage() {
                 </select>
               )}
 
-              {/* Material */}
               {materialOptions.length > 0 && (
                 <select
                   value={filterMaterial}
@@ -413,7 +430,6 @@ export default function CategoriaPage() {
                 </select>
               )}
 
-              {/* Price */}
               <select
                 value={filterPrice}
                 onChange={(e) => setFilterPrice(e.target.value)}
@@ -425,7 +441,6 @@ export default function CategoriaPage() {
                 <option value="alto">S/2,000 a más</option>
               </select>
 
-              {/* Clear */}
               {(filterColor || filterMaterial || filterPrice || search) && (
                 <button
                   onClick={() => { setFilterColor(''); setFilterMaterial(''); setFilterPrice(''); setSearch(''); }}
