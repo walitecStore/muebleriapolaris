@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AppImage from '@/components/ui/AppImage';
 import { getCategoryBySlug, buildWhatsAppUrl, type CatalogProduct, type CatalogCategory,  } from '../catalogoData';
+import { useAutoColor } from '@/app/components/useAutoColor';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -14,6 +15,7 @@ const ITEMS_PER_PAGE = 12;
 function ProductCard({ product }: { product: CatalogProduct }) {
   const isPlaceholder = product.name === 'Próximamente';
   const waUrl = buildWhatsAppUrl(product.name);
+  const { color: autoColor, loading: colorLoading } = useAutoColor(isPlaceholder ? '' : product.image);
 
   return (
     <div className="group bg-card rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-1 flex flex-col">
@@ -38,11 +40,27 @@ function ProductCard({ product }: { product: CatalogProduct }) {
             <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">OFERTA</span>
           </div>
         )}
-        {product.color && !isPlaceholder && (
+        {/* Auto color indicator badge */}
+        {!isPlaceholder && (
           <div className="absolute top-3 right-3">
-            <span className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-semibold px-2.5 py-1 rounded-full">
-              {product.color}
-            </span>
+            {colorLoading ? (
+              <span className="bg-white/80 backdrop-blur-sm text-foreground text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-muted animate-pulse inline-block" />
+                <span className="text-muted-foreground">...</span>
+              </span>
+            ) : autoColor ? (
+              <span className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                <span
+                  className="w-3 h-3 rounded-full border border-gray-200 shrink-0 inline-block"
+                  style={{ backgroundColor: `rgb(${autoColor.r},${autoColor.g},${autoColor.b})` }}
+                />
+                {autoColor.emoji} {autoColor.name}
+              </span>
+            ) : product.color ? (
+              <span className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-semibold px-2.5 py-1 rounded-full">
+                {product.color}
+              </span>
+            ) : null}
           </div>
         )}
       </div>

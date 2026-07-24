@@ -12,6 +12,7 @@ import {
   colorMap,
   type SofaProduct,
 } from './catalogData';
+import { useAutoColor } from './useAutoColor';
 
 export default function CatalogSection() {
   const [activeStyles, setActiveStyles] = useState<string[]>([]);
@@ -219,6 +220,7 @@ export default function CatalogSection() {
 
 function CatalogCard({ sofa }: { sofa: SofaProduct }) {
   const [liked, setLiked] = useState(false);
+  const { color: autoColor, loading: colorLoading } = useAutoColor(sofa.image);
 
   return (
     <div
@@ -312,13 +314,29 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
           <Link href={`/productos/${sofa.id}`} className="hover:text-primary transition-colors">
             <h3 className="font-bold text-foreground text-base leading-tight">{sofa.name}</h3>
           </Link>
+          {/* Auto color indicator */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <span
-              className="color-swatch"
-              style={{ backgroundColor: colorMap[sofa.color] }}
-              title={sofa.color}
-            />
-            <span className="text-xs text-muted-foreground">{sofa.color}</span>
+            {colorLoading ? (
+              <span className="w-3 h-3 rounded-full bg-muted animate-pulse" />
+            ) : autoColor ? (
+              <>
+                <span
+                  className="color-swatch"
+                  style={{ backgroundColor: `rgb(${autoColor.r},${autoColor.g},${autoColor.b})` }}
+                  title={autoColor.name}
+                />
+                <span className="text-xs text-muted-foreground">{autoColor.emoji} {autoColor.name}</span>
+              </>
+            ) : (
+              <>
+                <span
+                  className="color-swatch"
+                  style={{ backgroundColor: colorMap[sofa.color] }}
+                  title={sofa.color}
+                />
+                <span className="text-xs text-muted-foreground">{sofa.color}</span>
+              </>
+            )}
           </div>
         </div>
 
