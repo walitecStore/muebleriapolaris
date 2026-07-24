@@ -11,7 +11,7 @@ const SOFA_SLIDES = [
 },
 {
   label: 'Sofá 3 Plazas',
-  bg: "https://images.unsplash.com/photo-1635286729762-d3e53c422b43",
+  bg: "/assets/images/Set_Sofa_Tamu_Minimalis_Jakarta_Terbaru__1_-1784897220233.jpg",
   alt: 'Sofá de tres plazas tapizado en tela gris con cojines decorativos'
 },
 {
@@ -21,7 +21,7 @@ const SOFA_SLIDES = [
 },
 {
   label: 'Sofá 1 Plaza',
-  bg: "https://img.rocket.new/generatedImages/rocket_gen_img_1299dcd8c-1767966141629.png",
+  bg: "/assets/images/WhatsApp_Image_2026-07-24_at_7.58.35_AM-1784899076228.jpeg",
   alt: 'Sillón de una plaza estilo europeo con tapizado premium en color beige'
 },
 {
