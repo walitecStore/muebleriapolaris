@@ -69,6 +69,15 @@ export default function Header() {
                 {link.label}
               </button>
             ))}
+            {/* Ver Catálogo link */}
+            <a
+              href="/catalogo"
+              className={`nav-link-underline text-sm font-semibold transition-colors duration-300 ${
+                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
+              }`}
+            >
+              Ver Catálogo
+            </a>
             {/* Oferta Especial flashing button */}
             <button
               onClick={() => handleNavClick('#ruleta')}
@@ -128,6 +137,14 @@ export default function Header() {
                   {link.label}
                 </button>
               ))}
+              {/* Mobile Ver Catálogo */}
+              <a
+                href="/catalogo"
+                onClick={() => setMenuOpen(false)}
+                className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200"
+              >
+                Ver Catálogo Completo →
+              </a>
               {/* Mobile Oferta Especial */}
               <button
                 onClick={() => handleNavClick('#ruleta')}
