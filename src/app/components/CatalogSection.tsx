@@ -13,6 +13,7 @@ import {
   type SofaProduct,
 } from './catalogData';
 import { useAutoColor } from './useAutoColor';
+import { useCart } from './CartContext';
 
 export default function CatalogSection() {
   const [activeStyles, setActiveStyles] = useState<string[]>([]);
@@ -221,6 +222,21 @@ export default function CatalogSection() {
 function CatalogCard({ sofa }: { sofa: SofaProduct }) {
   const [liked, setLiked] = useState(false);
   const { color: autoColor, loading: colorLoading } = useAutoColor(sofa.image);
+  const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
+
+  function handleAddToCart(e: React.MouseEvent) {
+    e.preventDefault();
+    addItem({
+      id: String(sofa.id),
+      name: sofa.name,
+      price: sofa.price,
+      image: sofa.image,
+      alt: `${sofa.name} — sofá ${sofa.style.toLowerCase()} en color ${sofa.color.toLowerCase()}`,
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  }
 
   return (
     <div
@@ -289,6 +305,26 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
               />
             </svg>
           </Link>
+
+          {/* Add to cart button */}
+          <button
+            onClick={handleAddToCart}
+            className={`w-12 h-12 rounded-full backdrop-blur-sm flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-200 ${
+              added ? 'bg-green-500' : 'bg-white/90 hover:bg-primary'
+            }`}
+            aria-label="Agregar al carrito"
+            title="Agregar al carrito"
+          >
+            {added ? (
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6 text-gray-700 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            )}
+          </button>
         </div>
 
         <div className="absolute top-3 left-3 flex items-center gap-2">
@@ -306,6 +342,27 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
             </span>
           </div>
         )}
+
+        {/* Cart icon always visible at bottom-right */}
+        <button
+          onClick={handleAddToCart}
+          className={`absolute bottom-3 right-3 w-9 h-9 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 z-10 ${
+            added
+              ? 'bg-green-500 scale-110' :'bg-white/90 backdrop-blur-sm hover:bg-primary hover:scale-110'
+          }`}
+          aria-label="Agregar al carrito"
+          title="Agregar al carrito"
+        >
+          {added ? (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          )}
+        </button>
       </div>
 
       {/* Body */}

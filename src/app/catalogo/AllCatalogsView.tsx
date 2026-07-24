@@ -4,6 +4,63 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import { catalogCategories } from './catalogoData';
+import { useCart } from '@/app/components/CartContext';
+
+function MiniProductCard({ product }: { product: { id: string; name: string; price: string; image: string; alt: string } }) {
+  const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
+
+  function handleAdd(e: React.MouseEvent) {
+    e.preventDefault();
+    addItem({ id: product.id, name: product.name, price: product.price, image: product.image, alt: product.alt });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  }
+
+  return (
+    <div className="group relative">
+      <div className="relative h-24 rounded-xl overflow-hidden bg-muted mb-1.5">
+        <AppImage
+          src={product.image}
+          alt={product.alt}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+        />
+        {/* Cart icon — always visible, expands on hover */}
+        <button
+          onClick={handleAdd}
+          className={`absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-full shadow-md transition-all duration-200 overflow-hidden ${
+            added
+              ? 'bg-green-500 px-2 py-1' :'bg-white/90 backdrop-blur-sm hover:bg-primary px-1.5 py-1.5 group-hover:px-2.5 group-hover:py-1'
+          }`}
+          aria-label="Agregar al carrito"
+          title="Agregar al carrito"
+        >
+          {added ? (
+            <>
+              <svg className="w-3 h-3 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-white text-xs font-bold whitespace-nowrap">¡Listo!</span>
+            </>
+          ) : (
+            <>
+              <svg className="w-3.5 h-3.5 text-gray-700 group-hover:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span className="text-xs font-bold text-gray-700 group-hover:text-white whitespace-nowrap max-w-0 group-hover:max-w-[80px] overflow-hidden transition-all duration-300">
+                Agregar
+              </span>
+            </>
+          )}
+        </button>
+      </div>
+      <p className="text-xs font-semibold text-foreground line-clamp-1">{product.name}</p>
+      <p className="text-xs font-bold text-primary">{product.price}</p>
+    </div>
+  );
+}
 
 export default function AllCatalogsView() {
   const [expanded, setExpanded] = useState(false);
@@ -66,19 +123,7 @@ export default function AllCatalogsView() {
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                   {cat?.products?.filter(p => p?.name !== 'Próximamente')?.slice(0, 6)?.map((product) => (
-                    <div key={product?.id} className="group">
-                      <div className="relative h-24 rounded-xl overflow-hidden bg-muted mb-1.5">
-                        <AppImage
-                          src={product?.image}
-                          alt={product?.alt}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                        />
-                      </div>
-                      <p className="text-xs font-semibold text-foreground line-clamp-1">{product?.name}</p>
-                      <p className="text-xs font-bold text-primary">{product?.price}</p>
-                    </div>
+                    <MiniProductCard key={product?.id} product={product} />
                   ))}
                 </div>
               </div>
