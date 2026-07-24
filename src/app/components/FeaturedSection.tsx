@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AppImage from '@/components/ui/AppImage';
 import { WhatsAppIcon } from '@/components/Header';
 import { sofaProducts } from './catalogData';
+import { useCart } from './CartContext';
 
 const featured = sofaProducts.slice(0, 4);
 
@@ -16,6 +17,126 @@ const colorMap: Record<string, string> = {
   Negro: '#1f2937',
   Blanco: '#f9fafb',
 };
+
+function ProductCard({ sofa, index }: { sofa: (typeof sofaProducts)[0]; index: number }) {
+  const { addItem } = useCart();
+  const [qty, setQty] = useState(1);
+  const [added, setAdded] = useState(false);
+
+  function handleAdd() {
+    for (let i = 0; i < qty; i++) {
+      addItem({
+        id: String(sofa.id),
+        name: sofa.name,
+        price: sofa.price,
+        image: sofa.image,
+        alt: `${sofa.name} — sofá ${sofa.style.toLowerCase()} en color ${sofa.color.toLowerCase()}`,
+      });
+    }
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1800);
+  }
+
+  return (
+    <div
+      className={`reveal-on-scroll stagger-${index + 1} card-hover bg-card rounded-2xl overflow-hidden border border-border shadow-sm`}
+    >
+      {/* Image */}
+      <div className="relative h-48 overflow-hidden bg-muted">
+        <AppImage
+          src={sofa.image}
+          alt={`${sofa.name} — sofá ${sofa.style.toLowerCase()} en color ${sofa.color.toLowerCase()}, ${sofa.seats}`}
+          fill
+          className="object-cover w-full h-full"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+        />
+        <div className="absolute top-3 left-3">
+          <span className="bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
+            {sofa.style}
+          </span>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="p-5">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-foreground text-base leading-tight">{sofa.name}</h3>
+          <span
+            className="color-swatch shrink-0"
+            style={{ backgroundColor: colorMap[sofa.color] || '#ccc' }}
+            title={sofa.color}
+          />
+        </div>
+        <p className="text-muted-foreground text-sm mb-1">{sofa.seats}</p>
+        <p className="text-muted-foreground text-xs mb-4 line-clamp-2">{sofa.description}</p>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xl font-extrabold text-primary">{sofa.price}</span>
+        </div>
+
+        {/* Quantity selector */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs text-muted-foreground font-medium">Cantidad:</span>
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            <button
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              className="px-2.5 py-1 text-foreground hover:bg-muted transition-colors text-sm font-bold"
+              aria-label="Reducir cantidad"
+            >
+              −
+            </button>
+            <span className="px-3 py-1 text-sm font-bold text-foreground border-x border-border min-w-[2rem] text-center">
+              {qty}
+            </span>
+            <button
+              onClick={() => setQty((q) => q + 1)}
+              className="px-2.5 py-1 text-foreground hover:bg-muted transition-colors text-sm font-bold"
+              aria-label="Aumentar cantidad"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {/* Agregar al carrito */}
+          <button
+            onClick={handleAdd}
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 font-bold text-sm rounded-xl transition-all duration-200 ${
+              added
+                ? 'bg-green-500 text-white' :'bg-primary text-primary-foreground hover:bg-primary/90'
+            }`}
+          >
+            {added ? (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                ¡Agregado!
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-9H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Agregar al carrito
+              </>
+            )}
+          </button>
+
+          <a
+            href={`https://wa.me/51916832791?text=Hola%20Muebler%C3%ADa%20Polaris!%20Me%20interesa%20el%20sof%C3%A1%20${encodeURIComponent(sofa.name)}%2C%20%C2%BFpueden%20darme%20m%C3%A1s%20informaci%C3%B3n%3F`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25D366] text-white font-bold text-sm rounded-xl hover:bg-[#25D366]/90 transition-all duration-200"
+          >
+            <WhatsAppIcon className="w-4 h-4" />
+            Comprar por WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function FeaturedSection() {
   const ref = useRef<HTMLDivElement>(null);
@@ -56,60 +177,7 @@ export default function FeaturedSection() {
         {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {featured.map((sofa, i) => (
-            <div
-              key={sofa.id}
-              className={`reveal-on-scroll stagger-${i + 1} card-hover bg-card rounded-2xl overflow-hidden border border-border shadow-sm`}
-            >
-              {/* Image */}
-              <div className="relative h-48 overflow-hidden bg-muted">
-                <AppImage
-                  src={sofa.image}
-                  alt={`${sofa.name} — sofá ${sofa.style.toLowerCase()} en color ${sofa.color.toLowerCase()}, ${sofa.seats}`}
-                  fill
-                  className="object-cover w-full h-full"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                />
-                <div className="absolute top-3 left-3">
-                  <span className="bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
-                    {sofa.style}
-                  </span>
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="p-5">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-foreground text-base leading-tight">{sofa.name}</h3>
-                  <span
-                    className="color-swatch shrink-0"
-                    style={{ backgroundColor: colorMap[sofa.color] || '#ccc' }}
-                    title={sofa.color}
-                  />
-                </div>
-                <p className="text-muted-foreground text-sm mb-1">{sofa.seats}</p>
-                <p className="text-muted-foreground text-xs mb-4 line-clamp-2">{sofa.description}</p>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xl font-extrabold text-primary">{sofa.price}</span>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <a
-                    href={`#producto-${sofa.id}`}
-                    className="block text-center px-4 py-2.5 border-2 border-primary text-primary font-bold text-sm rounded-xl hover:bg-primary hover:text-primary-foreground transition-all duration-200"
-                  >
-                    Ver Detalles
-                  </a>
-                  <a
-                    href={`https://wa.me/15550000000?text=Hola%20Muebler%C3%ADa%20Polaris!%20Me%20interesa%20el%20sof%C3%A1%20${encodeURIComponent(sofa.name)}%2C%20%C2%BFpueden%20darme%20m%C3%A1s%20informaci%C3%B3n%3F`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25D366] text-white font-bold text-sm rounded-xl hover:bg-[#25D366]/90 transition-all duration-200"
-                  >
-                    <WhatsAppIcon className="w-4 h-4" />
-                    Comprar por WhatsApp
-                  </a>
-                </div>
-              </div>
-            </div>
+            <ProductCard key={sofa.id} sofa={sofa} index={i} />
           ))}
         </div>
 
