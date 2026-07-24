@@ -69,8 +69,17 @@ export default function Header() {
                 {link.label}
               </button>
             ))}
+            {/* Oferta Especial flashing button */}
+            <button
+              onClick={() => handleNavClick('#ruleta')}
+              className="relative flex items-center gap-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-extrabold hover:scale-105 transition-all duration-300 overflow-hidden"
+              style={{ boxShadow: '0 0 15px rgba(251,191,36,0.6)' }}
+            >
+              <span className="absolute inset-0 bg-white/30 animate-ping rounded-full opacity-0" style={{ animationDuration: '1.5s' }} />
+              ✨ Oferta Especial
+            </button>
             <a
-              href="https://wa.me/916832791?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
+              href="https://wa.me/51916832791?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-secondary text-secondary-foreground px-5 py-2.5 rounded-full text-sm font-bold hover:bg-secondary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-secondary/30"
@@ -119,8 +128,15 @@ export default function Header() {
                   {link.label}
                 </button>
               ))}
+              {/* Mobile Oferta Especial */}
+              <button
+                onClick={() => handleNavClick('#ruleta')}
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-full text-base font-extrabold mt-1 hover:opacity-90 transition-all animate-pulse"
+              >
+                ✨ Oferta Especial
+              </button>
               <a
-                href="https://wa.me/916832791?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
+                href="https://wa.me/51916832791?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setMenuOpen(false)}
