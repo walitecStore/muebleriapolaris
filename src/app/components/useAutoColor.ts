@@ -50,34 +50,62 @@ export const NAMED_COLORS: NamedColor[] = [
   { name: 'Pistacho',     emoji: '🟢', r: 160, g: 210, b: 120 },
 ];
 
-// ─── Color distance (Euclidean in RGB) ───────────────────────────────────────
-function colorDistance(r1: number, g1: number, b1: number, nc: NamedColor): number {
-  return Math.sqrt(
-    Math.pow(r1 - nc.r, 2) +
-    Math.pow(g1 - nc.g, 2) +
-    Math.pow(b1 - nc.b, 2)
-  );
+// ─── Convert RGB to HSL ───────────────────────────────────────────────────────
+function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+  const rn = r / 255, gn = g / 255, bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  const l = (max + min) / 2;
+  let h = 0, s = 0;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case rn: h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6; break;
+      case gn: h = ((bn - rn) / d + 2) / 6; break;
+      case bn: h = ((rn - gn) / d + 4) / 6; break;
+    }
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 };
 }
 
-// ─── Check if a pixel is "background-like" ───────────────────────────────────
-// Ignores: white/near-white backgrounds, very light grays, near-black shadows
-function isBackground(r: number, g: number, b: number): boolean {
-  const brightness = (r + g + b) / 3;
-  const saturation = Math.max(r, g, b) - Math.min(r, g, b);
+// ─── Color distance using weighted Lab-like approach ─────────────────────────
+function colorDistance(r1: number, g1: number, b1: number, nc: NamedColor): number {
+  // Weight differences: give more importance to hue similarity for chromatic colors
+  const dr = r1 - nc.r;
+  const dg = g1 - nc.g;
+  const db = b1 - nc.b;
+  // Perceptual weighting (human eye is more sensitive to green)
+  return Math.sqrt(2 * dr * dr + 4 * dg * dg + 3 * db * db);
+}
 
-  // Skip near-white (walls, backgrounds)
-  if (brightness > 220 && saturation < 30) return true;
-  // Skip near-black shadows
-  if (brightness < 25) return true;
-  // Skip very low saturation mid-grays (floors, walls)
-  if (brightness > 160 && brightness < 220 && saturation < 20) return true;
+// ─── Check if a pixel should be excluded (background, floor, wall, etc.) ─────
+function isExcluded(r: number, g: number, b: number): boolean {
+  const { s, l } = rgbToHsl(r, g, b);
+
+  // Skip near-white (walls, backgrounds, white cushions)
+  if (l > 88 && s < 15) return true;
+  // Skip near-black (shadows, very dark areas)
+  if (l < 8) return true;
+  // Skip very light grays (light walls, light floors)
+  if (l > 75 && s < 10) return true;
+  // Skip medium-light grays (typical floor/wall colors)
+  if (l > 55 && l < 80 && s < 8) return true;
 
   return false;
 }
 
+// ─── Check if a pixel is chromatic (has real color, not gray/neutral) ─────────
+function isChromatic(r: number, g: number, b: number): boolean {
+  const { s, l } = rgbToHsl(r, g, b);
+  // A pixel is chromatic if it has meaningful saturation and is not too dark/light
+  return s > 15 && l > 10 && l < 92;
+}
+
 // ─── In-memory cache ─────────────────────────────────────────────────────────
 const memCache = new Map<string, NamedColor>();
-const CACHE_KEY_PREFIX = 'polaris_color_';
+const CACHE_KEY_PREFIX = 'polaris_color_v2_'; // v2 to bust old wrong cache
 
 function getCached(imageUrl: string): NamedColor | null {
   if (memCache.has(imageUrl)) return memCache.get(imageUrl)!;
@@ -112,8 +140,7 @@ function extractDominantColor(imageUrl: string): Promise<NamedColor> {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        // Sample at reduced size for performance
-        const size = 80;
+        const size = 100;
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d');
@@ -125,57 +152,106 @@ function extractDominantColor(imageUrl: string): Promise<NamedColor> {
         ctx.drawImage(img, 0, 0, size, size);
         const { data } = ctx.getImageData(0, 0, size, size);
 
-        // Bucket colors into 8-bit buckets (divide by 32) to find dominant
-        const buckets = new Map<string, { r: number; g: number; b: number; count: number }>();
+        // Separate chromatic and achromatic pixel buckets
+        const chromaticBuckets = new Map<string, { r: number; g: number; b: number; count: number; weight: number }>();
+        const achromaticBuckets = new Map<string, { r: number; g: number; b: number; count: number; weight: number }>();
 
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          const a = data[i + 3];
+        for (let py = 0; py < size; py++) {
+          for (let px = 0; px < size; px++) {
+            const i = (py * size + px) * 4;
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
 
-          if (a < 128) continue; // skip transparent
-          if (isBackground(r, g, b)) continue;
+            if (a < 128) continue;
+            if (isExcluded(r, g, b)) continue;
 
-          // Quantize to 32-step buckets
-          const br = Math.round(r / 32) * 32;
-          const bg = Math.round(g / 32) * 32;
-          const bb = Math.round(b / 32) * 32;
-          const key = `${br},${bg},${bb}`;
+            // Center-weighted: pixels near center get higher weight
+            // Furniture is typically in the center of product photos
+            const cx = px / size - 0.5;
+            const cy = py / size - 0.5;
+            // Gaussian-like weight: center pixels count more
+            const distFromCenter = Math.sqrt(cx * cx + cy * cy);
+            const weight = Math.max(0.2, 1 - distFromCenter * 1.8);
 
-          const existing = buckets.get(key);
-          if (existing) {
-            existing.r += r;
-            existing.g += g;
-            existing.b += b;
-            existing.count++;
-          } else {
-            buckets.set(key, { r, g, b, count: 1 });
+            // Quantize to 24-step buckets for better grouping
+            const br = Math.round(r / 24) * 24;
+            const bg = Math.round(g / 24) * 24;
+            const bb = Math.round(b / 24) * 24;
+            const key = `${br},${bg},${bb}`;
+
+            const chromatic = isChromatic(r, g, b);
+            const targetMap = chromatic ? chromaticBuckets : achromaticBuckets;
+
+            const existing = targetMap.get(key);
+            if (existing) {
+              existing.r += r * weight;
+              existing.g += g * weight;
+              existing.b += b * weight;
+              existing.count++;
+              existing.weight += weight;
+            } else {
+              targetMap.set(key, { r: r * weight, g: g * weight, b: b * weight, count: 1, weight });
+            }
           }
         }
 
-        if (buckets.size === 0) {
-          resolve(NAMED_COLORS[0]);
-          return;
-        }
+        // Calculate total weighted counts
+        let totalChromaticWeight = 0;
+        chromaticBuckets.forEach(v => { totalChromaticWeight += v.weight; });
 
-        // Find the most frequent bucket
-        let maxCount = 0;
+        let totalAchromaticWeight = 0;
+        achromaticBuckets.forEach(v => { totalAchromaticWeight += v.weight; });
+
+        // Strategy: if there are significant chromatic pixels (>8% of non-excluded pixels),
+        // use the dominant chromatic color. Otherwise fall back to achromatic.
+        const totalWeight = totalChromaticWeight + totalAchromaticWeight;
+        const chromaticRatio = totalWeight > 0 ? totalChromaticWeight / totalWeight : 0;
+
         let dominantR = 128, dominantG = 128, dominantB = 128;
+        let usedChromatic = false;
 
-        buckets.forEach((val) => {
-          if (val.count > maxCount) {
-            maxCount = val.count;
-            dominantR = Math.round(val.r / val.count);
-            dominantG = Math.round(val.g / val.count);
-            dominantB = Math.round(val.b / val.count);
-          }
-        });
+        if (chromaticRatio > 0.08 && chromaticBuckets.size > 0) {
+          // Find dominant chromatic bucket by weighted count
+          let maxWeight = 0;
+          chromaticBuckets.forEach((val) => {
+            if (val.weight > maxWeight) {
+              maxWeight = val.weight;
+              dominantR = Math.round(val.r / val.weight);
+              dominantG = Math.round(val.g / val.weight);
+              dominantB = Math.round(val.b / val.weight);
+            }
+          });
+          usedChromatic = true;
+        } else if (achromaticBuckets.size > 0) {
+          // Fall back to dominant achromatic bucket
+          let maxWeight = 0;
+          achromaticBuckets.forEach((val) => {
+            if (val.weight > maxWeight) {
+              maxWeight = val.weight;
+              dominantR = Math.round(val.r / val.weight);
+              dominantG = Math.round(val.g / val.weight);
+              dominantB = Math.round(val.b / val.weight);
+            }
+          });
+        }
+
+        // If chromatic was used, only match against chromatic named colors
+        // to avoid misidentifying a blue sofa as gray
+        const candidateColors = usedChromatic
+          ? NAMED_COLORS.filter(nc => {
+              const { s } = rgbToHsl(nc.r, nc.g, nc.b);
+              return s > 12; // only chromatic named colors
+            })
+          : NAMED_COLORS;
+
+        const colorPool = candidateColors.length > 0 ? candidateColors : NAMED_COLORS;
 
         // Map to nearest named color
-        let nearest = NAMED_COLORS[0];
+        let nearest = colorPool[0];
         let minDist = Infinity;
-        for (const nc of NAMED_COLORS) {
+        for (const nc of colorPool) {
           const dist = colorDistance(dominantR, dominantG, dominantB, nc);
           if (dist < minDist) {
             minDist = dist;
@@ -190,13 +266,7 @@ function extractDominantColor(imageUrl: string): Promise<NamedColor> {
     };
 
     img.onerror = () => resolve(NAMED_COLORS[0]);
-
-    // For local images, use the full URL
-    if (imageUrl.startsWith('/')) {
-      img.src = imageUrl;
-    } else {
-      img.src = imageUrl;
-    }
+    img.src = imageUrl;
   });
 }
 
@@ -220,7 +290,6 @@ export function useAutoColor(imageUrl: string): { color: NamedColor | null; load
     }
 
     setLoading(true);
-    // Run in background — doesn't block render
     extractDominantColor(imageUrl).then((detected) => {
       setCache(imageUrl, detected);
       setColor(detected);
