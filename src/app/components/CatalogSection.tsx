@@ -14,6 +14,8 @@ import {
 } from './catalogData';
 import { useAutoColor } from './useAutoColor';
 import { useCart } from './CartContext';
+import { useFavorites } from '@/contexts/FavoritesContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function CatalogSection() {
   const [activeStyles, setActiveStyles] = useState<string[]>([]);
@@ -224,6 +226,11 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
   const { color: autoColor, loading: colorLoading } = useAutoColor(sofa.image);
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const { user } = useAuth();
+  const [showLoginHint, setShowLoginHint] = useState(false);
+
+  const isFav = isFavorite(String(sofa.id));
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
@@ -236,6 +243,16 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
+  }
+
+  async function handleFavorite(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!user) {
+      setShowLoginHint(true);
+      setTimeout(() => setShowLoginHint(false), 2500);
+      return;
+    }
+    await toggleFavorite(String(sofa.id));
   }
 
   return (
@@ -257,25 +274,21 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
 
         {/* Hover overlay with action buttons */}
         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 pointer-events-none group-hover:pointer-events-auto">
-          {/* Like button */}
+          {/* Like/Favorite button */}
           <button
-            onClick={(e) => { e.preventDefault(); setLiked((v) => !v); }}
+            onClick={handleFavorite}
             className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200"
-            aria-label="Me gusta"
+            aria-label={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
-              fill={liked ? '#ef4444' : 'none'}
-              stroke={liked ? '#ef4444' : '#374151'}
+              fill={isFav ? '#ef4444' : 'none'}
+              stroke={isFav ? '#ef4444' : '#374151'}
               strokeWidth={2}
               className="w-6 h-6 transition-colors duration-200"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
             </svg>
           </button>
 
@@ -285,24 +298,9 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
             className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200"
             aria-label="Ver producto"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="#374151"
-              strokeWidth={2}
-              className="w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#374151" strokeWidth={2} className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </Link>
 
@@ -313,7 +311,6 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
               added ? 'bg-green-500' : 'bg-white/90 hover:bg-primary'
             }`}
             aria-label="Agregar al carrito"
-            title="Agregar al carrito"
           >
             {added ? (
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -327,42 +324,22 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
           </button>
         </div>
 
-        <div className="absolute top-3 left-3 flex items-center gap-2">
-          <span className="bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
-            {sofa.style}
-          </span>
-          <span className="bg-white/90 text-foreground text-xs font-semibold px-2.5 py-1 rounded-full">
-            {sofa.seats}
-          </span>
-        </div>
-        {sofa.id === 12 && (
-          <div className="absolute top-3 right-3">
-            <span className="bg-secondary text-secondary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
-              ⭐ Exclusivo
-            </span>
+        {/* Login hint tooltip */}
+        {showLoginHint && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap z-20">
+            Inicia sesión para guardar favoritos
           </div>
         )}
 
-        {/* Cart icon always visible at bottom-right */}
-        <button
-          onClick={handleAddToCart}
-          className={`absolute bottom-3 right-3 w-9 h-9 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 z-10 ${
-            added
-              ? 'bg-green-500 scale-110' :'bg-white/90 backdrop-blur-sm hover:bg-primary hover:scale-110'
-          }`}
-          aria-label="Agregar al carrito"
-          title="Agregar al carrito"
-        >
-          {added ? (
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          )}
-        </button>
+        <div className="absolute top-3 left-3 flex items-center gap-2">
+          <span className="bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">{sofa.style}</span>
+          <span className="bg-white/90 text-foreground text-xs font-semibold px-2.5 py-1 rounded-full">{sofa.seats}</span>
+        </div>
+        {sofa.id === 12 && (
+          <div className="absolute top-3 right-3">
+            <span className="bg-secondary text-secondary-foreground text-xs font-bold px-2.5 py-1 rounded-full">⭐ Exclusivo</span>
+          </div>
+        )}
       </div>
 
       {/* Body */}

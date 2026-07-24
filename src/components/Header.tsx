@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import AppLogo from '@/components/ui/AppLogo';
 import { useCart } from '@/app/components/CartContext';
-
+import { useFavorites } from '@/contexts/FavoritesContext';
+import { useAuth } from '@/contexts/AuthContext';
+import SettingsPanel from '@/components/SettingsPanel';
 
 const navLinks = [
   { label: 'Inicio', href: '#inicio' },
@@ -16,7 +18,10 @@ const navLinks = [
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { totalItems, openCart } = useCart();
+  const { favorites } = useFavorites();
+  const { user } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -71,7 +76,6 @@ export default function Header() {
                 {link.label}
               </button>
             ))}
-            {/* Ver Catálogo link */}
             <a
               href="/catalogo"
               className={`nav-link-underline text-sm font-semibold transition-colors duration-300 ${
@@ -80,6 +84,33 @@ export default function Header() {
             >
               Ver Catálogo
             </a>
+            <a
+              href="/pedidos"
+              className={`nav-link-underline text-sm font-semibold transition-colors duration-300 ${
+                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
+              }`}
+            >
+              Mis Pedidos
+            </a>
+
+            {/* Favorites */}
+            <a
+              href="/favoritos"
+              className={`relative flex items-center gap-1.5 transition-colors duration-300 ${
+                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
+              }`}
+              aria-label={`Favoritos${favorites.length > 0 ? `, ${favorites.length}` : ''}`}
+            >
+              <svg className="w-6 h-6" fill={favorites.length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+              </svg>
+              {favorites.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center">
+                  {favorites.length > 9 ? '9+' : favorites.length}
+                </span>
+              )}
+            </a>
+
             {/* Cart Button */}
             <button
               onClick={openCart}
@@ -97,7 +128,22 @@ export default function Header() {
                 </span>
               )}
             </button>
-            {/* Oferta Especial flashing button */}
+
+            {/* Settings Gear */}
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 hover:scale-110 ${
+                scrolled ? 'text-muted-foreground hover:text-foreground hover:bg-muted' : 'text-white/90 hover:text-white hover:bg-white/10'
+              }`}
+              aria-label="Ajustes"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+
+            {/* Oferta Especial */}
             <button
               onClick={() => handleNavClick('#ruleta')}
               className="relative flex items-center gap-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-extrabold hover:scale-105 transition-all duration-300 overflow-hidden"
@@ -117,8 +163,18 @@ export default function Header() {
             </a>
           </div>
 
-          {/* Mobile hamburger + cart */}
+          {/* Mobile hamburger + cart + settings */}
           <div className="md:hidden flex items-center gap-3">
+            {/* Mobile Favorites */}
+            <a
+              href="/favoritos"
+              className={`relative transition-colors ${scrolled ? 'text-foreground' : 'text-white'}`}
+              aria-label="Favoritos"
+            >
+              <svg className="w-6 h-6" fill={favorites.length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+              </svg>
+            </a>
             {/* Mobile Cart Button */}
             <button
               onClick={openCart}
@@ -134,6 +190,17 @@ export default function Header() {
                 </span>
               )}
             </button>
+            {/* Mobile Settings */}
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className={`transition-colors ${scrolled ? 'text-foreground' : 'text-white'}`}
+              aria-label="Ajustes"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className={`flex flex-col justify-center items-center w-10 h-10 gap-1.5 transition-colors ${
@@ -141,21 +208,9 @@ export default function Header() {
               }`}
               aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
             >
-              <span
-                className={`block w-6 h-0.5 transition-all duration-300 origin-center ${
-                  scrolled ? 'bg-foreground' : 'bg-white'
-                } ${menuOpen ? 'rotate-45 translate-y-2' : ''}`}
-              />
-              <span
-                className={`block w-6 h-0.5 transition-all duration-300 ${
-                  scrolled ? 'bg-foreground' : 'bg-white'
-                } ${menuOpen ? 'opacity-0 scale-x-0' : ''}`}
-              />
-              <span
-                className={`block w-6 h-0.5 transition-all duration-300 origin-center ${
-                  scrolled ? 'bg-foreground' : 'bg-white'
-                } ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`}
-              />
+              <span className={`block w-6 h-0.5 transition-all duration-300 origin-center ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? 'rotate-45 translate-y-2' : ''}`} />
+              <span className={`block w-6 h-0.5 transition-all duration-300 ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? 'opacity-0 scale-x-0' : ''}`} />
+              <span className={`block w-6 h-0.5 transition-all duration-300 origin-center ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
             </button>
           </div>
         </nav>
@@ -173,15 +228,15 @@ export default function Header() {
                   {link.label}
                 </button>
               ))}
-              {/* Mobile Ver Catálogo */}
-              <a
-                href="/catalogo"
-                onClick={() => setMenuOpen(false)}
-                className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200"
-              >
+              <a href="/catalogo" onClick={() => setMenuOpen(false)} className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200">
                 Ver Catálogo Completo →
               </a>
-              {/* Mobile Oferta Especial */}
+              <a href="/pedidos" onClick={() => setMenuOpen(false)} className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200">
+                📦 Mis Pedidos
+              </a>
+              <a href="/favoritos" onClick={() => setMenuOpen(false)} className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200">
+                ❤️ Mis Favoritos
+              </a>
               <button
                 onClick={() => handleNavClick('#ruleta')}
                 className="flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-full text-base font-extrabold mt-1 hover:opacity-90 transition-all animate-pulse"
@@ -213,6 +268,8 @@ export default function Header() {
       >
         <WhatsAppIcon className="w-7 h-7" />
       </a>
+
+      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>
   );
 }
