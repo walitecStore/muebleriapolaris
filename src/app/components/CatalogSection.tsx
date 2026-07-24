@@ -12,6 +12,8 @@ import {
   colorMap,
   type SofaProduct,
 } from './catalogData';
+import { useAutoColor } from './useAutoColor';
+import { useCart } from './CartContext';
 
 export default function CatalogSection() {
   const [activeStyles, setActiveStyles] = useState<string[]>([]);
@@ -73,6 +75,17 @@ export default function CatalogSection() {
           <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto">
             Filtra por estilo, color o número de plazas para encontrar el sofá perfecto.
           </p>
+          <div className="mt-6">
+            <Link
+              href="/catalogo"
+              className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-8 py-4 rounded-full text-base font-extrabold hover:bg-primary/90 transition-all duration-200 hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-0.5"
+            >
+              🛋️ Ver Catálogo por Categorías
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
+              </svg>
+            </Link>
+          </div>
         </div>
 
         {/* Filter Panel */}
@@ -208,6 +221,22 @@ export default function CatalogSection() {
 
 function CatalogCard({ sofa }: { sofa: SofaProduct }) {
   const [liked, setLiked] = useState(false);
+  const { color: autoColor, loading: colorLoading } = useAutoColor(sofa.image);
+  const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
+
+  function handleAddToCart(e: React.MouseEvent) {
+    e.preventDefault();
+    addItem({
+      id: String(sofa.id),
+      name: sofa.name,
+      price: sofa.price,
+      image: sofa.image,
+      alt: `${sofa.name} — sofá ${sofa.style.toLowerCase()} en color ${sofa.color.toLowerCase()}`,
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  }
 
   return (
     <div
@@ -276,6 +305,26 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
               />
             </svg>
           </Link>
+
+          {/* Add to cart button */}
+          <button
+            onClick={handleAddToCart}
+            className={`w-12 h-12 rounded-full backdrop-blur-sm flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-200 ${
+              added ? 'bg-green-500' : 'bg-white/90 hover:bg-primary'
+            }`}
+            aria-label="Agregar al carrito"
+            title="Agregar al carrito"
+          >
+            {added ? (
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6 text-gray-700 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            )}
+          </button>
         </div>
 
         <div className="absolute top-3 left-3 flex items-center gap-2">
@@ -293,6 +342,27 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
             </span>
           </div>
         )}
+
+        {/* Cart icon always visible at bottom-right */}
+        <button
+          onClick={handleAddToCart}
+          className={`absolute bottom-3 right-3 w-9 h-9 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 z-10 ${
+            added
+              ? 'bg-green-500 scale-110' :'bg-white/90 backdrop-blur-sm hover:bg-primary hover:scale-110'
+          }`}
+          aria-label="Agregar al carrito"
+          title="Agregar al carrito"
+        >
+          {added ? (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          )}
+        </button>
       </div>
 
       {/* Body */}
@@ -301,13 +371,29 @@ function CatalogCard({ sofa }: { sofa: SofaProduct }) {
           <Link href={`/productos/${sofa.id}`} className="hover:text-primary transition-colors">
             <h3 className="font-bold text-foreground text-base leading-tight">{sofa.name}</h3>
           </Link>
+          {/* Auto color indicator */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <span
-              className="color-swatch"
-              style={{ backgroundColor: colorMap[sofa.color] }}
-              title={sofa.color}
-            />
-            <span className="text-xs text-muted-foreground">{sofa.color}</span>
+            {colorLoading ? (
+              <span className="w-3 h-3 rounded-full bg-muted animate-pulse" />
+            ) : autoColor ? (
+              <>
+                <span
+                  className="color-swatch"
+                  style={{ backgroundColor: `rgb(${autoColor.r},${autoColor.g},${autoColor.b})` }}
+                  title={autoColor.name}
+                />
+                <span className="text-xs text-muted-foreground">{autoColor.emoji} {autoColor.name}</span>
+              </>
+            ) : (
+              <>
+                <span
+                  className="color-swatch"
+                  style={{ backgroundColor: colorMap[sofa.color] }}
+                  title={sofa.color}
+                />
+                <span className="text-xs text-muted-foreground">{sofa.color}</span>
+              </>
+            )}
           </div>
         </div>
 
