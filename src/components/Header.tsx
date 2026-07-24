@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AppLogo from '@/components/ui/AppLogo';
+import { useCart } from '@/app/components/CartContext';
 
 
 const navLinks = [
@@ -15,6 +16,7 @@ const navLinks = [
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { totalItems, openCart } = useCart();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -78,6 +80,23 @@ export default function Header() {
             >
               Ver Catálogo
             </a>
+            {/* Cart Button */}
+            <button
+              onClick={openCart}
+              className={`relative flex items-center gap-1.5 transition-colors duration-300 ${
+                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
+              }`}
+              aria-label={`Carrito${totalItems > 0 ? `, ${totalItems} productos` : ''}`}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              {totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center">
+                  {totalItems > 9 ? '9+' : totalItems}
+                </span>
+              )}
+            </button>
             {/* Oferta Especial flashing button */}
             <button
               onClick={() => handleNavClick('#ruleta')}
@@ -98,30 +117,47 @@ export default function Header() {
             </a>
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className={`md:hidden flex flex-col justify-center items-center w-10 h-10 gap-1.5 transition-colors ${
-              scrolled ? 'text-foreground' : 'text-white'
-            }`}
-            aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
-          >
-            <span
-              className={`block w-6 h-0.5 transition-all duration-300 origin-center ${
-                scrolled ? 'bg-foreground' : 'bg-white'
-              } ${menuOpen ? 'rotate-45 translate-y-2' : ''}`}
-            />
-            <span
-              className={`block w-6 h-0.5 transition-all duration-300 ${
-                scrolled ? 'bg-foreground' : 'bg-white'
-              } ${menuOpen ? 'opacity-0 scale-x-0' : ''}`}
-            />
-            <span
-              className={`block w-6 h-0.5 transition-all duration-300 origin-center ${
-                scrolled ? 'bg-foreground' : 'bg-white'
-              } ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`}
-            />
-          </button>
+          {/* Mobile hamburger + cart */}
+          <div className="md:hidden flex items-center gap-3">
+            {/* Mobile Cart Button */}
+            <button
+              onClick={openCart}
+              className={`relative transition-colors ${scrolled ? 'text-foreground' : 'text-white'}`}
+              aria-label={`Carrito${totalItems > 0 ? `, ${totalItems} productos` : ''}`}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              {totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center">
+                  {totalItems > 9 ? '9+' : totalItems}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className={`flex flex-col justify-center items-center w-10 h-10 gap-1.5 transition-colors ${
+                scrolled ? 'text-foreground' : 'text-white'
+              }`}
+              aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+            >
+              <span
+                className={`block w-6 h-0.5 transition-all duration-300 origin-center ${
+                  scrolled ? 'bg-foreground' : 'bg-white'
+                } ${menuOpen ? 'rotate-45 translate-y-2' : ''}`}
+              />
+              <span
+                className={`block w-6 h-0.5 transition-all duration-300 ${
+                  scrolled ? 'bg-foreground' : 'bg-white'
+                } ${menuOpen ? 'opacity-0 scale-x-0' : ''}`}
+              />
+              <span
+                className={`block w-6 h-0.5 transition-all duration-300 origin-center ${
+                  scrolled ? 'bg-foreground' : 'bg-white'
+                } ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`}
+              />
+            </button>
+          </div>
         </nav>
 
         {/* Mobile Menu */}
