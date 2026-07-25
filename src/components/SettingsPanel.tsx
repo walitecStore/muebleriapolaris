@@ -193,10 +193,10 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
           <div className="px-5 py-4 border-b border-border">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Información</p>
             <div className="space-y-1">
-              <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground">
+              <a href="/#contacto" onClick={onClose} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground">
                 <span>📄</span> Política de privacidad
               </a>
-              <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground">
+              <a href="/#contacto" onClick={onClose} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground">
                 <span>📋</span> Términos de uso
               </a>
               <a href="https://wa.me/51916832791" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground">
