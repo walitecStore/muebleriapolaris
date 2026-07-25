@@ -78,7 +78,7 @@ export default function Header() {
             ))}
             <a
               href="/catalogo"
-              className={`nav-link-underline text-sm font-semibold transition-colors duration-300 ${
+              className={`nav-link-underline text-sm font-semibold transition-colors duration-300 text-center ${
                 scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
               }`}
             >
@@ -86,7 +86,7 @@ export default function Header() {
             </a>
             <a
               href="/pedidos"
-              className={`nav-link-underline text-sm font-semibold transition-colors duration-300 ${
+              className={`nav-link-underline text-sm font-semibold transition-colors duration-300 text-center ${
                 scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
               }`}
             >
