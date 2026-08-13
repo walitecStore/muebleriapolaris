@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import { useCart } from '@/app/components/CartContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
@@ -22,6 +23,8 @@ export default function Header() {
   const { totalItems, openCart } = useCart();
   const { favorites } = useFavorites();
   const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -31,9 +34,21 @@ export default function Header() {
 
   const handleNavClick = (href: string) => {
     setMenuOpen(false);
+
+    // Los enlaces del menú principal apuntan a secciones de la página de inicio.
+    // Si estamos en otra ruta (por ejemplo /pedidos), primero regresamos al inicio
+    // y conservamos el ancla para llevar al usuario exactamente a la sección solicitada.
+    if (pathname !== '/') {
+      router.push(`/${href}`);
+      return;
+    }
+
     const el = document.querySelector(href);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      // Respaldo: si una sección aún no está montada, actualizamos el hash.
+      window.location.hash = href.replace('#', '');
     }
   };
 
@@ -41,35 +56,36 @@ export default function Header() {
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-50 nav-enter transition-all duration-500 ${
-          scrolled
-            ? 'bg-white/80 backdrop-blur-xl shadow-lg shadow-primary/10 border-b border-border'
-            : 'bg-transparent'
-        }`}
+  scrolled
+    ? "bg-white/70 backdrop-blur-2xl border-b border-white/30 shadow-2xl shadow-slate-900/10"
+    : "bg-gradient-to-b from-black/40 via-black/10 to-transparent"
+}`}
       >
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
+        <nav className="max-w-[1440px] mx-auto px-6 lg:px-10 h-[76px] flex items-center justify-between">
           {/* Logo */}
           <button
             onClick={() => handleNavClick('#inicio')}
-            className="flex items-center gap-2 group"
+            className="flex items-center gap-3 group transition-all duration-300 hover:scale-105"
             aria-label="Ir al inicio"
           >
-            <AppLogo size={36} />
+            <AppLogo size={44} />
             <span
-              className={`font-extrabold text-lg sm:text-xl tracking-tight transition-colors duration-300 ${
-                scrolled ? 'text-foreground' : 'text-white'
+              className={`font-black text-2xl tracking-tight transition-colors duration-300 ${
+                scrolled ? "text-slate-900" : "text-white"
               }`}
-            >
-              Mueblería Polaris
+           >
+              Mueblería
+              <span className="text-cyan-500"> Polaris</span>
             </span>
           </button>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-10">
             {navLinks.map((link) => (
               <button
                 key={link.href}
                 onClick={() => handleNavClick(link.href)}
-                className={`nav-link-underline text-sm font-semibold transition-colors duration-300 ${
+                className={`nav-link-underline text-[15px] tracking-wide font-semibold transition-colors duration-300 ${
                   scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
                 }`}
               >

@@ -8,14 +8,13 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Profile {
-  full_name: string;
-  phone: string | null;
+  nombre_completo: string;
+  telefono: string | null;
   avatar_url: string | null;
 }
-
 export default function PerfilPage() {
   const { user, loading: authLoading } = useAuth();
-  const [profile, setProfile] = useState<Profile>({ full_name: '', phone: null, avatar_url: null });
+  const [profile, setProfile] = useState<Profile>({nombre_completo: '',telefono: null, avatar_url: null});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -27,8 +26,14 @@ export default function PerfilPage() {
   const fetchProfile = useCallback(async () => {
     if (!user) { setLoading(false); return; }
     const supabase = createClient();
-    const { data } = await supabase.from('profiles').select('full_name, phone, avatar_url').eq('id', user.id).maybeSingle();
-    if (data) setProfile({ full_name: data.full_name || '', phone: data.phone || '', avatar_url: data.avatar_url || null });
+    const { data } = await supabase.from('profiles').select('full_name, telefono, avatar_url').eq('id', user.id).maybeSingle();
+   if (data) {
+  setProfile({
+    nombre_completo: data.full_name || '',
+    telefono: data.telefono || '',
+    avatar_url: data.avatar_url || null
+  });
+}
     setLoading(false);
   }, [user]);
 
@@ -40,10 +45,19 @@ export default function PerfilPage() {
     setSaving(true);
     setError('');
     const supabase = createClient();
-    const { error: err } = await supabase.from('profiles').upsert(
-      { id: user.id, full_name: profile.full_name, phone: profile.phone, email: user.email || '' },
-      { onConflict: 'id' }
-    );
+   const { error: err } = await supabase
+  .from('profiles')
+  .upsert(
+{
+  id: user.id,
+  email: user.email,
+  full_name: profile.nombre_completo,
+  telefono: profile.telefono
+},
+{
+  onConflict: 'id'
+}
+);
     setSaving(false);
     if (err) { setError(err.message); } else { setMsg('¡Perfil guardado!'); setTimeout(() => setMsg(''), 2500); }
   }
@@ -108,8 +122,8 @@ export default function PerfilPage() {
                 <label className="block text-sm font-semibold text-foreground mb-1.5">Nombre completo</label>
                 <input
                   type="text"
-                  value={profile.full_name}
-                  onChange={(e) => setProfile((p) => ({ ...p, full_name: e.target.value }))}
+                  value={profile.nombre_completo}
+                  onChange={(e) => setProfile((p) => ({ ...p, nombre_completo: e.target.value}))}
                   placeholder="Tu nombre completo"
                   className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
@@ -127,8 +141,8 @@ export default function PerfilPage() {
                 <label className="block text-sm font-semibold text-foreground mb-1.5">Teléfono</label>
                 <input
                   type="tel"
-                  value={profile.phone || ''}
-                  onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
+                  value={profile.telefono || ''}
+                  onChange={(e) => setProfile((p) => ({ ...p,telefono: e.target.value }))}
                   placeholder="+51 999 999 999"
                   className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />

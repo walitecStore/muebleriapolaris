@@ -1,3 +1,4 @@
+import InsertProducts from "@/components/InsertProducts";
 import React from 'react';
 import type { Metadata } from 'next';
 import Header from '@/components/Header';
@@ -23,11 +24,11 @@ export const metadata: Metadata = {
     images: [{ url: '/assets/images/app_logo.png', width: 1200, height: 630 }],
   },
 };
-
 export default function HomePage() {
   return (
     <>
-      {/* Structured Data */}
+    <InsertProducts />
+    // <InsertProducts />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

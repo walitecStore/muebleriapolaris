@@ -12,17 +12,45 @@ export interface SofaReview {
   tags: string[];
   avatarColor: string;
 }
-
 export interface SofaProduct {
   id: number;
+
+  category:
+    | "Sofás Europeo"
+    | "Sofás Modulares"
+    | "Sofás Seccionales"
+    | "Sofás Cama"
+    | "Sofás 3-2-1"
+    | "Pufs y Decorativos";
+
   name: string;
-  style: 'Moderno' | 'Clásico' | 'Minimalista' | 'Escandinavo' | 'Industrial';
-  color: 'Gris' | 'Beige' | 'Azul' | 'Verde' | 'Rojo' | 'Negro' | 'Blanco';
-  seats: '1 plaza' | '2 plazas' | '3 plazas' | 'Chaise Longue';
+
+  style:
+    | "Moderno"
+    | "Clásico"
+    | "Minimalista"
+    | "Escandinavo"
+    | "Industrial";
+
+  color:
+    | "Gris"
+    | "Beige"
+    | "Azul"
+    | "Verde"
+    | "Rojo"
+    | "Negro"
+    | "Blanco";
+
+  seats:
+    | "1 plaza"
+    | "2 plazas"
+    | "3 plazas"
+    | "Chaise Longue";
+
   price: string;
   description: string;
   image: string;
-  // Extended fields for product detail page
+
   gallery?: string[];
   specs?: Record<string, string>;
   features?: string[];
@@ -36,7 +64,8 @@ export interface SofaProduct {
 export const sofaProducts: SofaProduct[] = [
 {
   id: 1,
-  name: 'Sofá Nórdico Oslo',
+  category:"Sofás Europeo",
+  name: 'Sofá europeo cama',
   style: 'Moderno',
   color: 'Gris',
   seats: '3 plazas',
@@ -73,6 +102,7 @@ export const sofaProducts: SofaProduct[] = [
 },
 {
   id: 2,
+  category:"Sofás Europeo",
   name: 'Sofa Europeo Baul',
   style: 'Clásico',
   color: 'Beige',
@@ -109,7 +139,8 @@ export const sofaProducts: SofaProduct[] = [
 },
 {
   id: 3,
-  name: 'Sofá Moderno Zen',
+   category:"Sofás Europeo",
+  name: 'Sofá europeo cama',
   style: 'Minimalista',
   color: 'Gris',
   seats: '2 plazas',
@@ -145,7 +176,8 @@ export const sofaProducts: SofaProduct[] = [
 },
 {
   id: 4,
-  name: 'Sofá Industrial Loft',
+  category:"Sofás Modulares",
+  name: 'Sofá modular caballito',
   style: 'Industrial',
   color: 'Negro',
   seats: '3 plazas',
@@ -181,6 +213,7 @@ export const sofaProducts: SofaProduct[] = [
 },
 {
   id: 5,
+  category:"Sofás Modulares",
   name: 'Sofá Chaise Longue Relax',
   style: 'Moderno',
   color: 'Azul',
@@ -217,6 +250,7 @@ export const sofaProducts: SofaProduct[] = [
 },
 {
   id: 6,
+  category:"Sofás 3-2-1",
   name: 'Sofá Escandinavo Hygge',
   style: 'Escandinavo',
   color: 'Beige',
@@ -253,6 +287,7 @@ export const sofaProducts: SofaProduct[] = [
 },
 {
   id: 7,
+  category:"Sofás 3-2-1",
   name: 'Sofá Modular Flex',
   style: 'Moderno',
   color: 'Verde',
@@ -289,6 +324,7 @@ export const sofaProducts: SofaProduct[] = [
 },
 {
   id: 8,
+  category:"Sofás 3-2-1",
   name: 'Sofá Vintage Retro',
   style: 'Clásico',
   color: 'Rojo',
@@ -325,6 +361,7 @@ export const sofaProducts: SofaProduct[] = [
 },
 {
   id: 9,
+  category:"Sofás Cama",
   name: 'Sofá Minimalista Blanco',
   style: 'Minimalista',
   color: 'Blanco',
@@ -360,6 +397,7 @@ export const sofaProducts: SofaProduct[] = [
 },
 {
   id: 10,
+  category:"Sofás Seccionales",
   name: 'Sofá Familiar XL',
   style: 'Moderno',
   color: 'Gris',
@@ -396,6 +434,7 @@ export const sofaProducts: SofaProduct[] = [
 },
 {
   id: 11,
+  category:"Sofás Cama",
   name: 'Sofá Cama Convertible',
   style: 'Moderno',
   color: 'Negro',
@@ -432,6 +471,7 @@ export const sofaProducts: SofaProduct[] = [
 },
 {
   id: 12,
+  category:"Sofás Seccionales",
   name: 'Sofá Polaris Signature',
   style: 'Moderno',
   color: 'Azul',
@@ -467,26 +507,26 @@ export const sofaProducts: SofaProduct[] = [
   { id: 3, name: 'Sebastián Torres', initials: 'ST', location: 'Trujillo, Perú', rating: 5, title: 'Vale cada centavo y más', text: 'Es el sofá más cómodo que he tenido en mi vida. El relleno de plumas es increíble.', date: 'Hace 3 semanas', verified: true, helpful: 38, tags: ['Ergonómico', 'Cómodo', 'Trabajo desde casa'], avatarColor: 'bg-accent' }]
 },
 // --- EXPANDED CATALOG (IDs 13-32) ---
-{ id: 13, name: 'Sofá Velvet Esmeralda', style: 'Moderno', color: 'Verde', seats: '2 plazas', price: 'S/1,150', description: 'Terciopelo esmeralda con patas doradas', image: "https://images.unsplash.com/photo-1646171734470-46b1a7dc9c82", gallery: ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600"], specs: { 'Dimensiones': '180 × 85 × 80 cm', 'Material': 'Velvet esmeralda', 'Patas': 'Metal dorado' }, features: ['Velvet premium', 'Patas doradas', 'Diseño elegante'], rating: 4.7, reviewCount: 38, sku: 'POL-VEL-ES-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Rosa Mendoza', initials: 'RM', location: 'Lima, Perú', rating: 5, title: 'Color precioso', text: 'El verde esmeralda es espectacular, muy elegante.', date: 'Hace 1 mes', verified: true, helpful: 12, tags: ['Elegante', 'Color único'], avatarColor: 'bg-primary' }] },
-{ id: 14, name: 'Sofá Capitoné Royal', style: 'Clásico', color: 'Azul', seats: '3 plazas', price: 'S/1,750', description: 'Capitoné clásico con botones decorativos', image: "https://images.unsplash.com/photo-1638368888198-0558b2f2aa7c", gallery: ["https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=600"], specs: { 'Dimensiones': '220 × 90 × 85 cm', 'Material': 'Tela capitoné', 'Patas': 'Madera tallada' }, features: ['Capitoné artesanal', 'Botones decorativos', 'Patas talladas'], rating: 4.8, reviewCount: 55, sku: 'POL-CAP-AZ-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Luis García', initials: 'LG', location: 'Arequipa, Perú', rating: 5, title: 'Clásico y elegante', text: 'El capitoné es perfecto para una sala clásica.', date: 'Hace 2 meses', verified: true, helpful: 18, tags: ['Clásico', 'Elegante'], avatarColor: 'bg-secondary' }] },
-{ id: 15, name: 'Sofá L Modular Gris', style: 'Moderno', color: 'Gris', seats: 'Chaise Longue', price: 'S/2,050', description: 'Sofá en L con módulos independientes', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1a13262e5-1784911131205.png", gallery: ["https://images.unsplash.com/photo-1540574163026-643ea20ade25?w=600"], specs: { 'Dimensiones': '290 × 170 × 82 cm', 'Material': 'Tela gris premium', 'Patas': 'Madera oscura' }, features: ['Módulos independientes', 'Chaise longue reversible', 'Tapizado premium'], rating: 4.9, reviewCount: 92, sku: 'POL-L-GR-CL', availability: 'En stock', reviews: [{ id: 1, name: 'Sandra Pérez', initials: 'SP', location: 'Lima, Perú', rating: 5, title: 'Perfecto para sala grande', text: 'El sofá en L es ideal para mi sala amplia.', date: 'Hace 3 semanas', verified: true, helpful: 25, tags: ['Espacioso', 'Modular'], avatarColor: 'bg-accent' }] },
-{ id: 16, name: 'Sofá Rústico Madera', style: 'Industrial', color: 'Beige', seats: '3 plazas', price: 'S/1,380', description: 'Estructura de madera maciza estilo rústico', image: "https://images.unsplash.com/photo-1734154162371-34d35438a2bf", gallery: ["https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600"], specs: { 'Dimensiones': '215 × 88 × 85 cm', 'Material': 'Tela beige + madera', 'Patas': 'Madera maciza' }, features: ['Estructura rústica', 'Madera maciza', 'Cojines extraíbles'], rating: 4.6, reviewCount: 43, sku: 'POL-RUS-BE-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Jorge Quispe', initials: 'JQ', location: 'Cusco, Perú', rating: 5, title: 'Estilo rústico perfecto', text: 'Combina perfecto con mi decoración rústica.', date: 'Hace 1 mes', verified: true, helpful: 14, tags: ['Rústico', 'Natural'], avatarColor: 'bg-primary' }] },
-{ id: 17, name: 'Sofá Terciopelo Vino', style: 'Clásico', color: 'Rojo', seats: '2 plazas', price: 'S/1,280', description: 'Terciopelo color vino con detalles dorados', image: "https://images.unsplash.com/photo-1646171734470-46b1a7dc9c82", gallery: ["https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=600"], specs: { 'Dimensiones': '175 × 85 × 82 cm', 'Material': 'Terciopelo vino', 'Patas': 'Metal dorado' }, features: ['Terciopelo premium', 'Detalles dorados', 'Diseño lujoso'], rating: 4.8, reviewCount: 61, sku: 'POL-TER-VN-2P', availability: 'En stock', reviews: [{ id: 1, name: 'María Flores', initials: 'MF', location: 'Lima, Perú', rating: 5, title: 'Lujoso y elegante', text: 'El color vino es precioso, muy sofisticado.', date: 'Hace 2 semanas', verified: true, helpful: 20, tags: ['Lujoso', 'Sofisticado'], avatarColor: 'bg-secondary' }] },
-{ id: 18, name: 'Sofá Minimalista Negro', style: 'Minimalista', color: 'Negro', seats: '3 plazas', price: 'S/1,420', description: 'Elegancia minimalista en negro profundo', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1d27f846e-1773044479844.png", gallery: ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600"], specs: { 'Dimensiones': '210 × 88 × 78 cm', 'Material': 'Cuero negro premium', 'Patas': 'Acero negro' }, features: ['Cuero premium', 'Patas de acero', 'Diseño minimalista'], rating: 4.7, reviewCount: 49, sku: 'POL-MIN-NK-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Carlos Ríos', initials: 'CR', location: 'Trujillo, Perú', rating: 5, title: 'Elegante y moderno', text: 'El negro es muy elegante y combina con todo.', date: 'Hace 1 mes', verified: true, helpful: 16, tags: ['Elegante', 'Versátil'], avatarColor: 'bg-accent' }] },
-{ id: 19, name: 'Sofá Escandinavo Blanco', style: 'Escandinavo', color: 'Blanco', seats: '2 plazas', price: 'S/920', description: 'Pureza nórdica con patas de madera clara', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1898a3e7d-1772441229806.png", gallery: ["https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=600"], specs: { 'Dimensiones': '170 × 82 × 76 cm', 'Material': 'Tela blanca nórdica', 'Patas': 'Madera de abedul' }, features: ['Estilo nórdico', 'Patas de abedul', 'Diseño limpio'], rating: 4.6, reviewCount: 35, sku: 'POL-ESC-BL-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Ana Vargas', initials: 'AV', location: 'Lima, Perú', rating: 5, title: 'Nórdico y elegante', text: 'El blanco nórdico es perfecto para mi sala.', date: 'Hace 3 semanas', verified: true, helpful: 11, tags: ['Nórdico', 'Limpio'], avatarColor: 'bg-primary' }] },
-{ id: 20, name: 'Sofá Cuero Marrón', style: 'Clásico', color: 'Beige', seats: '3 plazas', price: 'S/1,650', description: 'Cuero genuino color marrón cálido', image: "https://images.unsplash.com/photo-1628069435404-0712c6ca816f", gallery: ["https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=600"], specs: { 'Dimensiones': '220 × 92 × 85 cm', 'Material': 'Cuero genuino', 'Patas': 'Madera oscura' }, features: ['Cuero genuino', 'Envejecimiento natural', 'Muy duradero'], rating: 4.9, reviewCount: 78, sku: 'POL-CUE-MA-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Pedro Huanca', initials: 'PH', location: 'Arequipa, Perú', rating: 5, title: 'Cuero de primera calidad', text: 'El cuero genuino es increíble, mejora con el tiempo.', date: 'Hace 2 meses', verified: true, helpful: 28, tags: ['Cuero genuino', 'Duradero'], avatarColor: 'bg-secondary' }] },
-{ id: 21, name: 'Sofá Azul Marino', style: 'Moderno', color: 'Azul', seats: '2 plazas', price: 'S/1,080', description: 'Azul marino profundo con líneas modernas', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1fcbc54c8-1769510770320.png", gallery: ["https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=600"], specs: { 'Dimensiones': '178 × 85 × 80 cm', 'Material': 'Tela azul marino', 'Patas': 'Metal negro' }, features: ['Color intenso', 'Patas metálicas', 'Diseño contemporáneo'], rating: 4.7, reviewCount: 44, sku: 'POL-AZM-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Lucía Torres', initials: 'LT', location: 'Lima, Perú', rating: 5, title: 'Azul marino perfecto', text: 'El color es exactamente como en las fotos.', date: 'Hace 1 mes', verified: true, helpful: 15, tags: ['Color exacto', 'Moderno'], avatarColor: 'bg-accent' }] },
-{ id: 22, name: 'Sofá Verde Oliva', style: 'Escandinavo', color: 'Verde', seats: '3 plazas', price: 'S/1,320', description: 'Verde oliva natural con textura bouclé', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1065d7918-1771884763956.png", gallery: ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600"], specs: { 'Dimensiones': '205 × 88 × 80 cm', 'Material': 'Bouclé verde oliva', 'Patas': 'Madera natural' }, features: ['Bouclé premium', 'Color natural', 'Estilo escandinavo'], rating: 4.8, reviewCount: 52, sku: 'POL-VOL-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Valeria Quispe', initials: 'VQ', location: 'Cusco, Perú', rating: 5, title: 'Verde oliva hermoso', text: 'El color verde oliva es muy natural y elegante.', date: 'Hace 2 semanas', verified: true, helpful: 19, tags: ['Natural', 'Elegante'], avatarColor: 'bg-primary' }] },
-{ id: 23, name: 'Sofá Gris Perla', style: 'Minimalista', color: 'Gris', seats: '1 plaza', price: 'S/650', description: 'Sillón individual gris perla minimalista', image: "https://img.rocket.new/generatedImages/rocket_gen_img_10febaeec-1767125293758.png", gallery: ["https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600"], specs: { 'Dimensiones': '90 × 85 × 80 cm', 'Material': 'Tela gris perla', 'Patas': 'Acero cromado' }, features: ['Sillón individual', 'Diseño minimalista', 'Ideal para lectura'], rating: 4.6, reviewCount: 29, sku: 'POL-GP-1P', availability: 'En stock', reviews: [{ id: 1, name: 'Beatriz Lara', initials: 'BL', location: 'Lima, Perú', rating: 5, title: 'Perfecto para mi rincón de lectura', text: 'Muy cómodo para leer, el gris perla es muy elegante.', date: 'Hace 1 mes', verified: true, helpful: 10, tags: ['Cómodo', 'Compacto'], avatarColor: 'bg-secondary' }] },
-{ id: 24, name: 'Sofá Blanco Nube', style: 'Moderno', color: 'Blanco', seats: '2 plazas', price: 'S/1,180', description: 'Suavidad extrema estilo nube', image: "https://images.unsplash.com/photo-1722521309768-7ef1411244bf", gallery: ["https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=600"], specs: { 'Dimensiones': '185 × 90 × 78 cm', 'Material': 'Tela ultra suave', 'Patas': 'Madera blanca' }, features: ['Ultra suave', 'Relleno extra', 'Diseño nube'], rating: 4.8, reviewCount: 67, sku: 'POL-BN-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Claudia Mamani', initials: 'CM', location: 'Puno, Perú', rating: 5, title: 'Como sentarse en una nube', text: 'El sofá es increíblemente suave y cómodo.', date: 'Hace 3 semanas', verified: true, helpful: 22, tags: ['Ultra suave', 'Cómodo'], avatarColor: 'bg-accent' }] },
-{ id: 25, name: 'Sofá Rojo Pasión', style: 'Clásico', color: 'Rojo', seats: '3 plazas', price: 'S/1,480', description: 'Rojo intenso que domina cualquier sala', image: "https://images.unsplash.com/photo-1699832127583-3945f8d5bc97", gallery: ["https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=600"], specs: { 'Dimensiones': '215 × 90 × 85 cm', 'Material': 'Terciopelo rojo', 'Patas': 'Madera oscura' }, features: ['Terciopelo rojo', 'Diseño clásico', 'Muy llamativo'], rating: 4.7, reviewCount: 41, sku: 'POL-RP-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Gabriela Soto', initials: 'GS', location: 'Lima, Perú', rating: 5, title: 'El rojo es espectacular', text: 'El sofá rojo es el centro de atención de mi sala.', date: 'Hace 1 mes', verified: true, helpful: 17, tags: ['Llamativo', 'Elegante'], avatarColor: 'bg-primary' }] },
-{ id: 26, name: 'Sofá Beige Lino', style: 'Escandinavo', color: 'Beige', seats: '3 plazas', price: 'S/1,150', description: 'Lino natural beige de textura suave', image: "https://img.rocket.new/generatedImages/rocket_gen_img_15505ea49-1768416233200.png", gallery: ["https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=600"], specs: { 'Dimensiones': '210 × 88 × 80 cm', 'Material': 'Lino natural', 'Patas': 'Madera de roble' }, features: ['Lino natural', 'Ecológico', 'Textura suave'], rating: 4.6, reviewCount: 36, sku: 'POL-BL-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Teresa Condori', initials: 'TC', location: 'Arequipa, Perú', rating: 5, title: 'Natural y elegante', text: 'El lino natural es muy agradable al tacto.', date: 'Hace 2 meses', verified: true, helpful: 13, tags: ['Natural', 'Ecológico'], avatarColor: 'bg-secondary' }] },
-{ id: 27, name: 'Sofá Industrial Gris', style: 'Industrial', color: 'Gris', seats: '2 plazas', price: 'S/1,050', description: 'Estilo industrial con tapizado gris oscuro', image: "https://images.unsplash.com/photo-1598831629742-b091f925a426", gallery: ["https://images.unsplash.com/photo-1540574163026-643ea20ade25?w=600"], specs: { 'Dimensiones': '180 × 85 × 80 cm', 'Material': 'Tela gris industrial', 'Patas': 'Hierro negro' }, features: ['Estilo industrial', 'Hierro forjado', 'Muy resistente'], rating: 4.7, reviewCount: 48, sku: 'POL-IG-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Raúl Mendoza', initials: 'RM', location: 'Lima, Perú', rating: 5, title: 'Industrial y elegante', text: 'El estilo industrial es perfecto para mi loft.', date: 'Hace 1 mes', verified: true, helpful: 16, tags: ['Industrial', 'Resistente'], avatarColor: 'bg-accent' }] },
-{ id: 28, name: 'Sofá Turquesa Tropical', style: 'Moderno', color: 'Azul', seats: '2 plazas', price: 'S/1,220', description: 'Turquesa vibrante para espacios frescos', image: "https://img.rocket.new/generatedImages/rocket_gen_img_15159dfae-1784911122662.png", gallery: ["https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=600"], specs: { 'Dimensiones': '178 × 85 × 80 cm', 'Material': 'Tela turquesa', 'Patas': 'Metal blanco' }, features: ['Color vibrante', 'Patas blancas', 'Diseño tropical'], rating: 4.7, reviewCount: 33, sku: 'POL-TUR-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Paola Ríos', initials: 'PR', location: 'Lima, Perú', rating: 5, title: 'Color único y hermoso', text: 'El turquesa es perfecto para mi sala de playa.', date: 'Hace 3 semanas', verified: true, helpful: 12, tags: ['Vibrante', 'Único'], avatarColor: 'bg-primary' }] },
-{ id: 29, name: 'Sofá Cuero Negro Premium', style: 'Industrial', color: 'Negro', seats: '3 plazas', price: 'S/1,950', description: 'Cuero negro premium de alta durabilidad', image: "https://img.rocket.new/generatedImages/rocket_gen_img_147ec2b4f-1766411901095.png", gallery: ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600"], specs: { 'Dimensiones': '220 × 92 × 85 cm', 'Material': 'Cuero negro premium', 'Patas': 'Acero inoxidable' }, features: ['Cuero premium', 'Muy duradero', 'Fácil de limpiar'], rating: 4.9, reviewCount: 85, sku: 'POL-CNP-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Ernesto Cárdenas', initials: 'EC', location: 'Lima, Perú', rating: 5, title: 'Cuero de primera', text: 'El cuero negro es de altísima calidad.', date: 'Hace 2 semanas', verified: true, helpful: 30, tags: ['Premium', 'Duradero'], avatarColor: 'bg-secondary' }] },
-{ id: 30, name: 'Sofá Chesterfield Clásico', style: 'Clásico', color: 'Beige', seats: '3 plazas', price: 'S/2,100', description: 'Chesterfield inglés con capitoné artesanal', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1b2848dab-1772196144462.png", gallery: ["https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=600"], specs: { 'Dimensiones': '225 × 95 × 90 cm', 'Material': 'Cuero beige', 'Patas': 'Madera tallada' }, features: ['Chesterfield auténtico', 'Capitoné artesanal', 'Patas talladas'], rating: 4.9, reviewCount: 72, sku: 'POL-CHE-BE-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Alfredo Paredes', initials: 'AP', location: 'Lima, Perú', rating: 5, title: 'Chesterfield auténtico', text: 'El Chesterfield es una pieza de colección.', date: 'Hace 1 mes', verified: true, helpful: 25, tags: ['Clásico', 'Artesanal'], avatarColor: 'bg-accent' }] },
-{ id: 31, name: 'Sofá Gris Marengo', style: 'Moderno', color: 'Gris', seats: '3 plazas', price: 'S/1,380', description: 'Gris marengo profundo con líneas rectas', image: "https://img.rocket.new/generatedImages/rocket_gen_img_14be03324-1784911124550.png", gallery: ["https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=600"], specs: { 'Dimensiones': '215 × 90 × 82 cm', 'Material': 'Tela gris marengo', 'Patas': 'Metal negro' }, features: ['Gris profundo', 'Líneas rectas', 'Diseño contemporáneo'], rating: 4.7, reviewCount: 46, sku: 'POL-GM-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Silvia Tapia', initials: 'ST', location: 'Trujillo, Perú', rating: 5, title: 'Gris perfecto', text: 'El gris marengo es muy versátil y elegante.', date: 'Hace 2 semanas', verified: true, helpful: 14, tags: ['Versátil', 'Elegante'], avatarColor: 'bg-primary' }] },
-{ id: 32, name: 'Sofá Polaris Gold', style: 'Moderno', color: 'Beige', seats: '3 plazas', price: 'S/2,450', description: 'Edición especial dorada con detalles premium', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1dd9cd04a-1773562996153.png", gallery: ["https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=600"], specs: { 'Dimensiones': '230 × 95 × 88 cm', 'Material': 'Velvet dorado premium', 'Patas': 'Metal dorado 24k' }, features: ['Edición limitada', 'Velvet dorado', 'Patas doradas 24k', 'Certificado de autenticidad'], rating: 5.0, reviewCount: 28, sku: 'POL-GOLD-3P', availability: 'Últimas unidades', reviews: [{ id: 1, name: 'Victoria Salas', initials: 'VS', location: 'Lima, Perú', rating: 5, title: 'Pieza de lujo absoluto', text: 'El Polaris Gold es simplemente espectacular.', date: 'Hace 1 semana', verified: true, helpful: 18, tags: ['Lujo', 'Exclusivo', 'Premium'], avatarColor: 'bg-secondary' }] }];
+{ id: 13, category:"Sofás Modulares", name: 'Sofá Velvet Esmeralda', style: 'Moderno', color: 'Verde', seats: '2 plazas', price: 'S/1,150', description: 'Terciopelo esmeralda con patas doradas', image: "https://images.unsplash.com/photo-1646171734470-46b1a7dc9c82", gallery: ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600"], specs: { 'Dimensiones': '180 × 85 × 80 cm', 'Material': 'Velvet esmeralda', 'Patas': 'Metal dorado' }, features: ['Velvet premium', 'Patas doradas', 'Diseño elegante'], rating: 4.7, reviewCount: 38, sku: 'POL-VEL-ES-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Rosa Mendoza', initials: 'RM', location: 'Lima, Perú', rating: 5, title: 'Color precioso', text: 'El verde esmeralda es espectacular, muy elegante.', date: 'Hace 1 mes', verified: true, helpful: 12, tags: ['Elegante', 'Color único'], avatarColor: 'bg-primary' }] },
+{ id: 14, category:"Sofás Modulares", name: 'Sofá Capitoné Royal', style: 'Clásico', color: 'Azul', seats: '3 plazas', price: 'S/1,750', description: 'Capitoné clásico con botones decorativos', image: "https://images.unsplash.com/photo-1638368888198-0558b2f2aa7c", gallery: ["https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=600"], specs: { 'Dimensiones': '220 × 90 × 85 cm', 'Material': 'Tela capitoné', 'Patas': 'Madera tallada' }, features: ['Capitoné artesanal', 'Botones decorativos', 'Patas talladas'], rating: 4.8, reviewCount: 55, sku: 'POL-CAP-AZ-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Luis García', initials: 'LG', location: 'Arequipa, Perú', rating: 5, title: 'Clásico y elegante', text: 'El capitoné es perfecto para una sala clásica.', date: 'Hace 2 meses', verified: true, helpful: 18, tags: ['Clásico', 'Elegante'], avatarColor: 'bg-secondary' }] },
+{ id: 15, category:"Sofás Modulares", name: 'Sofá L Modular Gris', style: 'Moderno', color: 'Gris', seats: 'Chaise Longue', price: 'S/2,050', description: 'Sofá en L con módulos independientes', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1a13262e5-1784911131205.png", gallery: ["https://images.unsplash.com/photo-1540574163026-643ea20ade25?w=600"], specs: { 'Dimensiones': '290 × 170 × 82 cm', 'Material': 'Tela gris premium', 'Patas': 'Madera oscura' }, features: ['Módulos independientes', 'Chaise longue reversible', 'Tapizado premium'], rating: 4.9, reviewCount: 92, sku: 'POL-L-GR-CL', availability: 'En stock', reviews: [{ id: 1, name: 'Sandra Pérez', initials: 'SP', location: 'Lima, Perú', rating: 5, title: 'Perfecto para sala grande', text: 'El sofá en L es ideal para mi sala amplia.', date: 'Hace 3 semanas', verified: true, helpful: 25, tags: ['Espacioso', 'Modular'], avatarColor: 'bg-accent' }] },
+{ id: 16, category:"Sofás Modulares", name: 'Sofá Rústico Madera', style: 'Industrial', color: 'Beige', seats: '3 plazas', price: 'S/1,380', description: 'Estructura de madera maciza estilo rústico', image: "https://images.unsplash.com/photo-1734154162371-34d35438a2bf", gallery: ["https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600"], specs: { 'Dimensiones': '215 × 88 × 85 cm', 'Material': 'Tela beige + madera', 'Patas': 'Madera maciza' }, features: ['Estructura rústica', 'Madera maciza', 'Cojines extraíbles'], rating: 4.6, reviewCount: 43, sku: 'POL-RUS-BE-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Jorge Quispe', initials: 'JQ', location: 'Cusco, Perú', rating: 5, title: 'Estilo rústico perfecto', text: 'Combina perfecto con mi decoración rústica.', date: 'Hace 1 mes', verified: true, helpful: 14, tags: ['Rústico', 'Natural'], avatarColor: 'bg-primary' }] },
+{ id: 17,category:"Sofás Cama", name: 'Sofá Terciopelo Vino', style: 'Clásico', color: 'Rojo', seats: '2 plazas', price: 'S/1,280', description: 'Terciopelo color vino con detalles dorados', image: "https://images.unsplash.com/photo-1646171734470-46b1a7dc9c82", gallery: ["https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=600"], specs: { 'Dimensiones': '175 × 85 × 82 cm', 'Material': 'Terciopelo vino', 'Patas': 'Metal dorado' }, features: ['Terciopelo premium', 'Detalles dorados', 'Diseño lujoso'], rating: 4.8, reviewCount: 61, sku: 'POL-TER-VN-2P', availability: 'En stock', reviews: [{ id: 1, name: 'María Flores', initials: 'MF', location: 'Lima, Perú', rating: 5, title: 'Lujoso y elegante', text: 'El color vino es precioso, muy sofisticado.', date: 'Hace 2 semanas', verified: true, helpful: 20, tags: ['Lujoso', 'Sofisticado'], avatarColor: 'bg-secondary' }] },
+{ id: 18,category:"Sofás Cama", name: 'Sofá Minimalista Negro', style: 'Minimalista', color: 'Negro', seats: '3 plazas', price: 'S/1,420', description: 'Elegancia minimalista en negro profundo', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1d27f846e-1773044479844.png", gallery: ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600"], specs: { 'Dimensiones': '210 × 88 × 78 cm', 'Material': 'Cuero negro premium', 'Patas': 'Acero negro' }, features: ['Cuero premium', 'Patas de acero', 'Diseño minimalista'], rating: 4.7, reviewCount: 49, sku: 'POL-MIN-NK-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Carlos Ríos', initials: 'CR', location: 'Trujillo, Perú', rating: 5, title: 'Elegante y moderno', text: 'El negro es muy elegante y combina con todo.', date: 'Hace 1 mes', verified: true, helpful: 16, tags: ['Elegante', 'Versátil'], avatarColor: 'bg-accent' }] },
+{ id: 19,category:"Sofás Cama", name: 'Sofá Escandinavo Blanco', style: 'Escandinavo', color: 'Blanco', seats: '2 plazas', price: 'S/920', description: 'Pureza nórdica con patas de madera clara', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1898a3e7d-1772441229806.png", gallery: ["https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=600"], specs: { 'Dimensiones': '170 × 82 × 76 cm', 'Material': 'Tela blanca nórdica', 'Patas': 'Madera de abedul' }, features: ['Estilo nórdico', 'Patas de abedul', 'Diseño limpio'], rating: 4.6, reviewCount: 35, sku: 'POL-ESC-BL-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Ana Vargas', initials: 'AV', location: 'Lima, Perú', rating: 5, title: 'Nórdico y elegante', text: 'El blanco nórdico es perfecto para mi sala.', date: 'Hace 3 semanas', verified: true, helpful: 11, tags: ['Nórdico', 'Limpio'], avatarColor: 'bg-primary' }] },
+{ id: 20, category:"Sofás Cama", name: 'Sofá Cuero Marrón', style: 'Clásico', color: 'Beige', seats: '3 plazas', price: 'S/1,650', description: 'Cuero genuino color marrón cálido', image: "https://images.unsplash.com/photo-1628069435404-0712c6ca816f", gallery: ["https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=600"], specs: { 'Dimensiones': '220 × 92 × 85 cm', 'Material': 'Cuero genuino', 'Patas': 'Madera oscura' }, features: ['Cuero genuino', 'Envejecimiento natural', 'Muy duradero'], rating: 4.9, reviewCount: 78, sku: 'POL-CUE-MA-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Pedro Huanca', initials: 'PH', location: 'Arequipa, Perú', rating: 5, title: 'Cuero de primera calidad', text: 'El cuero genuino es increíble, mejora con el tiempo.', date: 'Hace 2 meses', verified: true, helpful: 28, tags: ['Cuero genuino', 'Duradero'], avatarColor: 'bg-secondary' }] },
+{ id: 21, category:"Sofás Cama", name: 'Sofá Azul Marino', style: 'Moderno', color: 'Azul', seats: '2 plazas', price: 'S/1,080', description: 'Azul marino profundo con líneas modernas', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1fcbc54c8-1769510770320.png", gallery: ["https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=600"], specs: { 'Dimensiones': '178 × 85 × 80 cm', 'Material': 'Tela azul marino', 'Patas': 'Metal negro' }, features: ['Color intenso', 'Patas metálicas', 'Diseño contemporáneo'], rating: 4.7, reviewCount: 44, sku: 'POL-AZM-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Lucía Torres', initials: 'LT', location: 'Lima, Perú', rating: 5, title: 'Azul marino perfecto', text: 'El color es exactamente como en las fotos.', date: 'Hace 1 mes', verified: true, helpful: 15, tags: ['Color exacto', 'Moderno'], avatarColor: 'bg-accent' }] },
+{ id: 22, category:"Sofás Cama", name: 'Sofá Verde Oliva', style: 'Escandinavo', color: 'Verde', seats: '3 plazas', price: 'S/1,320', description: 'Verde oliva natural con textura bouclé', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1065d7918-1771884763956.png", gallery: ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600"], specs: { 'Dimensiones': '205 × 88 × 80 cm', 'Material': 'Bouclé verde oliva', 'Patas': 'Madera natural' }, features: ['Bouclé premium', 'Color natural', 'Estilo escandinavo'], rating: 4.8, reviewCount: 52, sku: 'POL-VOL-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Valeria Quispe', initials: 'VQ', location: 'Cusco, Perú', rating: 5, title: 'Verde oliva hermoso', text: 'El color verde oliva es muy natural y elegante.', date: 'Hace 2 semanas', verified: true, helpful: 19, tags: ['Natural', 'Elegante'], avatarColor: 'bg-primary' }] },
+{ id: 23, category:"Sofás Europeo", name: 'Sofá Gris Perla', style: 'Minimalista', color: 'Gris', seats: '1 plaza', price: 'S/650', description: 'Sillón individual gris perla minimalista', image: "https://img.rocket.new/generatedImages/rocket_gen_img_10febaeec-1767125293758.png", gallery: ["https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600"], specs: { 'Dimensiones': '90 × 85 × 80 cm', 'Material': 'Tela gris perla', 'Patas': 'Acero cromado' }, features: ['Sillón individual', 'Diseño minimalista', 'Ideal para lectura'], rating: 4.6, reviewCount: 29, sku: 'POL-GP-1P', availability: 'En stock', reviews: [{ id: 1, name: 'Beatriz Lara', initials: 'BL', location: 'Lima, Perú', rating: 5, title: 'Perfecto para mi rincón de lectura', text: 'Muy cómodo para leer, el gris perla es muy elegante.', date: 'Hace 1 mes', verified: true, helpful: 10, tags: ['Cómodo', 'Compacto'], avatarColor: 'bg-secondary' }] },
+{ id: 24, category:"Sofás Europeo", name: 'Sofá Blanco Nube', style: 'Moderno', color: 'Blanco', seats: '2 plazas', price: 'S/1,180', description: 'Suavidad extrema estilo nube', image: "https://images.unsplash.com/photo-1722521309768-7ef1411244bf", gallery: ["https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=600"], specs: { 'Dimensiones': '185 × 90 × 78 cm', 'Material': 'Tela ultra suave', 'Patas': 'Madera blanca' }, features: ['Ultra suave', 'Relleno extra', 'Diseño nube'], rating: 4.8, reviewCount: 67, sku: 'POL-BN-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Claudia Mamani', initials: 'CM', location: 'Puno, Perú', rating: 5, title: 'Como sentarse en una nube', text: 'El sofá es increíblemente suave y cómodo.', date: 'Hace 3 semanas', verified: true, helpful: 22, tags: ['Ultra suave', 'Cómodo'], avatarColor: 'bg-accent' }] },
+{ id: 25, category:"Sofás Europeo", name: 'Sofá Rojo Pasión', style: 'Clásico', color: 'Rojo', seats: '3 plazas', price: 'S/1,480', description: 'Rojo intenso que domina cualquier sala', image: "https://images.unsplash.com/photo-1699832127583-3945f8d5bc97", gallery: ["https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=600"], specs: { 'Dimensiones': '215 × 90 × 85 cm', 'Material': 'Terciopelo rojo', 'Patas': 'Madera oscura' }, features: ['Terciopelo rojo', 'Diseño clásico', 'Muy llamativo'], rating: 4.7, reviewCount: 41, sku: 'POL-RP-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Gabriela Soto', initials: 'GS', location: 'Lima, Perú', rating: 5, title: 'El rojo es espectacular', text: 'El sofá rojo es el centro de atención de mi sala.', date: 'Hace 1 mes', verified: true, helpful: 17, tags: ['Llamativo', 'Elegante'], avatarColor: 'bg-primary' }] },
+{ id: 26, category:"Sofás Europeo", name: 'Sofá Beige Lino', style: 'Escandinavo', color: 'Beige', seats: '3 plazas', price: 'S/1,150', description: 'Lino natural beige de textura suave', image: "https://img.rocket.new/generatedImages/rocket_gen_img_15505ea49-1768416233200.png", gallery: ["https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=600"], specs: { 'Dimensiones': '210 × 88 × 80 cm', 'Material': 'Lino natural', 'Patas': 'Madera de roble' }, features: ['Lino natural', 'Ecológico', 'Textura suave'], rating: 4.6, reviewCount: 36, sku: 'POL-BL-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Teresa Condori', initials: 'TC', location: 'Arequipa, Perú', rating: 5, title: 'Natural y elegante', text: 'El lino natural es muy agradable al tacto.', date: 'Hace 2 meses', verified: true, helpful: 13, tags: ['Natural', 'Ecológico'], avatarColor: 'bg-secondary' }] },
+{ id: 27,category:"Sofás Modulares", name: 'Sofá Industrial Gris', style: 'Industrial', color: 'Gris', seats: '2 plazas', price: 'S/1,050', description: 'Estilo industrial con tapizado gris oscuro', image: "https://images.unsplash.com/photo-1598831629742-b091f925a426", gallery: ["https://images.unsplash.com/photo-1540574163026-643ea20ade25?w=600"], specs: { 'Dimensiones': '180 × 85 × 80 cm', 'Material': 'Tela gris industrial', 'Patas': 'Hierro negro' }, features: ['Estilo industrial', 'Hierro forjado', 'Muy resistente'], rating: 4.7, reviewCount: 48, sku: 'POL-IG-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Raúl Mendoza', initials: 'RM', location: 'Lima, Perú', rating: 5, title: 'Industrial y elegante', text: 'El estilo industrial es perfecto para mi loft.', date: 'Hace 1 mes', verified: true, helpful: 16, tags: ['Industrial', 'Resistente'], avatarColor: 'bg-accent' }] },
+{ id: 28,category:"Sofás Modulares", name: 'Sofá Turquesa Tropical', style: 'Moderno', color: 'Azul', seats: '2 plazas', price: 'S/1,220', description: 'Turquesa vibrante para espacios frescos', image: "https://img.rocket.new/generatedImages/rocket_gen_img_15159dfae-1784911122662.png", gallery: ["https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=600"], specs: { 'Dimensiones': '178 × 85 × 80 cm', 'Material': 'Tela turquesa', 'Patas': 'Metal blanco' }, features: ['Color vibrante', 'Patas blancas', 'Diseño tropical'], rating: 4.7, reviewCount: 33, sku: 'POL-TUR-2P', availability: 'En stock', reviews: [{ id: 1, name: 'Paola Ríos', initials: 'PR', location: 'Lima, Perú', rating: 5, title: 'Color único y hermoso', text: 'El turquesa es perfecto para mi sala de playa.', date: 'Hace 3 semanas', verified: true, helpful: 12, tags: ['Vibrante', 'Único'], avatarColor: 'bg-primary' }] },
+{ id: 29,category:"Sofás Modulares", name: 'Sofá Cuero Negro Premium', style: 'Industrial', color: 'Negro', seats: '3 plazas', price: 'S/1,950', description: 'Cuero negro premium de alta durabilidad', image: "https://img.rocket.new/generatedImages/rocket_gen_img_147ec2b4f-1766411901095.png", gallery: ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600"], specs: { 'Dimensiones': '220 × 92 × 85 cm', 'Material': 'Cuero negro premium', 'Patas': 'Acero inoxidable' }, features: ['Cuero premium', 'Muy duradero', 'Fácil de limpiar'], rating: 4.9, reviewCount: 85, sku: 'POL-CNP-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Ernesto Cárdenas', initials: 'EC', location: 'Lima, Perú', rating: 5, title: 'Cuero de primera', text: 'El cuero negro es de altísima calidad.', date: 'Hace 2 semanas', verified: true, helpful: 30, tags: ['Premium', 'Duradero'], avatarColor: 'bg-secondary' }] },
+{ id: 30,category:"Sofás Modulares", name: 'Sofá Chesterfield Clásico', style: 'Clásico', color: 'Beige', seats: '3 plazas', price: 'S/2,100', description: 'Chesterfield inglés con capitoné artesanal', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1b2848dab-1772196144462.png", gallery: ["https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=600"], specs: { 'Dimensiones': '225 × 95 × 90 cm', 'Material': 'Cuero beige', 'Patas': 'Madera tallada' }, features: ['Chesterfield auténtico', 'Capitoné artesanal', 'Patas talladas'], rating: 4.9, reviewCount: 72, sku: 'POL-CHE-BE-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Alfredo Paredes', initials: 'AP', location: 'Lima, Perú', rating: 5, title: 'Chesterfield auténtico', text: 'El Chesterfield es una pieza de colección.', date: 'Hace 1 mes', verified: true, helpful: 25, tags: ['Clásico', 'Artesanal'], avatarColor: 'bg-accent' }] },
+{ id: 31,category:"Sofás Modulares", name: 'Sofá Gris Marengo', style: 'Moderno', color: 'Gris', seats: '3 plazas', price: 'S/1,380', description: 'Gris marengo profundo con líneas rectas', image: "https://img.rocket.new/generatedImages/rocket_gen_img_14be03324-1784911124550.png", gallery: ["https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=600"], specs: { 'Dimensiones': '215 × 90 × 82 cm', 'Material': 'Tela gris marengo', 'Patas': 'Metal negro' }, features: ['Gris profundo', 'Líneas rectas', 'Diseño contemporáneo'], rating: 4.7, reviewCount: 46, sku: 'POL-GM-3P', availability: 'En stock', reviews: [{ id: 1, name: 'Silvia Tapia', initials: 'ST', location: 'Trujillo, Perú', rating: 5, title: 'Gris perfecto', text: 'El gris marengo es muy versátil y elegante.', date: 'Hace 2 semanas', verified: true, helpful: 14, tags: ['Versátil', 'Elegante'], avatarColor: 'bg-primary' }] },
+{ id: 32,category:"Sofás Modulares", name: 'Sofá Polaris Gold', style: 'Moderno', color: 'Beige', seats: '3 plazas', price: 'S/2,450', description: 'Edición especial dorada con detalles premium', image: "https://img.rocket.new/generatedImages/rocket_gen_img_1dd9cd04a-1773562996153.png", gallery: ["https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=600"], specs: { 'Dimensiones': '230 × 95 × 88 cm', 'Material': 'Velvet dorado premium', 'Patas': 'Metal dorado 24k' }, features: ['Edición limitada', 'Velvet dorado', 'Patas doradas 24k', 'Certificado de autenticidad'], rating: 5.0, reviewCount: 28, sku: 'POL-GOLD-3P', availability: 'Últimas unidades', reviews: [{ id: 1, name: 'Victoria Salas', initials: 'VS', location: 'Lima, Perú', rating: 5, title: 'Pieza de lujo absoluto', text: 'El Polaris Gold es simplemente espectacular.', date: 'Hace 1 semana', verified: true, helpful: 18, tags: ['Lujo', 'Exclusivo', 'Premium'], avatarColor: 'bg-secondary' }] }];
 
 
 

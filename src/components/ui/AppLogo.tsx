@@ -5,11 +5,11 @@ import AppIcon from './AppIcon';
 import AppImage from './AppImage';
 
 interface AppLogoProps {
-  src?: string; // Image source (optional)
-  iconName?: string; // Icon name when no image
-  size?: number; // Size for icon/image
-  className?: string; // Additional classes
-  onClick?: () => void; // Click handler
+  src?: string;
+  iconName?: string;
+  size?: number;
+  className?: string;
+  onClick?: () => void;
 }
 
 const AppLogo = memo(function AppLogo({
@@ -19,37 +19,81 @@ const AppLogo = memo(function AppLogo({
   className = '',
   onClick,
 }: AppLogoProps) {
-  // Memoize className calculation
   const containerClassName = useMemo(() => {
-    const classes = ['flex items-center'];
-    if (onClick) classes.push('cursor-pointer hover:opacity-80 transition-opacity');
-    if (className) classes.push(className);
+    const classes = [
+      'group',
+      'flex',
+      'items-center',
+      'select-none',
+      'transition-all',
+      'duration-300',
+    ];
+
+    if (onClick) {
+      classes.push(
+        'cursor-pointer',
+        'hover:scale-105',
+        'active:scale-95'
+      );
+    }
+
+    if (className) {
+      classes.push(className);
+    }
+
     return classes.join(' ');
-  }, [onClick, className]);
+  }, [className, onClick]);
 
   return (
-    <div className={containerClassName} onClick={onClick}>
-      {/* Show image if src provided, otherwise show icon */}
+    <div
+      className={containerClassName}
+      onClick={onClick}
+      aria-label="Logo Mueblería Polaris"
+    >
       {src ? (
         <div
-          className="flex-shrink-0 rounded-full overflow-hidden ring-2 ring-white/80"
-          style={{ width: size, height: size, minWidth: size, minHeight: size }}
+          className="
+            flex-shrink-0
+            overflow-hidden
+            rounded-2xl
+            ring-2
+            ring-white/80
+            bg-white
+            shadow-xl
+            shadow-cyan-500/10
+            transition-all
+            duration-300
+            group-hover:rotate-1
+            group-hover:shadow-cyan-500/30
+          "
+          style={{
+            width: size,
+            height: size,
+            minWidth: size,
+            minHeight: size,
+          }}
         >
           <AppImage
             src={src}
-            alt="Logo"
+            alt="Logo Mueblería Polaris"
             width={size}
             height={size}
-            className="w-full h-full object-cover"
-            priority={true}
+            priority
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             unoptimized={src.endsWith('.svg')}
           />
         </div>
       ) : (
-        <AppIcon name={iconName} size={size} className="flex-shrink-0" />
+        <AppIcon
+          name={iconName}
+          size={size}
+          className="transition-transform duration-300 group-hover:scale-110"
+        />
       )}
     </div>
   );
 });
+
+AppLogo.displayName = 'AppLogo';
 
 export default AppLogo;

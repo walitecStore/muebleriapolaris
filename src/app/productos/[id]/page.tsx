@@ -7,7 +7,9 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AppImage from '@/components/ui/AppImage';
 import { WhatsAppIcon } from '@/components/Header';
-import { sofaProducts, colorMap, type SofaReview } from '@/app/components/catalogData';
+import { sofaProducts, colorMap, type SofaReview, type SofaProduct } from '@/app/components/catalogData';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 function StarRating({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md' | 'lg' }) {
   const sizeClass = size === 'lg' ? 'w-6 h-6' : size === 'md' ? 'w-5 h-5' : 'w-4 h-4';
@@ -110,15 +112,71 @@ function ReviewCard({ review }: { review: SofaReview }) {
 
 const avatarColors = ['bg-primary', 'bg-secondary', 'bg-accent', 'bg-emerald-500', 'bg-purple-500', 'bg-orange-500'];
 
+const PRODUCT_VIDEO_BASE = '/videos/productos';
+function getProductVideoUrl(productId: number) { return `${PRODUCT_VIDEO_BASE}/${productId}.mp4`; }
+
+
+type ProductMedia = {
+  type: 'image' | 'video';
+  src: string;
+  label: string;
+  color?: string;
+};
+
+type ProductWithMedia = SofaProduct & {
+  video?: string;
+  videoUrl?: string;
+  colorVariants?: Array<{
+    name: string;
+    image: string;
+    hex?: string;
+  }>;
+};
+
+function VideoMedia({
+  src,
+  className = '',
+  controls = false,
+  autoPlay = false,
+  muted = true,
+  onError,
+}: {
+  src: string;
+  className?: string;
+  controls?: boolean;
+  autoPlay?: boolean;
+  muted?: boolean;
+  onError?: React.ReactEventHandler<HTMLVideoElement>;
+}) {
+  return (
+    <video
+      src={src}
+      className={`w-full h-full object-cover ${className}`}
+      controls={controls}
+      autoPlay={autoPlay}
+      muted={muted}
+      loop
+      playsInline
+      preload="metadata"
+      onError={onError}
+    />
+  );
+}
+
+
 export default function ProductPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const productId = Number(params?.id);
-  const sofa = sofaProducts.find((p) => p.id === productId);
+  const sofa = sofaProducts.find((p) => p.id === productId) as ProductWithMedia | undefined;
 
-  const [activeImage, setActiveImage] = useState(0);
+  const [activeMedia, setActiveMedia] = useState(0);
+  const [videoError, setVideoError] = useState(false);
   const [activeTab, setActiveTab] = useState<'specs' | 'reviews'>('specs');
   const [detectedColor, setDetectedColor] = useState<string | null>(null);
+  const [detectedColorName, setDetectedColorName] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string>(sofa?.color ?? '');
   const [localReviews, setLocalReviews] = useState<SofaReview[]>([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewForm, setReviewForm] = useState({ name: '', location: '', rating: 5, title: '', text: '' });
@@ -127,66 +185,258 @@ export default function ProductPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    setVideoError(false);
+  }, [activeMedia]);
+
+  useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (sofa) {
+    if (!sofa) return;
+
+    try {
       const stored = localStorage.getItem(`reviews_${sofa.id}`);
       if (stored) setLocalReviews(JSON.parse(stored));
+    } catch {
+      setLocalReviews([]);
     }
+
+    const loadRemoteReviews = async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('product_reviews')
+          .select('id, name, location, rating, title, text, created_at, verified, helpful, tags, avatar_color')
+          .eq('catalog_product_id', sofa.id)
+          .eq('status', 'published')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.warn('No se pudieron cargar reseñas de Supabase:', error.message);
+          return;
+        }
+
+        const remoteReviews: SofaReview[] = (data ?? []).map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          initials: String(r.name ?? 'CL').split(/\s+/).map((w: string) => w[0]).join('').toUpperCase().slice(0, 2),
+          location: r.location || 'Perú',
+          rating: Number(r.rating) || 5,
+          title: r.title || 'Mi reseña',
+          text: r.text || '',
+          date: new Date(r.created_at).toLocaleDateString('es-PE'),
+          verified: Boolean(r.verified),
+          helpful: Number(r.helpful) || 0,
+          tags: Array.isArray(r.tags) ? r.tags : [],
+          avatarColor: r.avatar_color || 'bg-primary',
+        }));
+
+        setLocalReviews(remoteReviews);
+      } catch (err) {
+        console.warn('Error cargando reseñas remotas:', err);
+      }
+    };
+
+    loadRemoteReviews();
   }, [sofa]);
 
   const detectImageColor = useCallback((imgSrc: string) => {
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
+
     img.onload = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      const ctx = canvas.getContext('2d');
+
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (!ctx) return;
-      canvas.width = 50;
-      canvas.height = 50;
-      ctx.drawImage(img, 0, 0, 50, 50);
-      const data = ctx.getImageData(0, 0, 50, 50).data;
-      let r = 0, g = 0, b = 0, count = 0;
-      for (let i = 0; i < data.length; i += 16) {
-        r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
+
+      const size = 64;
+      canvas.width = size;
+      canvas.height = size;
+      ctx.drawImage(img, 0, 0, size, size);
+
+      const data = ctx.getImageData(0, 0, size, size).data;
+      const samples: Array<[number, number, number]> = [];
+
+      // Ignore the extreme border where product photos commonly contain
+      // white/gray studio backgrounds.
+      for (let y = 8; y < size - 8; y += 2) {
+        for (let x = 8; x < size - 8; x += 2) {
+          const i = (y * size + x) * 4;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const saturation = max === 0 ? 0 : (max - min) / max;
+
+          // Skip near-white/very-dark background pixels and weak shadows.
+          if (max > 245 && saturation < 0.08) continue;
+          if (max < 28) continue;
+
+          samples.push([r, g, b]);
+        }
       }
-      r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
+
+      if (!samples.length) {
+        setDetectedColor(null);
+        setDetectedColorName(null);
+        return;
+      }
+
+      // Trim extremes so one bright background region does not dominate.
+      samples.sort((a, b) =>
+        (a[0] + a[1] + a[2]) - (b[0] + b[1] + b[2])
+      );
+      const usable = samples.slice(
+        Math.floor(samples.length * 0.15),
+        Math.ceil(samples.length * 0.85)
+      );
+
+      let r = 0, g = 0, b = 0;
+      for (const sample of usable) {
+        r += sample[0];
+        g += sample[1];
+        b += sample[2];
+      }
+
+      r = Math.round(r / usable.length);
+      g = Math.round(g / usable.length);
+      b = Math.round(b / usable.length);
+
       const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+
+      // Approximate a human-friendly color name for filtering/search UI.
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const delta = max - min;
+      const brightness = (r + g + b) / 3;
+
+      let hue = 0;
+      if (delta !== 0) {
+        if (max === r) hue = 60 * (((g - b) / delta) % 6);
+        else if (max === g) hue = 60 * ((b - r) / delta + 2);
+        else hue = 60 * ((r - g) / delta + 4);
+        if (hue < 0) hue += 360;
+      }
+
+      let name = 'Neutro';
+      if (brightness > 220 && delta < 35) name = 'Blanco';
+      else if (brightness < 55) name = 'Negro';
+      else if (delta < 25 && brightness < 105) name = 'Gris oscuro';
+      else if (delta < 30 && brightness < 185) name = 'Gris';
+      else if (delta < 35 && brightness >= 185) name = 'Beige';
+      else if (hue >= 0 && hue < 18) name = 'Rojo';
+      else if (hue >= 18 && hue < 45) name = brightness > 150 ? 'Beige' : 'Marrón';
+      else if (hue >= 45 && hue < 75) name = 'Amarillo';
+      else if (hue >= 75 && hue < 165) name = 'Verde';
+      else if (hue >= 165 && hue < 255) name = 'Azul';
+      else if (hue >= 255 && hue < 315) name = 'Morado';
+      else name = 'Rosa';
+
       setDetectedColor(hex);
+      setDetectedColorName(name);
     };
-    img.onerror = () => setDetectedColor(null);
+
+    img.onerror = () => {
+      setDetectedColor(null);
+      setDetectedColorName(null);
+    };
+
     img.src = imgSrc;
   }, []);
 
   useEffect(() => {
-    if (sofa?.image) detectImageColor(sofa.image);
-  }, [sofa, detectImageColor]);
+    if (!sofa) return;
+    setSelectedColor(sofa.color ?? '');
+    const galleryForDetection = sofa.gallery?.[activeMedia] ?? sofa.image;
+    if (galleryForDetection) {
+      detectImageColor(galleryForDetection);
+    }
+  }, [sofa, activeMedia, detectImageColor]);
 
-  const handleReviewSubmit = (e: React.FormEvent) => {
+  const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sofa || !reviewForm.name || !reviewForm.text || !reviewForm.rating) return;
-    const initials = reviewForm.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const newReview: SofaReview = {
-      id: Date.now(),
-      name: reviewForm.name,
-      initials,
-      location: reviewForm.location || 'Perú',
-      rating: reviewForm.rating,
-      title: reviewForm.title || 'Mi reseña',
-      text: reviewForm.text,
-      date: 'Hace un momento',
-      verified: false,
-      helpful: 0,
-      tags: [],
-      avatarColor: avatarColors[Math.floor(Math.random() * avatarColors.length)],
-    };
-    const updated = [...localReviews, newReview];
-    setLocalReviews(updated);
-    localStorage.setItem(`reviews_${sofa.id}`, JSON.stringify(updated));
-    setReviewForm({ name: '', location: '', rating: 5, title: '', text: '' });
-    setShowReviewForm(false);
-    setReviewSubmitted(true);
-    setTimeout(() => setReviewSubmitted(false), 4000);
+
+    if (!sofa || !reviewForm.name.trim() || !reviewForm.text.trim() || !reviewForm.rating) return;
+
+    const initials = reviewForm.name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+    try {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .insert({
+          catalog_product_id: sofa.id,
+          user_id: user?.id ?? null,
+          name: reviewForm.name.trim(),
+          location: reviewForm.location.trim() || 'Perú',
+          rating: reviewForm.rating,
+          title: reviewForm.title.trim() || 'Mi reseña',
+          text: reviewForm.text.trim(),
+          verified: false,
+          helpful: 0,
+          tags: [],
+          avatar_color: avatarColors[Math.floor(Math.random() * avatarColors.length)],
+          status: 'published',
+        })
+        .select('id, name, location, rating, title, text, created_at, verified, helpful, tags, avatar_color')
+        .single();
+
+      if (error) throw error;
+
+      const newReview: SofaReview = {
+        id: data.id,
+        name: data.name,
+        initials,
+        location: data.location,
+        rating: Number(data.rating),
+        title: data.title,
+        text: data.text,
+        date: 'Hace un momento',
+        verified: Boolean(data.verified),
+        helpful: Number(data.helpful) || 0,
+        tags: data.tags ?? [],
+        avatarColor: data.avatar_color || 'bg-primary',
+      };
+
+      setLocalReviews(prev => [newReview, ...prev]);
+
+      const current = JSON.parse(localStorage.getItem(`reviews_${sofa.id}`) || '[]');
+      localStorage.setItem(`reviews_${sofa.id}`, JSON.stringify([newReview, ...current].slice(0, 50)));
+
+      setReviewForm({ name: '', location: '', rating: 5, title: '', text: '' });
+      setShowReviewForm(false);
+      setReviewSubmitted(true);
+      setTimeout(() => setReviewSubmitted(false), 4000);
+    } catch (err) {
+      console.error('ERROR GUARDANDO RESEÑA:', err);
+
+      // Respaldo local mientras la tabla de Supabase no esté disponible.
+      const fallbackReview: SofaReview = {
+        id: `local-${Date.now()}`,
+        name: reviewForm.name.trim(),
+        initials,
+        location: reviewForm.location.trim() || 'Perú',
+        rating: reviewForm.rating,
+        title: reviewForm.title.trim() || 'Mi reseña',
+        text: reviewForm.text.trim(),
+        date: 'Hace un momento',
+        verified: false,
+        helpful: 0,
+        tags: [],
+        avatarColor: avatarColors[Math.floor(Math.random() * avatarColors.length)],
+      };
+
+      const current = JSON.parse(localStorage.getItem(`reviews_${sofa.id}`) || '[]');
+      localStorage.setItem(`reviews_${sofa.id}`, JSON.stringify([fallbackReview, ...current].slice(0, 50)));
+      setLocalReviews(prev => [fallbackReview, ...prev]);
+      setReviewForm({ name: '', location: '', rating: 5, title: '', text: '' });
+      setShowReviewForm(false);
+      setReviewSubmitted(true);
+      setTimeout(() => setReviewSubmitted(false), 4000);
+    }
   };
 
   if (!sofa) {
@@ -212,10 +462,30 @@ export default function ProductPage() {
   }
 
   const gallery = sofa.gallery ?? [sofa.image];
+  const colorVariants = sofa.colorVariants ?? [];
+  const videoUrl = sofa.video ?? sofa.videoUrl ?? getProductVideoUrl(sofa.id);
+
+  const media: ProductMedia[] = [
+    ...gallery.map((src, index) => ({
+      type: 'image' as const,
+      src,
+      label: `Vista ${index + 1}`,
+    })),
+    ...(videoUrl
+      ? [{
+          type: 'video' as const,
+          src: videoUrl,
+          label: 'Video del producto',
+        }]
+      : []),
+  ];
+
+  const activeItem = media[activeMedia] ?? media[0];
+  const isVideoActive = activeItem?.type === 'video';
   const whatsappMsg = encodeURIComponent(
     `Hola Mueblería Polaris! Me interesa el ${sofa.name} (SKU: ${sofa.sku ?? sofa.id}), precio ${sofa.price}. ¿Pueden darme más información y disponibilidad?`
   );
-  const whatsappUrl = `https://wa.me/51916832791?text=${whatsappMsg}`;
+  const whatsappUrl = `https://wa.me/51932036473?text=${whatsappMsg}`;
   const allReviews = [...(sofa.reviews ?? []), ...localReviews];
 
   const relatedSofas = sofaProducts
@@ -256,14 +526,35 @@ export default function ProductPage() {
             <div className="flex flex-col gap-4 animate-in-up">
               {/* Main image */}
               <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-muted border border-border shadow-lg">
-                <AppImage
-                  src={gallery[activeImage]}
-                  alt={`${sofa.name} — vista ${activeImage + 1} de ${gallery.length}`}
-                  fill
-                  className="object-cover w-full h-full transition-opacity duration-300"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  priority
-                />
+                {isVideoActive ? (
+                  videoError ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-muted text-center p-8">
+                      <div className="text-6xl mb-4">🎥</div>
+                      <h3 className="text-lg font-extrabold text-foreground">Video del producto</h3>
+                      <p className="text-sm text-muted-foreground mt-2 max-w-sm">
+                        Este producto aún no tiene un video cargado. El espacio ya está preparado para mostrarlo.
+                      </p>
+                    </div>
+                  ) : (
+                    <VideoMedia
+                      src={activeItem.src}
+                      className="w-full h-full"
+                      controls
+                      autoPlay
+                      muted
+                      onError={() => setVideoError(true)}
+                    />
+                  )
+                ) : (
+                  <AppImage
+                    src={activeItem?.src ?? gallery[0]}
+                    alt={`${sofa.name} — vista ${activeMedia + 1} de ${media.length}`}
+                    fill
+                    className="object-cover w-full h-full transition-opacity duration-300"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    priority
+                  />
+                )}
                 {/* Badges */}
                 <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                   <span className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-full shadow">
@@ -281,31 +572,46 @@ export default function ProductPage() {
                 )}
                 {/* Image counter */}
                 <div className="absolute bottom-4 right-4 bg-black/50 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
-                  {activeImage + 1} / {gallery.length}
+                  {activeMedia + 1} / {media.length}
                 </div>
               </div>
 
               {/* Thumbnails */}
-              {gallery.length > 1 && (
+              {media.length > 1 && (
                 <div className="flex gap-3 overflow-x-auto pb-1">
-                  {gallery.map((img, idx) => (
+                  {media.map((item, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setActiveImage(idx)}
+                      onClick={() => setActiveMedia(idx)}
                       className={`relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
-                        activeImage === idx
+                        activeMedia === idx
                           ? 'border-primary shadow-md shadow-primary/20 scale-105'
                           : 'border-border hover:border-primary/50'
                       }`}
-                      aria-label={`Ver imagen ${idx + 1}`}
+                      aria-label={item.type === 'video' ? 'Ver video del producto' : `Ver imagen ${idx + 1}`}
                     >
-                      <AppImage
-                        src={img}
-                        alt={`${sofa.name} miniatura ${idx + 1}`}
-                        fill
-                        className="object-cover"
-                        sizes="80px"
-                      />
+                      {item.type === 'video' ? (
+                        videoError ? (
+                          <div className="w-full h-full bg-muted flex flex-col items-center justify-center text-[10px] font-bold text-muted-foreground">
+                            <span className="text-xl">🎥</span>VIDEO
+                          </div>
+                        ) : (
+                          <>
+                            <VideoMedia src={item.src} muted />
+                            <span className="absolute inset-0 bg-black/25 flex items-center justify-center">
+                              <span className="w-8 h-8 rounded-full bg-white/95 text-primary flex items-center justify-center shadow-lg">▶</span>
+                            </span>
+                          </>
+                        )
+                      ) : (
+                        <AppImage
+                          src={item.src}
+                          alt={`${sofa.name} miniatura ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                          sizes="80px"
+                        />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -339,8 +645,8 @@ export default function ProductPage() {
               {/* Price */}
               <div className="flex items-center gap-4">
                 <span className="text-4xl font-extrabold text-primary">{sofa.price}</span>
-                <span className="text-sm font-semibold text-secondary bg-secondary/10 px-3 py-1.5 rounded-full">
-                  🚚 Envío gratis
+                <span className="text-sm font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full">
+                  🚚 Cotiza tu entrega
                 </span>
               </div>
 
@@ -349,30 +655,70 @@ export default function ProductPage() {
                 {sofa.description}
               </p>
 
-              {/* Color & seats */}
-              <div className="flex flex-wrap gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-muted-foreground">Color:</span>
-                  <span
-                    className="w-5 h-5 rounded-full border-2 border-white shadow"
-                    style={{ backgroundColor: detectedColor ?? colorMap[sofa.color] }}
-                    title={sofa.color}
-                  />
-                  <span className="text-sm font-bold text-foreground">{sofa.color}</span>
-                  {detectedColor && (
-                    <span className="text-xs text-muted-foreground">(detectado: {detectedColor})</span>
+              {/* Color, variantes y plazas */}
+              <div className="flex flex-col gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm font-semibold text-muted-foreground">Color:</span>
+                    <span className="text-sm font-extrabold text-foreground">{selectedColor || sofa.color}</span>
+                    {detectedColorName && (
+                      <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                        Detectado: {detectedColorName}
+                      </span>
+                    )}
+                  </div>
+
+                  {colorVariants.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {colorVariants.map((variant) => (
+                        <button
+                          key={variant.name}
+                          type="button"
+                          onClick={() => {
+                            setSelectedColor(variant.name);
+                            const variantIndex = gallery.findIndex((src) => src === variant.image);
+                            if (variantIndex >= 0) setActiveMedia(variantIndex);
+                            detectImageColor(variant.image);
+                          }}
+                          className={`group flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition-all ${
+                            selectedColor === variant.name
+                              ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/20'
+                              : 'border-border bg-white text-foreground hover:border-primary/50'
+                          }`}
+                          title={`Ver ${variant.name}`}
+                        >
+                          <span
+                            className="w-4 h-4 rounded-full border border-black/10 shadow-sm"
+                            style={{ backgroundColor: variant.hex ?? colorMap[variant.name] ?? '#d1d5db' }}
+                          />
+                          {variant.name}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5">
+                      <span
+                        className="w-5 h-5 rounded-full border border-black/10 shadow-sm"
+                        style={{ backgroundColor: detectedColor ?? colorMap[sofa.color] ?? '#d1d5db' }}
+                        title={sofa.color}
+                      />
+                      <span className="text-xs font-bold text-foreground">{sofa.color}</span>
+                    </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-muted-foreground">Plazas:</span>
-                  <span className="text-sm font-bold text-foreground">{sofa.seats}</span>
-                </div>
-                {sofa.sku && (
+
+                <div className="flex flex-wrap gap-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-muted-foreground">SKU:</span>
-                    <span className="text-sm font-mono text-muted-foreground">{sofa.sku}</span>
+                    <span className="text-sm font-semibold text-muted-foreground">Plazas:</span>
+                    <span className="text-sm font-bold text-foreground">{sofa.seats}</span>
                   </div>
-                )}
+                  {sofa.sku && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-muted-foreground">SKU:</span>
+                      <span className="text-sm font-mono text-muted-foreground">{sofa.sku}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Features */}
@@ -404,7 +750,7 @@ export default function ProductPage() {
                   Consultar por WhatsApp
                 </a>
                 <a
-                  href={`https://wa.me/51916832791?text=${encodeURIComponent(`Hola! Quiero comprar el ${sofa.name} (${sofa.price}). ¿Cómo procedo?`)}`}
+                  href={`https://wa.me/51932036473?text=${encodeURIComponent(`Hola! Quiero comprar el ${sofa.name} (${sofa.price}). ¿Cómo procedo?`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 px-6 py-4 bg-secondary text-secondary-foreground font-bold text-base rounded-2xl hover:bg-secondary/90 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
@@ -417,7 +763,7 @@ export default function ProductPage() {
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { icon: '🛡️', label: 'Garantía 2 años' },
-                  { icon: '🚚', label: 'Envío gratis' },
+                  { icon: '🚚', label: 'Entrega según ubicación' },
                   { icon: '↩️', label: '30 días devolución' },
                 ].map((badge) => (
                   <div key={badge.label} className="flex flex-col items-center gap-1 bg-muted/50 rounded-xl p-3 border border-border text-center">
@@ -429,6 +775,87 @@ export default function ProductPage() {
             </div>
           </div>
         </div>
+
+        {/* Mini video de producto — estilo marketplace */}
+        {videoUrl && (
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 mt-10">
+            <div className="rounded-3xl border border-border bg-card overflow-hidden shadow-sm">
+              <div className="px-5 sm:px-7 py-4 flex items-center justify-between gap-4 border-b border-border">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-primary">Video del producto</p>
+                  <h2 className="text-lg sm:text-xl font-extrabold text-foreground mt-1">
+                    Mira el sofá en movimiento
+                  </h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    Detalles de diseño, textura y proporciones antes de comprar.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveMedia(media.findIndex((item) => item.type === 'video'))}
+                  className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-bold hover:bg-primary/90 transition-all"
+                >
+                  ▶ Ver en galería
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-0">
+                <div className="relative aspect-video lg:aspect-[16/7] bg-black">
+                  {videoError ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-muted text-center p-8">
+                      <div className="text-5xl mb-3">🎥</div>
+                      <p className="font-extrabold text-foreground">Video aún no disponible</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        El espacio está preparado para el video corto de este producto.
+                      </p>
+                    </div>
+                  ) : (
+                    <VideoMedia
+                      src={videoUrl}
+                      controls
+                      muted
+                      className="w-full h-full"
+                      onError={() => setVideoError(true)}
+                    />
+                  )}
+                  <div className="pointer-events-none absolute left-4 bottom-4 rounded-full bg-black/60 text-white px-3 py-1.5 text-xs font-bold backdrop-blur-sm">
+                    🎥 Vista rápida
+                  </div>
+                </div>
+
+                <div className="p-5 sm:p-6 flex flex-col justify-center gap-4 bg-muted/20">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">👀</span>
+                    <div>
+                      <p className="font-bold text-sm text-foreground">Observa los detalles</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        El video ayuda a apreciar volumen, acabado y presencia real del modelo.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">🎨</span>
+                    <div>
+                      <p className="font-bold text-sm text-foreground">Compara colores</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Después revisa las variantes disponibles para elegir tu acabado.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">📲</span>
+                    <div>
+                      <p className="font-bold text-sm text-foreground">¿Te gustó?</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Consulta disponibilidad y entrega directamente por WhatsApp.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Tabs: Specs & Reviews */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-14">
@@ -651,6 +1078,24 @@ export default function ProductPage() {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Acceso rápido al video en móvil */}
+        {videoUrl && (
+          <button
+            type="button"
+            onClick={() => {
+              const videoIndex = media.findIndex((item) => item.type === 'video');
+              if (videoIndex >= 0) {
+                setActiveMedia(videoIndex);
+                window.scrollTo({ top: heroRef.current?.offsetTop ?? 0, behavior: 'smooth' });
+              }
+            }}
+            className="fixed bottom-[78px] right-4 z-40 md:hidden w-12 h-12 rounded-full bg-black text-white shadow-xl border border-white/20 flex items-center justify-center"
+            aria-label="Ver video del producto"
+          >
+            ▶
+          </button>
         )}
 
         {/* Bottom WhatsApp sticky bar (mobile) */}

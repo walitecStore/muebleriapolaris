@@ -4,8 +4,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '../lib/supabase/client';
 
-const AuthContext = createContext<any>({});
-
+const AuthContext = createContext<any>(null);
+interface SignUpMetadata {
+  fullName?: string;
+  avatarUrl?: string;
+}
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -41,7 +44,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   // Email/Password Sign Up
-  const signUp = async (email: string, password: string, metadata = {}) => {
+  const signUp = async (
+  email: string,
+  password: string,
+  metadata: SignUpMetadata = {}
+) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
