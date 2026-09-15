@@ -68,6 +68,8 @@ interface ShippingQuote {
   }[];
 }
 
+interface SavedAddress { id: string; label: string; street: string; city: string; state: string; country: string; is_default: boolean; }
+
 interface Coordinates {
   lat: number;
   lng: number;
@@ -402,7 +404,12 @@ export default function CartDrawer() {
   } = useCart();
 
   const { user } = useAuth();
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
 
+  useEffect(() => {
+    if (!user) { setSavedAddresses([]); return; }
+    void createClient().from('addresses').select('id,label,street,city,state,country,is_default').order('is_default', { ascending: false }).then(({ data }) => setSavedAddresses((data ?? []) as SavedAddress[]));
+  }, [user]);
   /* =======================================================
      ESTADOS
   ======================================================= */
@@ -426,6 +433,8 @@ export default function CartDrawer() {
     useState(false);
 
   const [savingOrder, setSavingOrder] =
+    useState(false);
+  const [savingQuote, setSavingQuote] =
     useState(false);
 
   const [paymentMethod, setPaymentMethod] =
@@ -1248,6 +1257,20 @@ export default function CartDrawer() {
       setSuccessMessage('');
     }, [savingOrder]);
 
+  const saveQuote = useCallback(async () => {
+    if (items.length === 0) return;
+    if (!user) { setErrorMessage('Inicia sesion para guardar una cotizacion.'); return; }
+    setSavingQuote(true); setErrorMessage('');
+    try {
+      const supabase = createClient();
+      const { data: quote, error: quoteError } = await supabase.from('quotes').insert({ user_id: user.id, status: 'solicitada', total: productsTotal, notes: referenceAddress.trim() || null }).select('id').single();
+      if (quoteError || !quote) throw new Error(quoteError?.message || 'No se pudo guardar la cotizacion.');
+      const { error: itemsError } = await supabase.from('quote_items').insert(items.map((item) => ({ quote_id: quote.id, product_name: item.name, quantity: Math.max(1, Number(item.quantity) || 1), requested_price: parsePrice(item.price) })));
+      if (itemsError) throw new Error(itemsError.message);
+      setSuccessMessage('Cotizacion guardada. Te contactaremos pronto.');
+    } catch (error) { setErrorMessage(error instanceof Error ? error.message : 'No se pudo guardar la cotizacion.'); }
+    finally { setSavingQuote(false); }
+  }, [items, user, productsTotal, referenceAddress]);
   /* =======================================================
      COTIZAR POR WHATSAPP
      NO CREA PEDIDO
@@ -1440,6 +1463,8 @@ Por favor, deseo confirmar mi pedido y coordinar la entrega. Gracias.`;
 
             return {
               product_id: product.id,
+              product_name: product.name,
+              product_image_url: item.image || null,
               quantity,
               unit_price: Number(unitPrice.toFixed(2)),
             };
@@ -1537,6 +1562,12 @@ Por favor, deseo confirmar mi pedido y coordinar la entrega. Gracias.`;
 
               product_id:
                 item.product_id,
+
+              product_name:
+                item.product_name,
+
+              product_image_url:
+                item.product_image_url,
 
               quantity:
                 item.quantity,
@@ -1916,7 +1947,7 @@ Por favor, deseo confirmar mi pedido y coordinar la entrega. Gracias.`;
                   }
                   className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20b858] text-white font-extrabold py-3.5 rounded-2xl transition-all"
                 >
-                  💬 Cotizar por WhatsApp
+                  💬 Solicitar cotizacion
                 </button>
 
                 {/* REALIZAR PEDIDO */}
@@ -2036,6 +2067,16 @@ Por favor, deseo confirmar mi pedido y coordinar la entrega. Gracias.`;
                   </p>
                 </div>
               </div>
+
+              {savedAddresses.length > 0 && (
+                <div className="mb-3">
+                  <label className="mb-1 block text-xs font-bold text-foreground">Direccion guardada</label>
+                  <select onChange={(event) => { const address = savedAddresses.find((item) => item.id === event.target.value); if (address) setReferenceAddress([address.street, address.city, address.state, address.country].filter(Boolean).join(', ')); }} defaultValue="" className="w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+                    <option value="">Elegir una direccion (opcional)</option>
+                    {savedAddresses.map((address) => <option key={address.id} value={address.id}>{address.label}{address.is_default ? ' - Principal' : ''}</option>)}
+                  </select>
+                </div>
+              )}
 
               {/* MAPA */}
 
@@ -2336,11 +2377,12 @@ Por favor, deseo confirmar mi pedido y coordinar la entrega. Gracias.`;
             <button
               type="button"
               onClick={
-                quoteWhatsApp
+                saveQuote
               }
+              disabled={savingQuote}
               className="w-full border border-[#25D366] text-[#168c43] hover:bg-green-50 font-extrabold py-3 rounded-xl transition-all"
             >
-              💬 Cotizar por WhatsApp
+              💬 Solicitar cotizacion
             </button>
 
             {/* =================================================

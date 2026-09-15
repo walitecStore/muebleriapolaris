@@ -200,6 +200,20 @@ export default function PerfilPage() {
                 <p className="text-xs text-muted-foreground">Ver guardados</p>
               </div>
             </Link>
+            <Link href="/direcciones" className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all">
+              <span className="text-2xl">Ubicacion</span>
+              <div>
+                <p className="font-bold text-foreground text-sm">Mis Direcciones</p>
+                <p className="text-xs text-muted-foreground">Gestionar entregas</p>
+              </div>
+            </Link>
+            <Link href="/cotizaciones" className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all">
+              <span className="text-2xl">Cotizacion</span>
+              <div>
+                <p className="font-bold text-foreground text-sm">Mis Cotizaciones</p>
+                <p className="text-xs text-muted-foreground">Ver solicitudes y estados</p>
+              </div>
+            </Link>
           </div>
         </div>
       </main>

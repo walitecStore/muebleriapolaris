@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -10,51 +10,66 @@ import {
   Eye,
   Package,
   Plus,
-  RefreshCw,
   Search,
   Trash2,
-  X,
 } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/client';
 
-/* =========================================================
-   TIPOS
-========================================================= */
+interface Category {
+  id: string;
+  name: string;
+  slug?: string | null;
+}
 
 interface Product {
   id: string;
-  categoryId: string | null;
+  category_id: string | null;
   name: string;
   slug: string | null;
   description: string | null;
-  price: number;
-  imageUrl: string | null;
-  images: string[];
-  stock: number;
-  isActive: boolean;
+  price: number | null;
+  image_url: string | null;
+  stock: number | null;
+  is_active: boolean | null;
   subcategory: string | null;
-  categoryName: string;
-
-  colorPrincipal: string | null;
-  colores: string[];
-  colorConfianza: number;
-
-  videoUrl: string | null;
-  videoPortadaUrl: string | null;
-
-  clasificacion: number;
-  reviewCount: number;
-  destacado: boolean;
-  masVendido: boolean;
-  ordenDestacado: number;
-  favoritos: number;
-  visitas: number;
 }
 
-/* =========================================================
-   CATEGORÍAS OFICIALES
-========================================================= */
+interface Subcategory {
+  name: string;
+  count: number;
+}
+
+const CATEGORY_STRUCTURE: Record<string, Subcategory[]> = {
+  'Sofás Europeo': [
+    { name: 'Europeo en Medida Original', count: 30 },
+    { name: 'Europeo Mediano', count: 30 },
+    { name: 'Europeo Mini', count: 30 },
+    { name: 'Europeo Mini Modular', count: 30 },
+  ],
+  'Sofás Modulares': [
+    { name: 'Modular Fijo', count: 30 },
+    { name: 'Modular Suelto', count: 30 },
+  ],
+  'Sofás Seccionales': [
+    { name: 'Seccional Fijo', count: 30 },
+    { name: 'Seccionales Sueltos', count: 30 },
+    { name: 'Seccionales con Parlantes', count: 30 },
+  ],
+  'Sofás Cama': [
+    { name: 'Sofá Cama Fijo', count: 20 },
+    { name: 'Sofás Cama Sueltos', count: 20 },
+  ],
+  'Sofás 3-2-1': [
+    { name: 'Sofás 3-2-1-Sueltos', count: 40 },
+  ],
+  'Pufs y Decorativos': [
+    { name: 'Pufs', count: 30 },
+    { name: 'Decorativos', count: 30 },
+  ],
+  'Sofás Reclinables': [],
+  'Comedores': [],
+};
 
 const OFFICIAL_CATEGORIES = [
   'Sofás Europeo',
@@ -63,108 +78,58 @@ const OFFICIAL_CATEGORIES = [
   'Sofás Cama',
   'Sofás 3-2-1',
   'Pufs y Decorativos',
-] as const;
+  'Sofás Reclinables',
+  'Comedores',
+];
 
-type OfficialCategory = (typeof OFFICIAL_CATEGORIES)[number];
-
-const CATEGORY_STRUCTURE: Record<
-  OfficialCategory,
-  string[]
-> = {
+const CATEGORY_ALIASES: Record<string, string[]> = {
   'Sofás Europeo': [
-    'Europeo Mediano',
-    'Europeo Mini',
-    'Europeo Mini Modular',
+    'Sofás Europeo',
+    'Sofás Europeos',
+    'Sofá Europeo',
+    'Sofá Europeos',
+    'Sofás Modelo Europeo',
+    'Sofá Modelo Europeo',
   ],
-
   'Sofás Modulares': [
-    'Modular Suelto',
+    'Sofás Modulares',
+    'Sofá Modular',
+    'Sofás Modular',
   ],
-
   'Sofás Seccionales': [
-    'Seccionales Sueltos',
-    'Seccionales con Parlantes',
+    'Sofás Seccionales',
+    'Sofá Seccional',
+    'Sofás Seccional',
   ],
-
   'Sofás Cama': [
-    'Sofás Cama Sueltos',
+    'Sofás Cama',
+    'Sofá Cama',
   ],
-
   'Sofás 3-2-1': [
-    'Sofás 3-2-1-Sueltos',
+    'Sofás 3-2-1',
+    'Sofá 3-2-1',
   ],
-
-  'Pufs y Decorativos': [],
-};
-
-/* =========================================================
-   ALIAS DE CATEGORÍAS
-========================================================= */
-
-const CATEGORY_ALIASES: Record<
-  OfficialCategory,
-  string[]
-> = {
-  'Sofás Europeo': [
-    'sofás europeo',
-    'sofás europeos',
-    'sofá europeo',
-    'sofá europeos',
-    'sofás modelo europeo',
-    'sofá modelo europeo',
-    'europea',
-    'europa',
-    'europeo',
-  ],
-
-  'Sofás Modulares': [
-    'sofás modulares',
-    'sofá modular',
-    'sofás modular',
-    'modular',
-    'modulares',
-  ],
-
-  'Sofás Seccionales': [
-    'sofás seccionales',
-    'sofá seccional',
-    'sofás seccional',
-    'seccional',
-    'seccionales',
-    'sectional',
-    'parlante',
-    'parlantes',
-  ],
-
-  'Sofás Cama': [
-    'sofás cama',
-    'sofá cama',
-    'sofa cama',
-    'cama',
-  ],
-
-  'Sofás 3-2-1': [
-    'sofás 3-2-1',
-    'sofá 3-2-1',
-    '3_2_1',
-    '3-2-1',
-    '3 2 1',
-  ],
-
   'Pufs y Decorativos': [
-    'pufs',
-    'puffs',
-    'puf',
-    'puff',
-    'decorativos',
+    'Pufs y Decorativos',
+    'Puffs y Decorativos',
+    'Pufs',
+    'Puffs',
+  ],
+  'Sofás Reclinables': [
+    'Sofás Reclinables',
+    'Sofas Reclinables',
+    'Sofá Reclinable',
+    'Sofa Reclinable',
+    'RECLINABLE',
+  ],
+  'Comedores': [
+    'Comedores',
+    'Comedor',
+    'COMEDORES',
   ],
 };
 
-/* =========================================================
-   FUNCIONES AUXILIARES
-========================================================= */
-
-function normalizeText(value: string): string {
+function normalizeText(value: string) {
   return value
     .trim()
     .toLowerCase()
@@ -172,418 +137,38 @@ function normalizeText(value: string): string {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
-function readString(
-  row: Record<string, any>,
-  ...keys: string[]
-): string | null {
-  for (const key of keys) {
-    const value = row[key];
+function getCanonicalCategoryName(
+  databaseName: string,
+) {
+  const normalizedDatabaseName =
+    normalizeText(databaseName);
 
-    if (
-      typeof value === 'string' &&
-      value.trim() !== ''
-    ) {
-      return value.trim();
-    }
-  }
-
-  return null;
-}
-
-function readNumber(
-  row: Record<string, any>,
-  ...keys: string[]
-): number {
-  for (const key of keys) {
-    const value = row[key];
-
-    if (
-      value !== null &&
-      value !== undefined &&
-      value !== ''
-    ) {
-      const parsed = Number(value);
-
-      if (Number.isFinite(parsed)) {
-        return parsed;
-      }
-    }
-  }
-
-  return 0;
-}
-
-function readBoolean(
-  row: Record<string, any>,
-  fallback: boolean,
-  ...keys: string[]
-): boolean {
-  for (const key of keys) {
-    if (typeof row[key] === 'boolean') {
-      return row[key];
-    }
-  }
-
-  return fallback;
-}
-
-function readStringArray(
-  row: Record<string, any>,
-  ...keys: string[]
-): string[] {
-  for (const key of keys) {
-    const value = row[key];
-
-    if (Array.isArray(value)) {
-      return value.filter(
-        (item): item is string =>
-          typeof item === 'string' &&
-          item.trim() !== '',
-      );
-    }
-
-    if (typeof value === 'string') {
-      try {
-        const parsed = JSON.parse(value);
-
-        if (Array.isArray(parsed)) {
-          return parsed.filter(
-            (item): item is string =>
-              typeof item === 'string' &&
-              item.trim() !== '',
-          );
-        }
-      } catch {
-        return [];
-      }
-    }
-  }
-
-  return [];
-}
-
-/* =========================================================
-   CATEGORÍA CANÓNICA
-========================================================= */
-
-function canonicalCategory(
-  value: string | null,
-): OfficialCategory | null {
-  if (!value) {
-    return null;
-  }
-
-  const normalized = normalizeText(value);
-
-  for (const category of OFFICIAL_CATEGORIES) {
+  for (const canonicalName of OFFICIAL_CATEGORIES) {
     const aliases =
-      CATEGORY_ALIASES[category];
+      CATEGORY_ALIASES[canonicalName] ?? [];
 
-    if (
-      aliases.some(
-        (alias) =>
-          normalizeText(alias) === normalized,
-      )
-    ) {
-      return category;
-    }
-  }
-
-  return null;
-}
-
-/* =========================================================
-   DETECCIÓN AUTOMÁTICA DE CATEGORÍA
-========================================================= */
-
-function inferCategory(
-  row: Record<string, any>,
-): OfficialCategory | 'Sin categoría' {
-  const explicitCategory = readString(
-    row,
-    'categoria',
-    'categoría',
-    'categoria_nombre',
-    'nombre_categoria',
-    'category_name',
-    'category',
-  );
-
-  const subcategory = readString(
-    row,
-    'subcategoría',
-    'subcategoria',
-    'subcategory',
-  );
-
-  const shippingCategory = readString(
-    row,
-    'categoría_de_envío',
-    'categoria_de_envio',
-    'shipping_category',
-  );
-
-  const name = readString(
-    row,
-    'nombre',
-    'name',
-  );
-
-  const slug = readString(
-    row,
-    'babosa',
-    'slug',
-  );
-
-  const direct =
-    canonicalCategory(
-      explicitCategory,
+    const matches = aliases.some(
+      (alias) =>
+        normalizeText(alias) ===
+        normalizedDatabaseName,
     );
 
-  if (direct) {
-    return direct;
+    if (matches) {
+      return canonicalName;
+    }
   }
 
-  const text = normalizeText(
-    [
-      explicitCategory ?? '',
-      subcategory ?? '',
-      shippingCategory ?? '',
-      name ?? '',
-      slug ?? '',
-    ].join(' '),
-  );
-
-  /*
-   * El orden importa.
-   * Primero comprobamos 3-2-1 y categorías especiales.
-   */
-
-  if (
-    /3[\s_-]*2[\s_-]*1/.test(text) ||
-    text.includes('3_2_1')
-  ) {
-    return 'Sofás 3-2-1';
-  }
-
-  if (
-    text.includes('puf') ||
-    text.includes('puff') ||
-    text.includes('decorativ')
-  ) {
-    return 'Pufs y Decorativos';
-  }
-
-  if (
-    text.includes('seccional') ||
-    text.includes('sectional') ||
-    text.includes('parlante')
-  ) {
-    return 'Sofás Seccionales';
-  }
-
-  if (
-    text.includes('modular') ||
-    text.includes('modulares')
-  ) {
-    return 'Sofás Modulares';
-  }
-
-  if (
-    text.includes('cama') ||
-    text.includes('sofa cama')
-  ) {
-    return 'Sofás Cama';
-  }
-
-  if (
-    text.includes('europe') ||
-    text.includes('europeo') ||
-    text.includes('europea') ||
-    text.includes('europa')
-  ) {
-    return 'Sofás Europeo';
-  }
-
-  return 'Sin categoría';
+  return null;
 }
-
-/* =========================================================
-   NORMALIZAR PRODUCTO REAL DE SUPABASE
-========================================================= */
-
-function normalizeProduct(
-  row: Record<string, any>,
-): Product {
-  const images = readStringArray(
-    row,
-    'imágenes',
-    'imagenes',
-    'images',
-  );
-
-  const imageUrl =
-    readString(
-      row,
-      'URL de la imagen',
-      'url_de_la_imagen',
-      'image_url',
-    ) ??
-    images[0] ??
-    null;
-
-  const colors = readStringArray(
-    row,
-    'colores',
-    'colors',
-  );
-
-  return {
-    id:
-      readString(
-        row,
-        'identificación',
-        'identificacion',
-        'id',
-      ) ?? '',
-
-    categoryId: readString(
-      row,
-      'ID de categoría',
-      'id_de_categoria',
-      'category_id',
-    ),
-
-    name:
-      readString(
-        row,
-        'nombre',
-        'name',
-      ) ?? 'Producto sin nombre',
-
-    slug: readString(
-      row,
-      'babosa',
-      'slug',
-    ),
-
-    description: readString(
-      row,
-      'descripción',
-      'descripcion',
-      'description',
-    ),
-
-    price: readNumber(
-      row,
-      'precio',
-      'price',
-    ),
-
-    imageUrl,
-
-    images,
-
-    stock: readNumber(
-      row,
-      'existencias',
-      'stock',
-    ),
-
-    isActive: readBoolean(
-      row,
-      true,
-      'está_activo',
-      'esta_activo',
-      'is_active',
-    ),
-
-    subcategory: readString(
-      row,
-      'subcategoría',
-      'subcategoria',
-      'subcategory',
-    ),
-
-    categoryName: inferCategory(row),
-
-    colorPrincipal: readString(
-      row,
-      'color_principal',
-    ),
-
-    colores: colors,
-
-    colorConfianza: readNumber(
-      row,
-      'color_confianza',
-    ),
-
-    videoUrl: readString(
-      row,
-      'URL del video',
-      'url_del_video',
-      'video_url',
-    ),
-
-    videoPortadaUrl: readString(
-      row,
-      'video_portada_url',
-    ),
-
-    clasificacion: readNumber(
-      row,
-      'clasificación',
-      'clasificacion',
-    ),
-
-    reviewCount: readNumber(
-      row,
-      'recuento_de_revisiones',
-      'review_count',
-    ),
-
-    destacado: readBoolean(
-      row,
-      false,
-      'destacado',
-    ),
-
-    masVendido: readBoolean(
-      row,
-      false,
-      'mas_vendido',
-    ),
-
-    ordenDestacado: readNumber(
-      row,
-      'orden_destacado',
-    ),
-
-    favoritos: readNumber(
-      row,
-      'favoritos',
-    ),
-
-    visitas: readNumber(
-      row,
-      'visitas',
-    ),
-  };
-}
-
-/* =========================================================
-   PÁGINA
-========================================================= */
 
 export default function AdminProductsPage() {
-  const supabase = useMemo(
-    () => createClient(),
-    [],
-  );
+  const supabase = createClient();
 
   const [products, setProducts] =
     useState<Product[]>([]);
+
+  const [categories, setCategories] =
+    useState<Category[]>([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -597,131 +182,286 @@ export default function AdminProductsPage() {
   const [selectedCategory, setSelectedCategory] =
     useState<string | null>(null);
 
-  const [selectedSubcategory, setSelectedSubcategory] =
-    useState<string | null>(null);
-
   const [openCategories, setOpenCategories] =
     useState<Record<string, boolean>>({});
 
-  const [deletingId, setDeletingId] =
+  const [selectedSubcategory, setSelectedSubcategory] =
     useState<string | null>(null);
 
-  const [updatingId, setUpdatingId] =
-    useState<string | null>(null);
-
-  /* =======================================================
-     CARGAR PRODUCTOS
-  ======================================================= */
-
-  const loadProducts = useCallback(
-    async () => {
-      setLoading(true);
-      setError('');
-
-      try {
-        /*
-         * IMPORTANTE:
-         * No usamos order() con columnas que podrían no existir.
-         * No consultamos la tabla categorías.
-         */
-        const {
-          data,
-          error: productsError,
-        } = await supabase
-          .from('products')
-          .select('*');
-
-        if (productsError) {
-          console.error(
-            'ERROR OBTENIENDO PRODUCTOS:',
-            productsError,
-          );
-
-          throw new Error(
-            productsError.message ||
-              'No se pudieron obtener los productos.',
-          );
-        }
-
-        const normalized =
-          (data ?? [])
-            .map(
-              (row: Record<string, any>) =>
-                normalizeProduct(row),
-            )
-            .filter(
-              (product) =>
-                product.id !== '',
-            )
-            .sort(
-              (a, b) =>
-                a.name.localeCompare(
-                  b.name,
-                  'es',
-                ),
-            );
-
-        setProducts(normalized);
-
-        console.info(
-          `PRODUCTOS CARGADOS CORRECTAMENTE: ${normalized.length}`,
-        );
-      } catch (err: any) {
-        console.error(
-          'ERROR OBTENIENDO PRODUCTOS:',
-          err,
-        );
-
-        setProducts([]);
-
-        setError(
-          err?.message ||
-            'No se pudieron cargar los productos.',
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [supabase],
-  );
+  // =========================================================
+  // CARGAR PRODUCTOS Y CATEGORÍAS
+  // =========================================================
 
   useEffect(() => {
-    void loadProducts();
-  }, [loadProducts]);
+    loadProducts();
+  }, []);
 
-  /* =======================================================
-     FILTROS
-  ======================================================= */
+  async function loadProducts() {
+    setLoading(true);
+    setError('');
+
+    const [
+      {
+        data: productsData,
+        error: productsError,
+      },
+      {
+        data: categoriesData,
+        error: categoriesError,
+      },
+    ] = await Promise.all([
+      supabase
+        .from('products')
+        .select(
+          `
+          id,
+          category_id,
+          name,
+          slug,
+          description,
+          price,
+          image_url,
+          stock,
+          is_active,
+          subcategory
+          `,
+        )
+        .order('created_at', {
+          ascending: false,
+        }),
+
+      supabase
+        .from('categories')
+        .select(
+          'id, name, slug',
+        )
+        .order('name', {
+          ascending: true,
+        }),
+    ]);
+
+    if (productsError) {
+      console.error(
+        'Error obteniendo productos:',
+        productsError,
+      );
+
+      setError(
+        'No se pudieron cargar los productos.',
+      );
+    }
+
+    if (categoriesError) {
+      console.error(
+        'Error obteniendo categorías:',
+        categoriesError,
+      );
+    }
+
+    setProducts(
+      productsData ?? [],
+    );
+
+    setCategories(
+      categoriesData ?? [],
+    );
+
+    setLoading(false);
+  }
+
+  // =========================================================
+  // MAPA DE CATEGORÍAS
+  //
+  // IMPORTANTE:
+  // Una categoría puede tener más de un ID en la base.
+  // Por eso usamos SET de IDs y no un solo ID.
+  // =========================================================
+
+  const categoryIdsByCanonicalName =
+    useMemo(() => {
+      const result =
+        new Map<string, Set<string>>();
+
+      for (const categoryName of OFFICIAL_CATEGORIES) {
+        result.set(
+          categoryName,
+          new Set<string>(),
+        );
+      }
+
+      categories.forEach(
+        (category) => {
+          const canonicalName =
+            getCanonicalCategoryName(
+              category.name,
+            );
+
+          const categoryKey = canonicalName ?? category.name;
+
+          if (!result.has(categoryKey)) {
+            result.set(categoryKey, new Set<string>());
+          }
+
+          const ids = result.get(categoryKey);
+
+          if (ids) {
+            ids.add(category.id);
+          }
+        },
+      );
+
+      return result;
+    }, [categories]);
+
+  const dashboardCategories = useMemo(
+    () => Array.from(categoryIdsByCanonicalName.keys()),
+    [categoryIdsByCanonicalName],
+  );
+
+  // =========================================================
+  // OBTENER NOMBRE CANÓNICO DE UNA CATEGORÍA
+  // =========================================================
+
+  function getCategoryName(
+    categoryId: string | null,
+  ) {
+    if (!categoryId) {
+      return 'Sin categoría';
+    }
+
+    const category =
+      categories.find(
+        (item) =>
+          item.id === categoryId,
+      );
+
+    if (!category) {
+      return 'Sin categoría';
+    }
+
+    return (
+      getCanonicalCategoryName(
+        category.name,
+      ) ?? category.name
+    );
+  }
+
+  // =========================================================
+  // CAMBIAR CATEGORÍA
+  // =========================================================
+
+  function toggleCategory(
+    categoryName: string,
+  ) {
+    setOpenCategories(
+      (previous) => ({
+        ...previous,
+        [categoryName]:
+          !previous[categoryName],
+      }),
+    );
+
+    setSelectedCategory(
+      categoryName,
+    );
+
+    setSelectedSubcategory(
+      null,
+    );
+  }
+
+  function selectCategory(
+    categoryName: string,
+  ) {
+    setSelectedCategory(
+      categoryName,
+    );
+
+    setSelectedSubcategory(
+      null,
+    );
+  }
+
+  function selectSubcategory(
+    categoryName: string,
+    subcategoryName: string,
+  ) {
+    setSelectedCategory(
+      categoryName,
+    );
+
+    setSelectedSubcategory(
+      subcategoryName,
+    );
+  }
+
+  // =========================================================
+  // FILTRAR PRODUCTOS
+  // =========================================================
 
   const filteredProducts =
     useMemo(() => {
-      const query =
-        normalizeText(search);
+      const normalizedSearch =
+        search
+          .trim()
+          .toLowerCase();
 
       return products.filter(
         (product) => {
-          const searchableText =
-            normalizeText(
-              [
-                product.name,
-                product.description ?? '',
-                product.categoryName,
-                product.subcategory ?? '',
-                product.colorPrincipal ?? '',
-                product.slug ?? '',
-              ].join(' '),
-            );
+          // -----------------------------------------------
+          // BUSCADOR
+          // -----------------------------------------------
 
           const matchesSearch =
-            !query ||
-            searchableText.includes(
-              query,
-            );
+            !normalizedSearch ||
+            product.name
+              .toLowerCase()
+              .includes(
+                normalizedSearch,
+              ) ||
+            (
+              product.description ??
+              ''
+            )
+              .toLowerCase()
+              .includes(
+                normalizedSearch,
+              ) ||
+            (
+              product.subcategory ??
+              ''
+            )
+              .toLowerCase()
+              .includes(
+                normalizedSearch,
+              );
 
-          const matchesCategory =
-            !selectedCategory ||
-            product.categoryName ===
-              selectedCategory;
+          // -----------------------------------------------
+          // CATEGORÍA
+          // -----------------------------------------------
+
+          let matchesCategory =
+            true;
+
+          if (selectedCategory) {
+            const categoryIds =
+              categoryIdsByCanonicalName.get(
+                selectedCategory,
+              );
+
+            matchesCategory =
+              Boolean(
+                categoryIds &&
+                  product.category_id &&
+                  categoryIds.has(
+                    product.category_id,
+                  ),
+              );
+          }
+
+          // -----------------------------------------------
+          // SUBCATEGORÍA
+          // -----------------------------------------------
 
           const matchesSubcategory =
             !selectedSubcategory ||
@@ -745,422 +485,297 @@ export default function AdminProductsPage() {
       search,
       selectedCategory,
       selectedSubcategory,
+      categoryIdsByCanonicalName,
+      dashboardCategories,
     ]);
 
-  /* =======================================================
-     CONTADORES
-  ======================================================= */
+  // =========================================================
+  // CANTIDAD REAL DE PRODUCTOS POR CATEGORÍA
+  // =========================================================
 
-  const categoryCounts =
+  const officialCategoryProducts =
     useMemo(() => {
       const result: Record<
         string,
         number
       > = {};
 
-      for (const category of OFFICIAL_CATEGORIES) {
-        result[category] =
-          products.filter(
-            (product) =>
-              product.categoryName ===
-              category,
-          ).length;
-      }
+      dashboardCategories.forEach(
+        (categoryName) => {
+          const categoryIds =
+            categoryIdsByCanonicalName.get(
+              categoryName,
+            );
+
+          if (!categoryIds) {
+            result[categoryName] =
+              0;
+
+            return;
+          }
+
+          result[categoryName] =
+            products.filter(
+              (product) =>
+                Boolean(
+                  product.category_id &&
+                    categoryIds.has(
+                      product.category_id,
+                    ),
+                ),
+            ).length;
+        },
+      );
 
       return result;
-    }, [products]);
+    }, [
+      products,
+      categoryIdsByCanonicalName,
+      dashboardCategories,
+    ]);
 
-  function getSubcategoryCount(
-    category: string,
-    subcategory: string,
+  // =========================================================
+  // CANTIDAD REAL POR SUBCATEGORÍA
+  // =========================================================
+
+  function getSubcategoryProductCount(
+    categoryName: string,
+    subcategoryName: string,
   ) {
+    const categoryIds =
+      categoryIdsByCanonicalName.get(
+        categoryName,
+      );
+
+    if (!categoryIds) {
+      return 0;
+    }
+
     return products.filter(
-      (product) =>
-        product.categoryName ===
-          category &&
-        normalizeText(
-          product.subcategory ??
-            '',
-        ) ===
+      (product) => {
+        const sameCategory =
+          Boolean(
+            product.category_id &&
+              categoryIds.has(
+                product.category_id,
+              ),
+          );
+
+        const sameSubcategory =
           normalizeText(
-            subcategory,
-          ),
+            product.subcategory ??
+              '',
+          ) ===
+            normalizeText(
+              subcategoryName,
+            );
+
+        return (
+          sameCategory &&
+          sameSubcategory
+        );
+      },
     ).length;
   }
 
-  /* =======================================================
-     SELECCIONAR CATEGORÍA
-  ======================================================= */
-
-  function selectCategory(
-    category: string,
-  ) {
-    setSelectedCategory(
-      category,
-    );
-
-    setSelectedSubcategory(
-      null,
-    );
-  }
-
-  function toggleCategory(
-    category: string,
-  ) {
-    setOpenCategories(
-      (previous) => ({
-        ...previous,
-        [category]:
-          !previous[category],
-      }),
-    );
-
-    selectCategory(
-      category,
-    );
-  }
-
-  function selectSubcategory(
-    category: string,
-    subcategory: string,
-  ) {
-    setSelectedCategory(
-      category,
-    );
-
-    setSelectedSubcategory(
-      subcategory,
-    );
-
-    setOpenCategories(
-      (previous) => ({
-        ...previous,
-        [category]: true,
-      }),
-    );
-  }
-
-  function clearFilters() {
-    setSearch('');
-    setSelectedCategory(null);
-    setSelectedSubcategory(null);
-  }
-
-  /* =======================================================
-     CAMBIAR ESTADO
-  ======================================================= */
+  // =========================================================
+  // CAMBIAR ESTADO DEL PRODUCTO
+  // =========================================================
 
   async function toggleProductStatus(
     product: Product,
   ) {
-    if (updatingId) {
+    const newStatus =
+      !product.is_active;
+
+    const {
+      error: updateError,
+    } = await supabase
+      .from('products')
+      .update({
+        is_active:
+          newStatus,
+      })
+      .eq(
+        'id',
+        product.id,
+      );
+
+    if (updateError) {
+      console.error(
+        'Error actualizando producto:',
+        updateError,
+      );
+
+      alert(
+        'No se pudo actualizar el producto.',
+      );
+
       return;
     }
 
-    setUpdatingId(product.id);
-
-    const newStatus =
-      !product.isActive;
-
-    try {
-      /*
-       * ESTA ES LA COLUMNA REAL QUE
-       * CONFIRMAMOS EN SUPABASE.
-       */
-      const { error } =
-        await supabase
-          .from('products')
-          .update({
-            'está_activo':
-              newStatus,
-          })
-          .eq(
-            'identificación',
-            product.id,
-          );
-
-      if (error) {
-        console.error(
-          'ERROR ACTUALIZANDO ESTADO:',
-          error,
-        );
-
-        alert(
-          error.message ||
-            'No se pudo actualizar el estado.',
-        );
-
-        return;
-      }
-
-      setProducts(
-        (previous) =>
-          previous.map(
-            (item) =>
-              item.id ===
-              product.id
-                ? {
-                    ...item,
-                    isActive:
-                      newStatus,
-                  }
-                : item,
-          ),
-      );
-    } finally {
-      setUpdatingId(null);
-    }
+    setProducts(
+      (previous) =>
+        previous.map(
+          (item) =>
+            item.id === product.id
+              ? {
+                  ...item,
+                  is_active:
+                    newStatus,
+                }
+              : item,
+        ),
+    );
   }
 
-  /* =======================================================
-     ELIMINAR PRODUCTO
-  ======================================================= */
+  // =========================================================
+  // ELIMINAR PRODUCTO
+  // =========================================================
 
   async function deleteProduct(
     product: Product,
   ) {
-    if (deletingId) {
-      return;
-    }
-
     const confirmed =
       window.confirm(
-        `¿Estás seguro de eliminar "${product.name}"?\n\nEsta acción no se puede deshacer.`,
+        `¿Seguro que deseas eliminar "${product.name}"?`,
       );
 
     if (!confirmed) {
       return;
     }
 
-    setDeletingId(product.id);
-
-    try {
-      /*
-       * IDENTIFICACIÓN es la clave
-       * primaria real de products.
-       */
-      const { error } =
-        await supabase
-          .from('products')
-          .delete()
-          .eq(
-            'identificación',
-            product.id,
-          );
-
-      if (error) {
-        console.error(
-          'ERROR ELIMINANDO PRODUCTO:',
-          error,
-        );
-
-        alert(
-          error.message ||
-            'No se pudo eliminar el producto.',
-        );
-
-        return;
-      }
-
-      setProducts(
-        (previous) =>
-          previous.filter(
-            (item) =>
-              item.id !==
-              product.id,
-          ),
+    const {
+      error: deleteError,
+    } = await supabase
+      .from('products')
+      .delete()
+      .eq(
+        'id',
+        product.id,
       );
-    } finally {
-      setDeletingId(null);
+
+    if (deleteError) {
+      console.error(
+        'Error eliminando producto:',
+        deleteError,
+      );
+
+      alert(
+        `No se pudo eliminar el producto. ${deleteError.message || ''}`,
+      );
+
+      return;
     }
-  }
 
-  /* =======================================================
-     FORMATO DE PRECIO
-  ======================================================= */
-
-  function formatPrice(
-    price: number,
-  ) {
-    return price.toLocaleString(
-      'es-PE',
-      {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      },
+    setProducts(
+      (previous) =>
+        previous.filter(
+          (item) =>
+            item.id !== product.id,
+        ),
     );
+
+    alert('Producto eliminado correctamente.');
   }
 
-  /* =======================================================
-     IMAGEN
-  ======================================================= */
-
-  function getProductImage(
-    product: Product,
-  ) {
-    return (
-      product.imageUrl ||
-      product.images[0] ||
-      null
-    );
-  }
-
-  /* =======================================================
-     RENDER
-  ======================================================= */
+  // =========================================================
+  // INTERFAZ
+  // =========================================================
 
   return (
     <div className="min-h-screen bg-slate-50">
 
-      {/* =================================================
-          HEADER
-      ================================================= */}
+      {/* =====================================================
+          ENCABEZADO
+      ===================================================== */}
 
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <header className="border-b border-slate-200 bg-white">
 
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-5">
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
 
             <Link
               href="/admin"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
-              title="Volver al Dashboard"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
             >
-              <ArrowLeft
-                size={18}
-              />
+              <ArrowLeft size={18} />
             </Link>
 
             <div>
-              <h1 className="text-xl font-black text-slate-900 sm:text-2xl">
+              <h1 className="text-2xl font-black text-slate-900">
                 Productos
               </h1>
 
-              <p className="hidden text-sm text-slate-500 sm:block">
-                Gestiona el catálogo inteligente de Mueblería Polaris.
+              <p className="mt-1 text-sm text-slate-500">
+                Gestiona el catálogo de productos de Polaris.
               </p>
             </div>
 
           </div>
 
-          <div className="flex items-center gap-2">
-
-            <button
-              type="button"
-              onClick={() =>
-                void loadProducts()
-              }
-              disabled={loading}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 disabled:opacity-50"
-              title="Actualizar productos"
-            >
-              <RefreshCw
-                size={17}
-                className={
-                  loading
-                    ? 'animate-spin'
-                    : ''
-                }
-              />
-            </button>
-
-            <Link
-              href="/admin/productos/nuevo"
-              className="flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-cyan-700"
-            >
-              <Plus
-                size={18}
-              />
-              <span className="hidden sm:inline">
-                Nuevo producto
-              </span>
-            </Link>
-
-          </div>
+          <Link
+            href="/admin/productos/nuevo"
+            className="flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-cyan-700"
+          >
+            <Plus size={18} />
+            Nuevo producto
+          </Link>
 
         </div>
 
       </header>
 
-      <main className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6">
-
-        {/* =================================================
-            MENSAJE DE ERROR
-        ================================================= */}
-
-        {error && (
-          <div className="mb-5 flex items-start justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
-
-            <div>
-              <p className="font-black">
-                No se pudieron cargar los productos.
-              </p>
-
-              <p className="mt-1 text-sm">
-                {error}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                setError('')
-              }
-              className="shrink-0 rounded-lg p-1 hover:bg-red-100"
-            >
-              <X size={18} />
-            </button>
-
-          </div>
-        )}
+      <main className="mx-auto max-w-[1600px] px-6 py-6">
 
         {/* =================================================
             RESUMEN DE CATEGORÍAS
         ================================================= */}
 
-        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
 
-          {OFFICIAL_CATEGORIES.map(
-            (category) => {
-              const selected =
+          {dashboardCategories.map(
+            (categoryName) => {
+
+              const isSelected =
                 selectedCategory ===
-                category;
+                categoryName;
 
               return (
                 <button
-                  key={category}
+                  key={categoryName}
                   type="button"
                   onClick={() =>
                     selectCategory(
-                      category,
+                      categoryName,
                     )
                   }
                   className={`rounded-2xl border bg-white p-4 text-left transition ${
-                    selected
+                    isSelected
                       ? 'border-cyan-400 ring-2 ring-cyan-100'
-                      : 'border-slate-200 hover:border-cyan-300 hover:shadow-sm'
+                      : 'border-slate-200 hover:border-cyan-300'
                   }`}
                 >
 
                   <div className="mb-3 flex items-center justify-between">
 
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
-                      <Package
-                        size={18}
-                      />
+                      <Package size={18} />
                     </div>
 
-                    <span className="text-xl font-black text-slate-900">
-                      {categoryCounts[
-                        category
-                      ] ?? 0}
+                    <span className="text-lg font-black text-slate-900">
+                      {
+                        officialCategoryProducts[
+                          categoryName
+                        ] ?? 0
+                      }
                     </span>
 
                   </div>
 
-                  <p className="text-xs font-bold leading-tight text-slate-700 sm:text-sm">
-                    {category}
+                  <p className="text-sm font-bold text-slate-800">
+                    {categoryName}
                   </p>
 
                 </button>
@@ -1171,23 +786,22 @@ export default function AdminProductsPage() {
         </div>
 
         {/* =================================================
-            CONTENEDOR PRINCIPAL
+            CATÁLOGO
         ================================================= */}
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-          {/* =================================================
-              BARRA DE BÚSQUEDA
-          ================================================= */}
+          {/* BARRA SUPERIOR */}
 
-          <div className="flex flex-col gap-4 border-b border-slate-200 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-4 border-b border-slate-200 p-5 lg:flex-row lg:items-center lg:justify-between">
 
             <div>
+
               <h2 className="text-lg font-black text-slate-900">
                 Catálogo
               </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="text-sm text-slate-500">
                 {filteredProducts.length}{' '}
                 producto
                 {filteredProducts.length ===
@@ -1200,9 +814,10 @@ export default function AdminProductsPage() {
                   ? ''
                   : 's'}
               </p>
+
             </div>
 
-            <div className="relative w-full lg:max-w-[420px]">
+            <div className="relative w-full lg:w-[380px]">
 
               <Search
                 size={18}
@@ -1217,7 +832,7 @@ export default function AdminProductsPage() {
                     event.target.value,
                   )
                 }
-                placeholder="Buscar sofá, categoría, color..."
+                placeholder="Buscar producto..."
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-2 focus:ring-cyan-100"
               />
 
@@ -1225,71 +840,56 @@ export default function AdminProductsPage() {
 
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[290px_1fr]">
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr]">
 
             {/* =================================================
-                SIDEBAR
+                CATEGORÍAS
             ================================================= */}
 
             <aside className="border-b border-slate-200 bg-slate-50/70 p-4 lg:border-b-0 lg:border-r">
 
-              <div className="mb-3 flex items-center justify-between">
-
+              <div className="mb-3">
                 <p className="text-xs font-black uppercase tracking-wider text-slate-400">
                   Categorías
                 </p>
-
-                {(selectedCategory ||
-                  selectedSubcategory ||
-                  search) && (
-                  <button
-                    type="button"
-                    onClick={
-                      clearFilters
-                    }
-                    className="text-xs font-bold text-cyan-600 hover:text-cyan-700"
-                  >
-                    Limpiar
-                  </button>
-                )}
-
               </div>
 
               <div className="space-y-1">
 
-                {OFFICIAL_CATEGORIES.map(
-                  (category) => {
+                {dashboardCategories.map(
+                  (categoryName) => {
+
                     const subcategories =
                       CATEGORY_STRUCTURE[
-                        category
-                      ];
+                        categoryName
+                      ] ?? [];
 
                     const hasSubcategories =
                       subcategories.length >
                       0;
 
                     const isOpen =
-                      Boolean(
-                        openCategories[
-                          category
-                        ],
-                      );
+                      openCategories[
+                        categoryName
+                      ];
 
-                    const selected =
+                    const isSelected =
                       selectedCategory ===
-                        category &&
+                        categoryName &&
                       !selectedSubcategory;
 
                     return (
                       <div
-                        key={category}
+                        key={categoryName}
                       >
+
+                        {/* CATEGORÍA */}
 
                         <div
                           className={`flex items-center rounded-xl transition ${
-                            selected
-                              ? 'bg-cyan-50'
-                              : 'hover:bg-white'
+                            isSelected
+                              ? 'bg-cyan-50 text-cyan-700'
+                              : 'text-slate-700 hover:bg-white'
                           }`}
                         >
 
@@ -1298,16 +898,17 @@ export default function AdminProductsPage() {
                               type="button"
                               onClick={() =>
                                 toggleCategory(
-                                  category,
+                                  categoryName,
                                 )
                               }
-                              className="flex h-10 w-10 items-center justify-center text-slate-400"
+                              className="flex h-10 w-10 shrink-0 items-center justify-center"
                               aria-label={
                                 isOpen
-                                  ? 'Cerrar categoría'
-                                  : 'Abrir categoría'
+                                  ? 'Ocultar subcategorías'
+                                  : 'Mostrar subcategorías'
                               }
                             >
+
                               {isOpen ? (
                                 <ChevronDown
                                   size={17}
@@ -1317,86 +918,86 @@ export default function AdminProductsPage() {
                                   size={17}
                                 />
                               )}
+
                             </button>
                           ) : (
-                            <div className="w-10" />
+                            <span className="w-10" />
                           )}
 
                           <button
                             type="button"
                             onClick={() =>
                               selectCategory(
-                                category,
+                                categoryName,
                               )
                             }
-                            className="flex flex-1 items-center justify-between py-2.5 pr-3 text-left"
+                            className="flex min-h-10 flex-1 items-center justify-between py-2 pr-3 text-left"
                           >
 
-                            <span
-                              className={`text-sm font-bold ${
-                                selected
-                                  ? 'text-cyan-700'
-                                  : 'text-slate-700'
-                              }`}
-                            >
-                              {category}
+                            <span className="text-sm font-semibold">
+                              {categoryName}
                             </span>
 
-                            <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-black text-slate-500">
-                              {categoryCounts[
-                                category
-                              ] ?? 0}
+                            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-slate-500">
+                              {
+                                officialCategoryProducts[
+                                  categoryName
+                                ] ?? 0
+                              }
                             </span>
 
                           </button>
 
                         </div>
 
+                        {/* SUBCATEGORÍAS */}
+
                         {hasSubcategories &&
                           isOpen && (
-                            <div className="ml-10 mt-1 space-y-1 border-l border-slate-200 pl-2">
+                            <div className="ml-10 mt-1 space-y-1 border-l border-slate-200 pl-3">
 
                               {subcategories.map(
                                 (
                                   subcategory,
                                 ) => {
-                                  const subSelected =
-                                    selectedSubcategory ===
-                                    subcategory;
 
-                                  const count =
-                                    getSubcategoryCount(
-                                      category,
-                                      subcategory,
+                                  const isSubSelected =
+                                    selectedSubcategory ===
+                                    subcategory.name;
+
+                                  const realCount =
+                                    getSubcategoryProductCount(
+                                      categoryName,
+                                      subcategory.name,
                                     );
 
                                   return (
                                     <button
                                       key={
-                                        subcategory
+                                        subcategory.name
                                       }
                                       type="button"
                                       onClick={() =>
                                         selectSubcategory(
-                                          category,
-                                          subcategory,
+                                          categoryName,
+                                          subcategory.name,
                                         )
                                       }
-                                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${
-                                        subSelected
-                                          ? 'bg-cyan-100 text-cyan-700'
-                                          : 'text-slate-500 hover:bg-white hover:text-slate-700'
+                                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition ${
+                                        isSubSelected
+                                          ? 'bg-cyan-100 font-bold text-cyan-700'
+                                          : 'text-slate-600 hover:bg-white hover:text-slate-900'
                                       }`}
                                     >
 
                                       <span>
                                         {
-                                          subcategory
+                                          subcategory.name
                                         }
                                       </span>
 
-                                      <span className="text-[10px] text-slate-400">
-                                        {count}
+                                      <span className="text-[10px] font-bold text-slate-400">
+                                        {realCount}
                                       </span>
 
                                     </button>
@@ -1420,374 +1021,313 @@ export default function AdminProductsPage() {
                 TABLA
             ================================================= */}
 
-            <div className="min-w-0">
+            <div className="min-w-0 overflow-x-auto">
 
               {loading ? (
-                <div className="flex min-h-[450px] flex-col items-center justify-center">
 
-                  <RefreshCw
-                    size={34}
-                    className="animate-spin text-cyan-600"
-                  />
+                <div className="flex min-h-[400px] items-center justify-center">
 
-                  <p className="mt-4 font-bold text-slate-700">
-                    Cargando productos...
-                  </p>
+                  <div className="text-center">
 
-                  <p className="mt-1 text-sm text-slate-400">
-                    Conectando con Supabase
-                  </p>
+                    <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-cyan-600" />
 
-                </div>
-              ) : filteredProducts.length ===
-                0 ? (
-                <div className="flex min-h-[450px] flex-col items-center justify-center px-6 text-center">
+                    <p className="text-sm font-semibold text-slate-500">
+                      Cargando productos...
+                    </p>
 
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-                    <Package
-                      size={28}
-                    />
                   </div>
 
-                  <h3 className="mt-4 text-lg font-black text-slate-800">
+                </div>
+
+              ) : error ? (
+
+                <div className="flex min-h-[400px] items-center justify-center p-6">
+
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-6 py-5 text-center">
+
+                    <p className="font-bold text-red-700">
+                      {error}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={
+                        loadProducts
+                      }
+                      className="mt-3 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white"
+                    >
+                      Reintentar
+                    </button>
+
+                  </div>
+
+                </div>
+
+              ) : filteredProducts.length ===
+                0 ? (
+
+                <div className="flex min-h-[400px] flex-col items-center justify-center p-6 text-center">
+
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                    <Package size={26} />
+                  </div>
+
+                  <h3 className="font-black text-slate-800">
                     No hay productos
                   </h3>
 
-                  <p className="mt-1 max-w-md text-sm text-slate-500">
-                    No encontramos productos con los filtros actuales.
+                  <p className="mt-1 max-w-sm text-sm text-slate-500">
+                    No encontramos productos con los filtros seleccionados.
                   </p>
 
-                  <div className="mt-5 flex flex-wrap justify-center gap-2">
+                  <Link
+                    href="/admin/productos/nuevo"
+                    className="mt-4 flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white"
+                  >
+                    <Plus size={16} />
+                    Agregar producto
+                  </Link>
 
-                    {(selectedCategory ||
-                      selectedSubcategory ||
-                      search) && (
-                      <button
-                        type="button"
-                        onClick={
-                          clearFilters
-                        }
-                        className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50"
-                      >
-                        Limpiar filtros
-                      </button>
+                </div>
+
+              ) : (
+
+                <table className="w-full min-w-[900px] border-collapse">
+
+                  <thead>
+
+                    <tr className="border-b border-slate-200 bg-slate-50/70">
+
+                      <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-400">
+                        Producto
+                      </th>
+
+                      <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-400">
+                        Categoría
+                      </th>
+
+                      <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-400">
+                        Precio
+                      </th>
+
+                      <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-400">
+                        Stock
+                      </th>
+
+                      <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-400">
+                        Estado
+                      </th>
+
+                      <th className="px-5 py-4 text-right text-xs font-black uppercase tracking-wider text-slate-400">
+                        Acciones
+                      </th>
+
+                    </tr>
+
+                  </thead>
+
+                  <tbody>
+
+                    {filteredProducts.map(
+                      (product) => (
+
+                        <tr
+                          key={product.id}
+                          className="border-b border-slate-100 transition hover:bg-slate-50/70"
+                        >
+
+                          {/* PRODUCTO */}
+
+                          <td className="px-5 py-4">
+
+                            <div className="flex items-center gap-3">
+
+                              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+
+                                {product.image_url ? (
+
+                                  <img
+                                    src={
+                                      product.image_url
+                                    }
+                                    alt={
+                                      product.name
+                                    }
+                                    className="h-full w-full object-cover"
+                                  />
+
+                                ) : (
+
+                                  <div className="flex h-full w-full items-center justify-center text-slate-400">
+                                    <Package
+                                      size={20}
+                                    />
+                                  </div>
+
+                                )}
+
+                              </div>
+
+                              <div className="min-w-0">
+
+                                <p className="truncate font-bold text-slate-800">
+                                  {product.name}
+                                </p>
+
+                                <p className="mt-1 max-w-[320px] truncate text-xs text-slate-400">
+                                  {product.description ||
+                                    'Sin descripción'}
+                                </p>
+
+                                {product.subcategory && (
+                                  <p className="mt-1 text-[10px] font-semibold text-cyan-600">
+                                    {product.subcategory}
+                                  </p>
+                                )}
+
+                              </div>
+
+                            </div>
+
+                          </td>
+
+                          {/* CATEGORÍA */}
+
+                          <td className="px-5 py-4">
+
+                            <div className="flex flex-col items-start gap-1">
+
+                              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
+                                {getCategoryName(
+                                  product.category_id,
+                                )}
+                              </span>
+
+                              {product.subcategory && (
+                                <span className="text-[10px] font-semibold text-slate-400">
+                                  {product.subcategory}
+                                </span>
+                              )}
+
+                            </div>
+
+                          </td>
+
+                          {/* PRECIO */}
+
+                          <td className="px-5 py-4">
+
+                            <span className="font-black text-slate-800">
+                              S/{' '}
+                              {Number(
+                                product.price ??
+                                  0,
+                              ).toLocaleString(
+                                'es-PE',
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                },
+                              )}
+                            </span>
+
+                          </td>
+
+                          {/* STOCK */}
+
+                          <td className="px-5 py-4">
+
+                            <span
+                              className={`font-bold ${
+                                Number(
+                                  product.stock ??
+                                    0,
+                                ) <= 0
+                                  ? 'text-red-600'
+                                  : 'text-slate-700'
+                              }`}
+                            >
+                              {product.stock ??
+                                0}
+                            </span>
+
+                          </td>
+
+                          {/* ESTADO */}
+
+                          <td className="px-5 py-4">
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleProductStatus(
+                                  product,
+                                )
+                              }
+                              className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                                product.is_active
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : 'bg-slate-100 text-slate-500'
+                              }`}
+                            >
+                              {product.is_active
+                                ? 'Activo'
+                                : 'Inactivo'}
+                            </button>
+
+                          </td>
+
+                          {/* ACCIONES */}
+
+                          <td className="px-5 py-4">
+
+                            <div className="flex justify-end gap-2">
+
+                              <Link
+                                href={`/productos/${product.id}`}
+                                target="_blank"
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
+                                title="Ver producto"
+                              >
+                                <Eye size={16} />
+                              </Link>
+
+                              <Link
+                                href={`/admin/productos/${product.id}`}
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
+                                title="Editar producto"
+                              >
+                                <Edit size={16} />
+                              </Link>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  deleteProduct(
+                                    product,
+                                  )
+                                }
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 text-red-500 transition hover:bg-red-50"
+                                title="Eliminar producto"
+                              >
+                                <Trash2
+                                  size={16}
+                                />
+                              </button>
+
+                            </div>
+
+                          </td>
+
+                        </tr>
+
+                      ),
                     )}
 
-                    <Link
-                      href="/admin/productos/nuevo"
-                      className="flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-cyan-700"
-                    >
-                      <Plus
-                        size={16}
-                      />
-                      Nuevo producto
-                    </Link>
+                  </tbody>
 
-                  </div>
+                </table>
 
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-
-                  <table className="w-full min-w-[950px] border-collapse">
-
-                    <thead>
-
-                      <tr className="border-b border-slate-200 bg-slate-50/80">
-
-                        <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-400">
-                          Producto
-                        </th>
-
-                        <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-400">
-                          Categoría
-                        </th>
-
-                        <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-400">
-                          Precio
-                        </th>
-
-                        <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-400">
-                          Stock
-                        </th>
-
-                        <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-400">
-                          Estado
-                        </th>
-
-                        <th className="px-5 py-4 text-right text-xs font-black uppercase tracking-wider text-slate-400">
-                          Acciones
-                        </th>
-
-                      </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                      {filteredProducts.map(
-                        (product) => {
-                          const image =
-                            getProductImage(
-                              product,
-                            );
-
-                          return (
-                            <tr
-                              key={
-                                product.id
-                              }
-                              className="border-b border-slate-100 transition hover:bg-slate-50/70"
-                            >
-
-                              {/* PRODUCTO */}
-
-                              <td className="px-5 py-4">
-
-                                <div className="flex items-center gap-3">
-
-                                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-
-                                    {image ? (
-                                      <img
-                                        src={
-                                          image
-                                        }
-                                        alt={
-                                          product.name
-                                        }
-                                        className="h-full w-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="flex h-full w-full items-center justify-center text-slate-400">
-                                        <Package
-                                          size={
-                                            22
-                                          }
-                                        />
-                                      </div>
-                                    )}
-
-                                  </div>
-
-                                  <div className="min-w-0">
-
-                                    <p className="max-w-[300px] truncate font-bold text-slate-800">
-                                      {
-                                        product.name
-                                      }
-                                    </p>
-
-                                    <p className="mt-1 max-w-[320px] truncate text-xs text-slate-400">
-                                      {product.description ||
-                                        'Sin descripción'}
-                                    </p>
-
-                                    {product.colorPrincipal && (
-                                      <div className="mt-1 flex items-center gap-2">
-
-                                        <span className="text-[10px] font-semibold text-slate-400">
-                                          Color:
-                                        </span>
-
-                                        <span className="text-[10px] font-bold text-cyan-600">
-                                          {
-                                            product.colorPrincipal
-                                          }
-                                        </span>
-
-                                        {product.colorConfianza >
-                                          0 && (
-                                          <span className="text-[9px] text-slate-400">
-                                            {Math.round(
-                                              product.colorConfianza *
-                                                100,
-                                            )}
-                                            %
-                                          </span>
-                                        )}
-
-                                      </div>
-                                    )}
-
-                                  </div>
-
-                                </div>
-
-                              </td>
-
-                              {/* CATEGORÍA */}
-
-                              <td className="px-5 py-4">
-
-                                <div className="flex flex-col items-start gap-1">
-
-                                  <span className="rounded-full bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-700">
-                                    {
-                                      product.categoryName
-                                    }
-                                  </span>
-
-                                  {product.subcategory && (
-                                    <span className="text-[10px] font-semibold text-slate-400">
-                                      {
-                                        product.subcategory
-                                      }
-                                    </span>
-                                  )}
-
-                                </div>
-
-                              </td>
-
-                              {/* PRECIO */}
-
-                              <td className="px-5 py-4">
-
-                                <span className="font-black text-slate-800">
-                                  S/{' '}
-                                  {formatPrice(
-                                    product.price,
-                                  )}
-                                </span>
-
-                              </td>
-
-                              {/* STOCK */}
-
-                              <td className="px-5 py-4">
-
-                                <span
-                                  className={`font-black ${
-                                    product.stock <=
-                                    0
-                                      ? 'text-red-600'
-                                      : product.stock <=
-                                          3
-                                        ? 'text-amber-600'
-                                        : 'text-slate-700'
-                                  }`}
-                                >
-                                  {
-                                    product.stock
-                                  }
-                                </span>
-
-                              </td>
-
-                              {/* ESTADO */}
-
-                              <td className="px-5 py-4">
-
-                                <button
-                                  type="button"
-                                  disabled={
-                                    updatingId ===
-                                    product.id
-                                  }
-                                  onClick={() =>
-                                    void toggleProductStatus(
-                                      product,
-                                    )
-                                  }
-                                  className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                                    product.isActive
-                                      ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                  } ${
-                                    updatingId ===
-                                    product.id
-                                      ? 'cursor-wait opacity-50'
-                                      : ''
-                                  }`}
-                                >
-                                  {updatingId ===
-                                  product.id
-                                    ? 'Guardando...'
-                                    : product.isActive
-                                      ? 'Activo'
-                                      : 'Inactivo'}
-                                </button>
-
-                              </td>
-
-                              {/* ACCIONES */}
-
-                              <td className="px-5 py-4">
-
-                                <div className="flex justify-end gap-2">
-
-                                  <Link
-                                    href={`/productos/${product.id}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
-                                    title="Ver producto"
-                                  >
-                                    <Eye
-                                      size={
-                                        16
-                                      }
-                                    />
-                                  </Link>
-
-                                  <Link
-                                    href={`/admin/productos/${product.id}`}
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
-                                    title="Editar producto"
-                                  >
-                                    <Edit
-                                      size={
-                                        16
-                                      }
-                                    />
-                                  </Link>
-
-                                  <button
-                                    type="button"
-                                    disabled={
-                                      deletingId ===
-                                      product.id
-                                    }
-                                    onClick={() =>
-                                      void deleteProduct(
-                                        product,
-                                      )
-                                    }
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 text-red-500 transition hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
-                                    title="Eliminar producto"
-                                  >
-                                    {deletingId ===
-                                    product.id ? (
-                                      <RefreshCw
-                                        size={
-                                          16
-                                        }
-                                        className="animate-spin"
-                                      />
-                                    ) : (
-                                      <Trash2
-                                        size={
-                                          16
-                                        }
-                                      />
-                                    )}
-                                  </button>
-
-                                </div>
-
-                              </td>
-
-                            </tr>
-                          );
-                        },
-                      )}
-
-                    </tbody>
-
-                  </table>
-
-                </div>
               )}
 
             </div>

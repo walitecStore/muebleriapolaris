@@ -1,4 +1,3 @@
-import InsertProducts from "@/components/InsertProducts";
 import React from 'react';
 import type { Metadata } from 'next';
 import Header from '@/components/Header';
@@ -11,24 +10,24 @@ import AboutSection from './components/AboutSection';
 import TestimonialsSection from './components/TestimonialsSection';
 import ContactCTA from './components/ContactCTA';
 import RouletteSection from './components/RouletteSection';
+import RoomsSection from './components/RoomsSection';
+import InspirationSection from './components/InspirationSection';
 
 export const metadata: Metadata = {
-  title: 'Mueblería Polaris — Sofás de Calidad para tu Hogar',
-  description: 'Colección exclusiva de sofás modernos, clásicos y de diseño. Compra fácil por WhatsApp, envío gratis y garantía 2 años. Más de 50 modelos disponibles.',
+  title: 'Muebler\u00eda Polaris | Muebles para tu hogar',
+  description: 'Muebles para sala, comedor, dormitorio, oficina y decoraci\u00f3n. Compra f\u00e1cil y recibe asesor\u00eda personalizada.',
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: 'Mueblería Polaris — Sofás de Calidad',
-    description: 'Descubre nuestra colección de sofás premium. Compra por WhatsApp.',
+    title: 'Muebler\u00eda Polaris | Muebles para tu hogar',
+    description: 'Muebles para sala, comedor, dormitorio, oficina y decoraci\u00f3n. Compra f\u00e1cil y recibe asesor\u00eda personalizada.',
     images: [{ url: '/assets/images/app_logo.png', width: 1200, height: 630 }],
   },
 };
 export default function HomePage() {
   return (
     <>
-    <InsertProducts />
-    // <InsertProducts />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -36,7 +35,7 @@ export default function HomePage() {
             '@context': 'https://schema.org',
             '@type': 'FurnitureStore',
             name: 'Mueblería Polaris',
-            description: 'Sofás de calidad para tu hogar. Más de 50 modelos disponibles.',
+            description: 'Muebles para sala, comedor, dormitorio, oficina y decoraci\u00f3n. Compra f\u00e1cil y recibe asesor\u00eda personalizada.',
             url: 'https://muebleriapolaris.com',
             telephone: '+15550000000',
             address: {
@@ -53,6 +52,8 @@ export default function HomePage() {
       <main>
         <HeroSection />
         <BenefitsBar />
+        <RoomsSection />
+        <InspirationSection />
         <FeaturedSection />
         <CatalogSection />
         <AboutSection />

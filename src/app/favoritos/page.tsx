@@ -287,9 +287,7 @@ export default function FavoritosPage() {
 
       name: product.name,
 
-      price: Number.isFinite(price)
-        ? price
-        : 0,
+      price: 'S/ ' + (Number.isFinite(price) ? price.toLocaleString('es-PE') : '0'),
 
       image,
 

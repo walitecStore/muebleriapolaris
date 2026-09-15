@@ -99,6 +99,10 @@ export default function LoginPage() {
                 />
               </div>
 
+              <div className="text-right">
+                <Link href="/recuperar-contrasena" className="text-xs font-bold text-primary hover:underline">Olvide mi contrasena</Link>
+              </div>
+
               {/* Submit */}
               <button
                 type="submit"

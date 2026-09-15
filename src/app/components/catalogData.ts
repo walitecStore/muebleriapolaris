@@ -25,6 +25,8 @@ export interface SofaProduct {
 
   name: string;
 
+  subcategory?: string;
+
   style:
     | "Moderno"
     | "Clásico"

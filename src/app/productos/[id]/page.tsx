@@ -415,7 +415,7 @@ export default function ProductPage() {
 
       // Respaldo local mientras la tabla de Supabase no esté disponible.
       const fallbackReview: SofaReview = {
-        id: `local-${Date.now()}`,
+        id: Date.now(),
         name: reviewForm.name.trim(),
         initials,
         location: reviewForm.location.trim() || 'Perú',

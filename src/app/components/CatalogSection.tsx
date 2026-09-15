@@ -19,7 +19,6 @@ import {
   type SofaProduct,
 } from './catalogData';
 
-import { useAutoColor } from './useAutoColor';
 import { useCart } from './CartContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,7 +40,35 @@ const CATEGORY_OPTIONS = [
   'Sofás Cama',
   'Sofás 3-2-1',
   'Pufs y Decorativos',
-];
+] as const;
+
+type CategoryOption = (typeof CATEGORY_OPTIONS)[number];
+
+const CATEGORY_ALIASES: Record<CategoryOption, string[]> = {
+  'Sofás Europeo': [
+    'Sofás Europeo', 'Sofas Europeo', 'Sofá Europeo', 'Sofa Europeo',
+    'Sofás Europeos', 'Sofas Europeos', 'Europeo', 'EUROPA', 'europeo', 'europa',
+  ],
+  'Sofás Modulares': [
+    'Sofás Modulares', 'Sofas Modulares', 'Sofá Modular', 'Sofa Modular',
+    'Modulares', 'Modular', 'MODULAR',
+  ],
+  'Sofás Seccionales': [
+    'Sofás Seccionales', 'Sofas Seccionales', 'Sofá Seccional', 'Sofa Seccional',
+    'Seccionales', 'Seccional', 'SECCIONAL',
+  ],
+  'Sofás Cama': [
+    'Sofás Cama', 'Sofas Cama', 'Sofá Cama', 'Sofa Cama', 'Cama', 'CAMA',
+  ],
+  'Sofás 3-2-1': [
+    'Sofás 3-2-1', 'Sofas 3-2-1', 'Sofá 3-2-1', 'Sofa 3-2-1',
+    '3-2-1', '3 2 1', '3_2_1',
+  ],
+  'Pufs y Decorativos': [
+    'Pufs y Decorativos', 'Puffs y Decorativos', 'Puf y Decorativos', 'Puff y Decorativos',
+    'Pufs', 'Puffs', 'Puf', 'Puff', 'PUFS_DECORATIVOS',
+  ],
+};
 
 const PRICE_OPTIONS: { value: PriceRange; label: string }[] = [
   { value: 'all', label: 'Todos los precios' },
@@ -58,6 +85,30 @@ function normalizeText(value: unknown): string {
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toLowerCase();
+}
+
+function getCanonicalCategory(value: unknown): CategoryOption | null {
+  const normalized = normalizeText(value);
+  if (!normalized) return null;
+
+  for (const category of CATEGORY_OPTIONS) {
+    if (CATEGORY_ALIASES[category].some((alias) => normalizeText(alias) === normalized)) {
+      return category;
+    }
+  }
+
+  return null;
+}
+
+function categoriesMatch(productCategory: unknown, selectedCategory: unknown): boolean {
+  if (!selectedCategory) return true;
+
+  const selected = getCanonicalCategory(selectedCategory);
+  const product = getCanonicalCategory(productCategory);
+
+  if (selected && product) return selected === product;
+
+  return normalizeText(productCategory) === normalizeText(selectedCategory);
 }
 
 function parsePrice(value: unknown): number {
@@ -186,6 +237,14 @@ function productMatchesColor(sofa: SofaProduct, selectedColors: string[]): boole
 
 export default function CatalogSection() {
   const catalogRef = useRef<HTMLDivElement>(null);
+
+  // Los hooks de contexto se ejecutan UNA SOLA VEZ en el componente padre.
+  // Esto evita cambios en el orden de hooks cuando cambia la cantidad de productos filtrados.
+  const { addItem } = useCart();
+  const { toggleFavorite, isFavorite, loading: favoritesLoading } = useFavorites();
+  const { user } = useAuth();
+
+  const [addedProductId, setAddedProductId] = useState<number | null>(null);
 
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
@@ -337,13 +396,12 @@ export default function CatalogSection() {
 
     const result = catalogProducts.filter((sofa) => {
       const searchOk = !query || getSearchText(sofa).includes(query);
-      const categoryOk = !activeCategory || sofa.category === activeCategory;
+      const categoryOk = categoriesMatch(sofa.category, activeCategory);
       const styleOk = !activeStyles.length || activeStyles.includes(sofa.style);
       const colorOk = productMatchesColor(sofa, activeColors);
       const seatsOk = !activeSeats.length || activeSeats.includes(sofa.seats);
       const priceOk = matchesPriceRange(parsePrice(sofa.price), priceRange);
       const ratingOk = Number(sofa.rating ?? 0) >= minRating;
-      const reviews = Number(sofa.reviewCount ?? 0);
 
       return (
         searchOk &&
@@ -434,28 +492,9 @@ export default function CatalogSection() {
     activeColors.length > 0 ||
     activeSeats.length > 0 ||
     priceRange !== 'all' ||
-    minRating > 0 ||
+    minRating > 0;
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
 
-          entry.target.querySelectorAll('.catalog-card').forEach((element, index) => {
-            const card = element as HTMLElement;
-            card.style.transitionDelay = `${index * 45}ms`;
-            card.classList.add('revealed');
-          });
-        });
-      },
-      { threshold: 0.04 },
-    );
-
-    if (catalogRef.current) observer.observe(catalogRef.current);
-
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <section
@@ -545,6 +584,8 @@ export default function CatalogSection() {
               type="button"
               onClick={() => {
                 setActiveCategory('');
+                setVisibleCount(12);
+                setRecommendationSourceId(null);
               }}
               className={`shrink-0 px-4 py-2 rounded-full text-xs font-extrabold border transition-all ${
                 !activeCategory
@@ -554,20 +595,28 @@ export default function CatalogSection() {
             >
               Todos
             </button>
-{CATEGORY_OPTIONS.map((category) => (
-              <button
-                key={category}
-                type="button"
-                onClick={() => setActiveCategory(activeCategory === category ? '' : category)}
-                className={`shrink-0 px-4 py-2 rounded-full text-xs font-extrabold border transition-all ${
-                  activeCategory === category
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-white border-border text-muted-foreground hover:border-primary hover:text-primary'
-                }`}
-              >
-                {category.replace('Sofás ', '')}
-              </button>
-            ))}
+{CATEGORY_OPTIONS.map((category) => {
+              const isActive = activeCategory === category;
+
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(isActive ? '' : category);
+                    setVisibleCount(12);
+                    setRecommendationSourceId(null);
+                  }}
+                  className={`shrink-0 px-4 py-2 rounded-full text-xs font-extrabold border transition-all ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-white border-border text-muted-foreground hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  {category.replace('Sofás ', '')}
+                </button>
+              );
+            })}
           </div>
 
           {showFilters && (
@@ -758,9 +807,28 @@ export default function CatalogSection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {filtered.slice(0, visibleCount).map((sofa, index) => (
               <CatalogCard
-                key={sofa.id}
+                key={`catalog-${String(sofa.id)}`}
                 sofa={sofa}
                 rank={index}
+                added={addedProductId === sofa.id}
+                favorite={isFavorite(String(sofa.id), sofa.name)}
+                favoritesLoading={favoritesLoading}
+                loggedIn={Boolean(user)}
+                onAdd={() => {
+                  addItem({
+                    id: String(sofa.id),
+                    name: sofa.name,
+                    price: sofa.price,
+                    image: sofa.image,
+                    alt: `${sofa.name} — ${sofa.style} ${sofa.color} ${sofa.seats}`,
+                  });
+                  setAddedProductId(sofa.id);
+                  window.setTimeout(() => setAddedProductId(null), 1600);
+                }}
+                onFavorite={async () => {
+                  if (!user || favoritesLoading) return;
+                  await toggleFavorite(String(sofa.id), sofa.name);
+                }}
                 onViewed={() => {
                   const next = [
                     sofa.id,
@@ -817,9 +885,28 @@ export default function CatalogSection() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {recommendations.map((sofa) => (
                 <RecommendationCard
-                  key={sofa.id}
+                  key={`recommendation-${String(sofa.id)}`}
                   sofa={sofa}
                   badge={getCommercialBadge(sofa)}
+                  added={addedProductId === sofa.id}
+                  favorite={isFavorite(String(sofa.id), sofa.name)}
+                  favoritesLoading={favoritesLoading}
+                  loggedIn={Boolean(user)}
+                  onAdd={() => {
+                    addItem({
+                      id: String(sofa.id),
+                      name: sofa.name,
+                      price: sofa.price,
+                      image: sofa.image,
+                      alt: `${sofa.name} — ${sofa.style} ${sofa.color}`,
+                    });
+                    setAddedProductId(sofa.id);
+                    window.setTimeout(() => setAddedProductId(null), 1500);
+                  }}
+                  onFavorite={async () => {
+                    if (!user || favoritesLoading) return;
+                    await toggleFavorite(String(sofa.id), sofa.name);
+                  }}
                 />
               ))}
             </div>
@@ -1109,35 +1196,22 @@ function FinderSelect({
 function RecommendationCard({
   sofa,
   badge,
+  added,
+  favorite,
+  favoritesLoading,
+  loggedIn,
+  onAdd,
+  onFavorite,
 }: {
   sofa: SofaProduct;
   badge: string;
+  added: boolean;
+  favorite: boolean;
+  favoritesLoading: boolean;
+  loggedIn: boolean;
+  onAdd: () => void;
+  onFavorite: () => void | Promise<void>;
 }) {
-  const { addItem } = useCart();
-  const { toggleFavorite, isFavorite, loading: favoritesLoading } = useFavorites();
-  const { user } = useAuth();
-
-  const [added, setAdded] = useState(false);
-  const isFav = isFavorite(String(sofa.id), sofa.name);
-
-  const handleAdd = () => {
-    addItem({
-      id: String(sofa.id),
-      name: sofa.name,
-      price: sofa.price,
-      image: sofa.image,
-      alt: `${sofa.name} — ${sofa.style} ${sofa.color}`,
-    });
-
-    setAdded(true);
-    window.setTimeout(() => setAdded(false), 1500);
-  };
-
-  const handleFavorite = async () => {
-    if (!user || favoritesLoading) return;
-    await toggleFavorite(String(sofa.id), sofa.name);
-  };
-
   return (
     <article className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all">
       <div className="relative h-44 bg-muted">
@@ -1159,55 +1233,32 @@ function RecommendationCard({
 
         <button
           type="button"
-          onClick={handleFavorite}
+          onClick={onFavorite}
           disabled={favoritesLoading}
           className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 shadow flex items-center justify-center hover:scale-110 transition-transform"
-          aria-label={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-          aria-pressed={isFav}
+          aria-label={favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+          aria-pressed={favorite}
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill={isFav ? '#ef4444' : 'none'}
-            stroke={isFav ? '#ef4444' : '#374151'}
-            strokeWidth={2}
-            className="w-5 h-5"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-            />
+          <svg viewBox="0 0 24 24" fill={favorite ? '#ef4444' : 'none'} stroke={favorite ? '#ef4444' : '#374151'} strokeWidth={2} className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
           </svg>
         </button>
       </div>
 
       <div className="p-4">
         <Link href={`/productos/${sofa.id}`} className="hover:text-primary">
-          <h4 className="font-extrabold text-foreground line-clamp-2">
-            {sofa.name}
-          </h4>
+          <h4 className="font-extrabold text-foreground line-clamp-2">{sofa.name}</h4>
         </Link>
 
         <div className="flex items-center gap-2 mt-2">
           <span className="text-yellow-500">★</span>
           <span className="text-xs font-bold">{Number(sofa.rating ?? 0).toFixed(1)}</span>
-          <span className="text-xs text-muted-foreground">
-            ({Number(sofa.reviewCount ?? 0)})
-          </span>
+          <span className="text-xs text-muted-foreground">({Number(sofa.reviewCount ?? 0)})</span>
         </div>
 
         <div className="flex items-end justify-between gap-3 mt-4">
           <span className="text-xl font-extrabold text-primary">{sofa.price}</span>
-
-          <button
-            type="button"
-            onClick={handleAdd}
-            className={`px-3 py-2 rounded-xl text-xs font-extrabold ${
-              added
-                ? 'bg-emerald-500 text-white'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90'
-            }`}
-          >
+          <button type="button" onClick={onAdd} className={`px-3 py-2 rounded-xl text-xs font-extrabold ${added ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>
             {added ? '✓ Agregado' : '🛒 Agregar'}
           </button>
         </div>
@@ -1220,81 +1271,35 @@ function CatalogCard({
   sofa,
   rank,
   onViewed,
+  added,
+  favorite,
+  favoritesLoading,
+  loggedIn,
+  onAdd,
+  onFavorite,
 }: {
   sofa: SofaProduct;
   rank: number;
   onViewed: () => void;
+  added: boolean;
+  favorite: boolean;
+  favoritesLoading: boolean;
+  loggedIn: boolean;
+  onAdd: () => void;
+  onFavorite: () => void | Promise<void>;
 }) {
-  const { color: autoColor, loading: colorLoading } = useAutoColor(sofa.image);
-  const { addItem } = useCart();
-  const { toggleFavorite, isFavorite, loading: favoritesLoading } = useFavorites();
-  const { user } = useAuth();
-
-  const [added, setAdded] = useState(false);
-  const [favoriteProcessing, setFavoriteProcessing] = useState(false);
-  const [showLoginHint, setShowLoginHint] = useState(false);
-
-  const isFav = isFavorite(String(sofa.id), sofa.name);
-
   const rating = Number(sofa.rating ?? 0);
   const reviewCount = Number(sofa.reviewCount ?? 0);
-  const price = parsePrice(sofa.price);
-
   const badge =
     sofa.id === 12
       ? '⭐ Exclusivo'
       : getCommercialBadge(sofa) ||
         (rank < 3 ? '✨ Recomendado' : '');
 
-  const handleAddToCart = (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    addItem({
-      id: String(sofa.id),
-      name: sofa.name,
-      price: sofa.price,
-      image: sofa.image,
-      alt: `${sofa.name} — ${sofa.style} ${sofa.color} ${sofa.seats}`,
-    });
-
-    setAdded(true);
-    window.setTimeout(() => setAdded(false), 1600);
-  };
-
-  const handleFavorite = async (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (favoriteProcessing || favoritesLoading) return;
-
-    if (!user) {
-      setShowLoginHint(true);
-      window.setTimeout(() => setShowLoginHint(false), 2400);
-      return;
-    }
-
-    try {
-      setFavoriteProcessing(true);
-      await toggleFavorite(String(sofa.id), sofa.name);
-    } finally {
-      setFavoriteProcessing(false);
-    }
-  };
-
-  const handleOpenProduct = () => {
-    onViewed();
-  };
-
   return (
-    <article className="catalog-card reveal-on-scroll card-hover bg-card rounded-2xl overflow-hidden border border-border shadow-sm flex flex-col">
-      {/* Imagen */}
+    <article className="catalog-card card-hover bg-card rounded-2xl overflow-hidden border border-border shadow-sm flex flex-col">
       <div className="relative h-56 overflow-hidden bg-muted group">
-        <Link
-          href={`/productos/${sofa.id}`}
-          onClick={handleOpenProduct}
-          className="block w-full h-full"
-        >
+        <Link href={`/productos/${sofa.id}`} onClick={onViewed} className="block w-full h-full">
           <AppImage
             src={sofa.image}
             alt={`${sofa.name} — ${sofa.style}, ${sofa.color}, ${sofa.seats}`}
@@ -1304,168 +1309,66 @@ function CatalogCard({
           />
         </Link>
 
-        {/* Badge */}
         {badge && (
-          <span className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-foreground text-[11px] font-extrabold px-2.5 py-1.5 rounded-full shadow-sm">
+          <span className="absolute top-3 left-3 bg-white/95 text-foreground text-[11px] font-extrabold px-2.5 py-1.5 rounded-full shadow">
             {badge}
           </span>
         )}
 
-        {/* Favorito visible siempre */}
         <button
           type="button"
-          onClick={handleFavorite}
-          disabled={favoriteProcessing || favoritesLoading}
-          className={`absolute top-3 right-3 w-10 h-10 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-md transition-all duration-200 ${
-            isFav ? 'scale-105' : 'hover:scale-110'
-          }`}
-          aria-label={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-          aria-pressed={isFav}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!loggedIn || favoritesLoading) return;
+            void onFavorite();
+          }}
+          disabled={favoritesLoading}
+          className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/95 shadow flex items-center justify-center hover:scale-110 transition-transform"
+          aria-label={favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+          aria-pressed={favorite}
         >
-          {favoriteProcessing ? (
-            <span className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <svg
-              viewBox="0 0 24 24"
-              fill={isFav ? '#ef4444' : 'none'}
-              stroke={isFav ? '#ef4444' : '#374151'}
-              strokeWidth={2}
-              className={`w-5.5 h-5.5 ${isFav ? 'animate-pulse' : ''}`}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-              />
-            </svg>
-          )}
+          <svg viewBox="0 0 24 24" fill={favorite ? '#ef4444' : 'none'} stroke={favorite ? '#ef4444' : '#374151'} strokeWidth={2} className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+          </svg>
         </button>
-
-        {/* Estilo + plazas */}
-        <div className="absolute bottom-3 left-3 flex gap-2">
-          <span className="bg-primary text-primary-foreground text-[11px] font-extrabold px-2.5 py-1 rounded-full">
-            {sofa.style}
-          </span>
-          <span className="bg-white/95 text-foreground text-[11px] font-bold px-2.5 py-1 rounded-full">
-            {sofa.seats}
-          </span>
-        </div>
-
-        {showLoginHint && (
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-black/85 text-white text-[11px] font-bold px-3 py-2 rounded-full whitespace-nowrap z-20">
-            Inicia sesión para guardar favoritos
-          </div>
-        )}
       </div>
 
-      {/* Contenido */}
-      <div className="p-4 sm:p-5 flex flex-col flex-1">
-        <Link
-          href={`/productos/${sofa.id}`}
-          onClick={handleOpenProduct}
-          className="hover:text-primary transition-colors"
-        >
-          <h3 className="font-extrabold text-foreground text-base leading-tight line-clamp-2">
-            {sofa.name}
-          </h3>
+      <div className="p-4 flex-1 flex flex-col">
+        <Link href={`/productos/${sofa.id}`} onClick={onViewed} className="hover:text-primary">
+          <h3 className="font-extrabold text-base sm:text-lg text-foreground line-clamp-2">{sofa.name}</h3>
         </Link>
 
-        <div className="flex items-center gap-2 mt-2">
-          <div className="flex items-center gap-1">
-            <span className="text-yellow-500">★</span>
-            <span className="text-xs font-extrabold text-foreground">
-              {rating > 0 ? rating.toFixed(1) : 'Nuevo'}
-            </span>
-          </div>
-          {reviewCount > 0 && (
-            <span className="text-xs text-muted-foreground">
-              ({reviewCount} reseñas)
-            </span>
-          )}
-          {reviewCount >= 50 && (
-            <span className="text-[10px] font-extrabold text-orange-700 bg-orange-50 px-2 py-1 rounded-full">
-              🔥 Popular
-            </span>
-          )}
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{sofa.description}</p>
+
+        <div className="flex flex-wrap gap-2 mt-3">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-muted text-[11px] font-bold">{sofa.category}</span>
+          {sofa.subcategory && <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold">{sofa.subcategory}</span>}
         </div>
 
-        <p className="text-muted-foreground text-sm mt-2 mb-4 leading-relaxed line-clamp-2 flex-1">
-          {sofa.description}
-        </p>
-
-        {/* Color detectado + disponibilidad */}
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2 min-w-0">
-            {colorLoading ? (
-              <span className="w-4 h-4 rounded-full bg-muted animate-pulse shrink-0" />
-            ) : autoColor ? (
-              <>
-                <span
-                  className="w-4 h-4 rounded-full border border-black/10 shadow-sm shrink-0"
-                  style={{
-                    backgroundColor: `rgb(${autoColor.r},${autoColor.g},${autoColor.b})`,
-                  }}
-                  title={`Color detectado: ${autoColor.name}`}
-                />
-                <span className="text-xs font-bold text-muted-foreground truncate">
-                  {autoColor.emoji} {autoColor.name}
-                </span>
-              </>
-            ) : (
-              <>
-                <span
-                  className="w-4 h-4 rounded-full border border-black/10 shadow-sm shrink-0"
-                  style={{ backgroundColor: colorMap[sofa.color] }}
-                />
-                <span className="text-xs font-bold text-muted-foreground">
-                  {sofa.color}
-                </span>
-              </>
-            )}
-          </div>
-
-          <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full whitespace-nowrap">
-            🟢 Disponible
-          </span>
+        <div className="flex items-center gap-2 mt-3">
+          <span className="text-yellow-500">★</span>
+          <span className="text-xs font-bold">{rating.toFixed(1)}</span>
+          <span className="text-xs text-muted-foreground">({reviewCount})</span>
+          {sofa.color && <span className="text-xs text-muted-foreground">• {sofa.color}</span>}
         </div>
 
-        {/* Precio */}
-        <div className="flex items-end justify-between gap-3 mb-4">
+        <div className="flex items-end justify-between gap-3 mt-auto pt-5">
           <div>
-            <span className="text-[11px] text-muted-foreground block">
-              Precio
-            </span>
-            <span className="text-2xl font-extrabold text-primary">
-              {sofa.price}
-            </span>
+            <span className="block text-xs text-muted-foreground">Precio</span>
+            <span className="text-xl font-extrabold text-primary">{sofa.price}</span>
           </div>
-
-          <span className="text-[11px] font-bold text-muted-foreground text-right">
-            🚚 Cotiza tu entrega
-          </span>
-        </div>
-
-        {/* Acciones */}
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          <Link
-            href={`/productos/${sofa.id}`}
-            onClick={handleOpenProduct}
-            className="flex items-center justify-center gap-2 px-3 py-2.5 border border-primary text-primary font-extrabold text-sm rounded-xl hover:bg-primary hover:text-white transition-all"
-          >
-            👁️ Ver detalles
-          </Link>
 
           <button
             type="button"
-            onClick={handleAddToCart}
-            className={`px-4 py-2.5 rounded-xl font-extrabold text-sm transition-all ${
-              added
-                ? 'bg-emerald-500 text-white'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90'
-            }`}
-            aria-label={added ? 'Producto agregado' : 'Agregar al carrito'}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onAdd();
+            }}
+            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${added ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
           >
-            {added ? '✓' : '🛒'}
+            {added ? '✓ Agregado' : '🛒 Agregar'}
           </button>
         </div>
       </div>
