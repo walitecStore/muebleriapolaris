@@ -30,12 +30,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .eq('is_active', true);
 
   // Total de pedidos
-  const { count: ordersCount } = await supabase
-    .from('orders')
-    .select('id', {
-      count: 'exact',
-      head: true,
-    });
+  const { count: ordersCount } = await supabase.from('orders').select('id', {
+    count: 'exact',
+    head: true,
+  });
 
   // Total de clientes
   const { count: usersCount } = await supabase
@@ -47,9 +45,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .eq('role', 'user');
 
   // Obtener ventas
-  const { data: orders } = await supabase
-    .from('orders')
-    .select('total');
+  const { data: orders } = await supabase.from('orders').select('total');
 
   const totalSales =
     orders?.reduce((sum, order) => {
@@ -64,17 +60,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   };
 }
 
-export async function getRecentOrders(
-  limit = 5,
-): Promise<RecentOrder[]> {
+export async function getRecentOrders(limit = 5): Promise<RecentOrder[]> {
   const supabase = createClient();
 
   // 1. Obtener pedidos recientes
   const { data: orders, error: ordersError } = await supabase
     .from('orders')
-    .select(
-      'id, user_id, total, status, created_at',
-    )
+    .select('id, user_id, total, status, created_at')
     .order('created_at', {
       ascending: false,
     })
@@ -90,13 +82,7 @@ export async function getRecentOrders(
 
   // 2. Obtener perfiles de los clientes
   const userIds = [
-    ...new Set(
-      orders
-        .map((order) => order.user_id)
-        .filter(
-          (id): id is string => Boolean(id),
-        ),
-    ),
+    ...new Set(orders.map((order) => order.user_id).filter((id): id is string => Boolean(id))),
   ];
 
   const profilesMap = new Map<
@@ -122,25 +108,17 @@ export async function getRecentOrders(
   }
 
   // 3. Obtener detalles de los pedidos
-  const orderIds = orders.map(
-    (order) => order.id,
-  );
+  const orderIds = orders.map((order) => order.id);
 
   const { data: items } = await supabase
     .from('order_items')
-    .select(
-      'order_id, product_id, quantity, unit_price, subtotal',
-    )
+    .select('order_id, product_id, quantity, unit_price, subtotal')
     .in('order_id', orderIds);
 
   // 4. Obtener productos relacionados
   const productIds = [
     ...new Set(
-      (items ?? [])
-        .map((item) => item.product_id)
-        .filter(
-          (id): id is string => Boolean(id),
-        ),
+      (items ?? []).map((item) => item.product_id).filter((id): id is string => Boolean(id))
     ),
   ];
 
@@ -153,48 +131,31 @@ export async function getRecentOrders(
       .in('id', productIds);
 
     products?.forEach((product) => {
-      productsMap.set(
-        product.id,
-        product.name,
-      );
+      productsMap.set(product.id, product.name);
     });
   }
 
   // 5. Construir información final
   return orders.map((order) => {
-    const profile = profilesMap.get(
-      order.user_id,
-    );
+    const profile = profilesMap.get(order.user_id);
 
-    const orderItems = (items ?? []).filter(
-      (item) =>
-        item.order_id === order.id,
-    );
+    const orderItems = (items ?? []).filter((item) => item.order_id === order.id);
 
     const firstItem = orderItems[0];
 
     let productName = 'Pedido sin detalle';
 
     if (firstItem?.product_id) {
-      productName =
-        productsMap.get(
-          firstItem.product_id,
-        ) ?? 'Producto no disponible';
+      productName = productsMap.get(firstItem.product_id) ?? 'Producto no disponible';
     }
 
     if (orderItems.length > 1) {
-      const additionalProducts =
-        orderItems.length - 1;
+      const additionalProducts = orderItems.length - 1;
 
-      productName += ` + ${additionalProducts} producto${
-        additionalProducts === 1 ? '' : 's'
-      }`;
+      productName += ` + ${additionalProducts} producto${additionalProducts === 1 ? '' : 's'}`;
     }
 
-    const customer =
-      profile?.full_name?.trim() ||
-      profile?.email ||
-      'Cliente';
+    const customer = profile?.full_name?.trim() || profile?.email || 'Cliente';
 
     return {
       id: order.id,
@@ -203,36 +164,19 @@ export async function getRecentOrders(
 
       product: productName,
 
-      amount: Number(
-        order.total || 0,
-      ),
+      amount: Number(order.total || 0),
 
-      date: new Intl.DateTimeFormat(
-        'es-PE',
-        {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        },
-      ).format(
-        new Date(order.created_at),
-      ),
+      date: new Intl.DateTimeFormat('es-PE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(order.created_at)),
 
-      status: String(
-        order.status || 'pendiente',
-      ),
+      status: String(order.status || 'pendiente'),
 
-      quantity:
-        orderItems.reduce(
-          (total, item) =>
-            total +
-            Number(
-              item.quantity || 0,
-            ),
-          0,
-        ) || 0,
+      quantity: orderItems.reduce((total, item) => total + Number(item.quantity || 0), 0) || 0,
     };
   });
 }
@@ -242,29 +186,20 @@ export interface SalesChartData {
   sales: number;
 }
 
-export async function getSalesChartData(): Promise<
-  SalesChartData[]
-> {
+export async function getSalesChartData(): Promise<SalesChartData[]> {
   const supabase = createClient();
 
-  const currentYear =
-    new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
 
   const startDate = `${currentYear}-01-01T00:00:00.000Z`;
 
-  const { data: orders } =
-    await supabase
-      .from('orders')
-      .select(
-        'total, created_at',
-      )
-      .gte(
-        'created_at',
-        startDate,
-      )
-      .order('created_at', {
-        ascending: true,
-      });
+  const { data: orders } = await supabase
+    .from('orders')
+    .select('total, created_at')
+    .gte('created_at', startDate)
+    .order('created_at', {
+      ascending: true,
+    });
 
   const monthNames = [
     'Ene',
@@ -281,29 +216,18 @@ export async function getSalesChartData(): Promise<
     'Dic',
   ];
 
-  const monthlySales =
-    monthNames.map((month) => ({
-      month,
-      sales: 0,
-    }));
+  const monthlySales = monthNames.map((month) => ({
+    month,
+    sales: 0,
+  }));
 
   orders?.forEach((order) => {
-    const date = new Date(
-      order.created_at,
-    );
+    const date = new Date(order.created_at);
 
-    const monthIndex =
-      date.getMonth();
+    const monthIndex = date.getMonth();
 
-    if (
-      monthIndex >= 0 &&
-      monthIndex <= 11
-    ) {
-      monthlySales[
-        monthIndex
-      ].sales += Number(
-        order.total || 0,
-      );
+    if (monthIndex >= 0 && monthIndex <= 11) {
+      monthlySales[monthIndex].sales += Number(order.total || 0);
     }
   });
 

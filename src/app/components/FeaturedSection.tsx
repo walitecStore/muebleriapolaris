@@ -18,13 +18,7 @@ const colorMap: Record<string, string> = {
   Blanco: '#f9fafb',
 };
 
-function ProductCard({
-  sofa,
-  index,
-}: {
-  sofa: (typeof sofaProducts)[0];
-  index: number;
-}) {
+function ProductCard({ sofa, index }: { sofa: (typeof sofaProducts)[0]; index: number }) {
   const { addItem } = useCart();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -100,18 +94,12 @@ function ProductCard({
           />
         </div>
 
-        <p className="text-muted-foreground text-sm mb-1">
-          {sofa.seats}
-        </p>
+        <p className="text-muted-foreground text-sm mb-1">{sofa.seats}</p>
 
-        <p className="text-muted-foreground text-xs mb-4 line-clamp-2">
-          {sofa.description}
-        </p>
+        <p className="text-muted-foreground text-xs mb-4 line-clamp-2">{sofa.description}</p>
 
         <div className="flex items-center justify-between gap-3 mb-3">
-          <span className="text-xl font-extrabold text-primary">
-            {sofa.price}
-          </span>
+          <span className="text-xl font-extrabold text-primary">{sofa.price}</span>
 
           {Number(sofa.rating ?? 0) > 0 && (
             <span className="text-xs font-bold text-foreground">
@@ -122,9 +110,7 @@ function ProductCard({
 
         {/* Selector de cantidad */}
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs text-muted-foreground font-medium">
-            Cantidad:
-          </span>
+          <span className="text-xs text-muted-foreground font-medium">Cantidad:</span>
 
           <div className="flex items-center border border-border rounded-lg overflow-hidden">
             <button
@@ -242,13 +228,11 @@ export default function FeaturedSection() {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target
-              .querySelectorAll('.reveal-on-scroll')
-              .forEach((el, i) => {
-                window.setTimeout(() => {
-                  el.classList.add('revealed');
-                }, i * 100);
-              });
+            entry.target.querySelectorAll('.reveal-on-scroll').forEach((el, i) => {
+              window.setTimeout(() => {
+                el.classList.add('revealed');
+              }, i * 100);
+            });
 
             observer.unobserve(entry.target);
           }
@@ -265,11 +249,7 @@ export default function FeaturedSection() {
   }, []);
 
   return (
-    <section
-      id="destacados"
-      className="py-20 bg-background"
-      ref={ref}
-    >
+    <section id="destacados" className="py-20 bg-background" ref={ref}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Encabezado */}
         <div className="text-center mb-14 reveal-on-scroll">
@@ -278,26 +258,18 @@ export default function FeaturedSection() {
           </span>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-4">
-            Sofás{' '}
-            <span className="text-gradient-teal">
-              Destacados
-            </span>
+            Sofás <span className="text-gradient-teal">Destacados</span>
           </h2>
 
           <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto">
-            Los modelos más populares de nuestra colección, elegidos por
-            nuestros clientes.
+            Los modelos más populares de nuestra colección, elegidos por nuestros clientes.
           </p>
         </div>
 
         {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {featured.map((sofa, i) => (
-            <ProductCard
-              key={sofa.id}
-              sofa={sofa}
-              index={i}
-            />
+            <ProductCard key={sofa.id} sofa={sofa} index={i} />
           ))}
         </div>
 
@@ -308,7 +280,6 @@ export default function FeaturedSection() {
             className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-full hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/30 text-sm sm:text-base"
           >
             Ver catálogo completo
-
             <svg
               className="w-4 h-4"
               fill="none"

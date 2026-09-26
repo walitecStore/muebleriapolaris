@@ -4,7 +4,10 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 
-interface SignUpMetadata { fullName?: string; avatarUrl?: string; }
+interface SignUpMetadata {
+  fullName?: string;
+  avatarUrl?: string;
+}
 interface AuthContextValue {
   user: User | null;
   session: Session | null;
@@ -33,27 +36,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session); setUser(data.session?.user ?? null); setLoading(false);
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      setLoading(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession); setUser(nextSession?.user ?? null); setLoading(false);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      setLoading(false);
     });
     return () => subscription.unsubscribe();
   }, [supabase]);
 
   const value: AuthContextValue = {
-    user, session, loading,
+    user,
+    session,
+    loading,
     async signUp(email, password, metadata = {}) {
-      const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: metadata.fullName ?? '', avatar_url: metadata.avatarUrl ?? '' }, emailRedirectTo: `${window.location.origin}/auth/callback` } });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: metadata.fullName ?? '', avatar_url: metadata.avatarUrl ?? '' },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
       if (error) throw error;
     },
-    async signIn(email, password) { const { error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; },
-    async signOut() { const { error } = await supabase.auth.signOut(); if (error) throw error; },
-    async getCurrentUser() { const { data, error } = await supabase.auth.getUser(); if (error) throw error; return data.user; },
+    async signIn(email, password) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    },
+    async signOut() {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    },
+    async getCurrentUser() {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      return data.user;
+    },
     isEmailVerified: () => Boolean(user?.email_confirmed_at),
     async getUserProfile() {
       if (!user) return null;
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
       if (error) throw error;
       return data as Record<string, unknown> | null;
     },

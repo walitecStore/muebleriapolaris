@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import { useCart } from '@/app/components/CartContext';
@@ -58,10 +59,10 @@ export default function Header() {
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-50 nav-enter transition-all duration-500 ${
-  scrolled
-    ? "bg-white/70 backdrop-blur-2xl border-b border-white/30 shadow-2xl shadow-slate-900/10"
-    : "bg-gradient-to-b from-black/40 via-black/10 to-transparent"
-}`}
+          scrolled
+            ? 'bg-white/70 backdrop-blur-2xl border-b border-white/30 shadow-2xl shadow-slate-900/10'
+            : 'bg-gradient-to-b from-black/40 via-black/10 to-transparent'
+        }`}
       >
         <nav className="max-w-[1440px] mx-auto px-6 lg:px-10 h-[76px] flex items-center justify-between">
           {/* Logo */}
@@ -73,9 +74,9 @@ export default function Header() {
             <AppLogo size={44} />
             <span
               className={`font-black text-2xl tracking-tight transition-colors duration-300 ${
-                scrolled ? "text-slate-900" : "text-white"
+                scrolled ? 'text-slate-900' : 'text-white'
               }`}
-           >
+            >
               Mueblería
               <span className="text-cyan-500"> Polaris</span>
             </span>
@@ -88,24 +89,30 @@ export default function Header() {
                 key={link.href}
                 onClick={() => handleNavClick(link.href)}
                 className={`nav-link-underline text-[15px] tracking-wide font-semibold transition-colors duration-300 ${
-                  scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
+                  scrolled
+                    ? 'text-muted-foreground hover:text-foreground'
+                    : 'text-white/90 hover:text-white'
                 }`}
               >
                 {link.label}
               </button>
             ))}
-            <a
+            <Link
               href="/catalogo"
               className={`nav-link-underline text-sm font-semibold transition-colors duration-300 text-center ${
-                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
+                scrolled
+                  ? 'text-muted-foreground hover:text-foreground'
+                  : 'text-white/90 hover:text-white'
               }`}
             >
               Ver Catálogo
-            </a>
+            </Link>
             <a
               href="/pedidos"
               className={`nav-link-underline text-sm font-semibold transition-colors duration-300 text-center ${
-                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
+                scrolled
+                  ? 'text-muted-foreground hover:text-foreground'
+                  : 'text-white/90 hover:text-white'
               }`}
             >
               Mis Pedidos
@@ -117,19 +124,38 @@ export default function Header() {
               className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${scrolled ? 'text-muted-foreground hover:bg-muted hover:text-foreground' : 'text-white/90 hover:bg-white/10 hover:text-white'}`}
               aria-label="Buscar productos"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="m21 21-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"
+                />
+              </svg>
             </button>
 
             {/* Favorites */}
             <a
               href="/favoritos"
               className={`relative flex items-center gap-1.5 transition-colors duration-300 ${
-                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
+                scrolled
+                  ? 'text-muted-foreground hover:text-foreground'
+                  : 'text-white/90 hover:text-white'
               }`}
               aria-label={`Favoritos${favorites.length > 0 ? `, ${favorites.length}` : ''}`}
             >
-              <svg className="w-6 h-6" fill={favorites.length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+              <svg
+                className="w-6 h-6"
+                fill={favorites.length > 0 ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                />
               </svg>
               {favorites.length > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center">
@@ -142,12 +168,19 @@ export default function Header() {
             <button
               onClick={openCart}
               className={`relative flex items-center gap-1.5 transition-colors duration-300 ${
-                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-white/90 hover:text-white'
+                scrolled
+                  ? 'text-muted-foreground hover:text-foreground'
+                  : 'text-white/90 hover:text-white'
               }`}
               aria-label={`Carrito${totalItems > 0 ? `, ${totalItems} productos` : ''}`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
               </svg>
               {totalItems > 0 && (
                 <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center">
@@ -160,13 +193,25 @@ export default function Header() {
             <button
               onClick={() => setSettingsOpen(true)}
               className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 hover:scale-110 ${
-                scrolled ? 'text-muted-foreground hover:text-foreground hover:bg-muted' : 'text-white/90 hover:text-white hover:bg-white/10'
+                scrolled
+                  ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  : 'text-white/90 hover:text-white hover:bg-white/10'
               }`}
               aria-label="Ajustes"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
               </svg>
             </button>
 
@@ -176,7 +221,10 @@ export default function Header() {
               className="relative flex items-center gap-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-extrabold hover:scale-105 transition-all duration-300 overflow-hidden"
               style={{ boxShadow: '0 0 15px rgba(251,191,36,0.6)' }}
             >
-              <span className="absolute inset-0 bg-white/30 animate-ping rounded-full opacity-0" style={{ animationDuration: '1.5s' }} />
+              <span
+                className="absolute inset-0 bg-white/30 animate-ping rounded-full opacity-0"
+                style={{ animationDuration: '1.5s' }}
+              />
               ✨ Oferta Especial
             </button>
             <a
@@ -198,8 +246,18 @@ export default function Header() {
               className={`relative transition-colors ${scrolled ? 'text-foreground' : 'text-white'}`}
               aria-label="Favoritos"
             >
-              <svg className="w-6 h-6" fill={favorites.length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+              <svg
+                className="w-6 h-6"
+                fill={favorites.length > 0 ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                />
               </svg>
             </a>
             {/* Mobile Cart Button */}
@@ -209,7 +267,12 @@ export default function Header() {
               aria-label={`Carrito${totalItems > 0 ? `, ${totalItems} productos` : ''}`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
               </svg>
               {totalItems > 0 && (
                 <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center">
@@ -224,8 +287,18 @@ export default function Header() {
               aria-label="Ajustes"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
               </svg>
             </button>
             <button
@@ -235,9 +308,15 @@ export default function Header() {
               }`}
               aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
             >
-              <span className={`block w-6 h-0.5 transition-all duration-300 origin-center ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? 'rotate-45 translate-y-2' : ''}`} />
-              <span className={`block w-6 h-0.5 transition-all duration-300 ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? 'opacity-0 scale-x-0' : ''}`} />
-              <span className={`block w-6 h-0.5 transition-all duration-300 origin-center ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+              <span
+                className={`block w-6 h-0.5 transition-all duration-300 origin-center ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? 'rotate-45 translate-y-2' : ''}`}
+              />
+              <span
+                className={`block w-6 h-0.5 transition-all duration-300 ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? 'opacity-0 scale-x-0' : ''}`}
+              />
+              <span
+                className={`block w-6 h-0.5 transition-all duration-300 origin-center ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`}
+              />
             </button>
           </div>
         </nav>
@@ -255,13 +334,25 @@ export default function Header() {
                   {link.label}
                 </button>
               ))}
-              <a href="/catalogo" onClick={() => setMenuOpen(false)} className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200">
+              <Link
+                href="/catalogo"
+                onClick={() => setMenuOpen(false)}
+                className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200"
+              >
                 Ver Catálogo Completo →
-              </a>
-              <a href="/pedidos" onClick={() => setMenuOpen(false)} className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200">
+              </Link>
+              <a
+                href="/pedidos"
+                onClick={() => setMenuOpen(false)}
+                className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200"
+              >
                 📦 Mis Pedidos
               </a>
-              <a href="/favoritos" onClick={() => setMenuOpen(false)} className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200">
+              <a
+                href="/favoritos"
+                onClick={() => setMenuOpen(false)}
+                className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200"
+              >
                 ❤️ Mis Favoritos
               </a>
               <button

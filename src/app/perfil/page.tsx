@@ -14,7 +14,11 @@ interface Profile {
 }
 export default function PerfilPage() {
   const { user, loading: authLoading } = useAuth();
-  const [profile, setProfile] = useState<Profile>({nombre_completo: '',telefono: null, avatar_url: null});
+  const [profile, setProfile] = useState<Profile>({
+    nombre_completo: '',
+    telefono: null,
+    avatar_url: null,
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -24,20 +28,29 @@ export default function PerfilPage() {
   const [pwMsg, setPwMsg] = useState('');
 
   const fetchProfile = useCallback(async () => {
-    if (!user) { setLoading(false); return; }
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     const supabase = createClient();
-    const { data } = await supabase.from('profiles').select('full_name, telefono, avatar_url').eq('id', user.id).maybeSingle();
-   if (data) {
-  setProfile({
-    nombre_completo: data.full_name || '',
-    telefono: data.telefono || '',
-    avatar_url: data.avatar_url || null
-  });
-}
+    const { data } = await supabase
+      .from('profiles')
+      .select('full_name, telefono, avatar_url')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (data) {
+      setProfile({
+        nombre_completo: data.full_name || '',
+        telefono: data.telefono || '',
+        avatar_url: data.avatar_url || null,
+      });
+    }
     setLoading(false);
   }, [user]);
 
-  useEffect(() => { fetchProfile(); }, [fetchProfile]);
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -45,31 +58,42 @@ export default function PerfilPage() {
     setSaving(true);
     setError('');
     const supabase = createClient();
-   const { error: err } = await supabase
-  .from('profiles')
-  .upsert(
-{
-  id: user.id,
-  email: user.email,
-  full_name: profile.nombre_completo,
-  telefono: profile.telefono
-},
-{
-  onConflict: 'id'
-}
-);
+    const { error: err } = await supabase.from('profiles').upsert(
+      {
+        id: user.id,
+        email: user.email,
+        full_name: profile.nombre_completo,
+        telefono: profile.telefono,
+      },
+      {
+        onConflict: 'id',
+      }
+    );
     setSaving(false);
-    if (err) { setError(err.message); } else { setMsg('¡Perfil guardado!'); setTimeout(() => setMsg(''), 2500); }
+    if (err) {
+      setError(err.message);
+    } else {
+      setMsg('¡Perfil guardado!');
+      setTimeout(() => setMsg(''), 2500);
+    }
   }
 
   async function changePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (!newPassword || newPassword.length < 6) { setPwMsg('La contraseña debe tener al menos 6 caracteres.'); return; }
+    if (!newPassword || newPassword.length < 6) {
+      setPwMsg('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
     setChangingPw(true);
     const supabase = createClient();
     const { error: err } = await supabase.auth.updateUser({ password: newPassword });
     setChangingPw(false);
-    if (err) { setPwMsg(err.message); } else { setPwMsg('¡Contraseña actualizada!'); setNewPassword(''); }
+    if (err) {
+      setPwMsg(err.message);
+    } else {
+      setPwMsg('¡Contraseña actualizada!');
+      setNewPassword('');
+    }
     setTimeout(() => setPwMsg(''), 3000);
   }
 
@@ -94,7 +118,10 @@ export default function PerfilPage() {
             <div className="text-6xl mb-4">👤</div>
             <h1 className="text-2xl font-extrabold text-foreground mb-2">Mi Perfil</h1>
             <p className="text-muted-foreground mb-6">Inicia sesión para ver y editar tu perfil.</p>
-            <Link href="/login" className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-primary text-primary-foreground font-bold rounded-2xl hover:bg-primary/90 transition-all">
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-primary text-primary-foreground font-bold rounded-2xl hover:bg-primary/90 transition-all"
+            >
               Iniciar sesión
             </Link>
           </div>
@@ -119,17 +146,21 @@ export default function PerfilPage() {
             <h2 className="font-extrabold text-foreground text-lg mb-5">Información personal</h2>
             <form onSubmit={saveProfile} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">Nombre completo</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">
+                  Nombre completo
+                </label>
                 <input
                   type="text"
                   value={profile.nombre_completo}
-                  onChange={(e) => setProfile((p) => ({ ...p, nombre_completo: e.target.value}))}
+                  onChange={(e) => setProfile((p) => ({ ...p, nombre_completo: e.target.value }))}
                   placeholder="Tu nombre completo"
                   className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">Correo electrónico</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">
+                  Correo electrónico
+                </label>
                 <input
                   type="email"
                   value={user.email || ''}
@@ -138,11 +169,13 @@ export default function PerfilPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">Teléfono</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">
+                  Teléfono
+                </label>
                 <input
                   type="tel"
                   value={profile.telefono || ''}
-                  onChange={(e) => setProfile((p) => ({ ...p,telefono: e.target.value }))}
+                  onChange={(e) => setProfile((p) => ({ ...p, telefono: e.target.value }))}
                   placeholder="+51 999 999 999"
                   className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
@@ -160,11 +193,16 @@ export default function PerfilPage() {
           </div>
 
           {/* Change password */}
-          <div id="seguridad" className="bg-card border border-border rounded-2xl p-6 shadow-sm mb-6">
+          <div
+            id="seguridad"
+            className="bg-card border border-border rounded-2xl p-6 shadow-sm mb-6"
+          >
             <h2 className="font-extrabold text-foreground text-lg mb-5">🔒 Cambiar contraseña</h2>
             <form onSubmit={changePassword} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">Nueva contraseña</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">
+                  Nueva contraseña
+                </label>
                 <input
                   type="password"
                   value={newPassword}
@@ -173,7 +211,13 @@ export default function PerfilPage() {
                   className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
               </div>
-              {pwMsg && <p className={`text-sm font-semibold ${pwMsg.includes('!') ? 'text-green-600' : 'text-red-500'}`}>{pwMsg}</p>}
+              {pwMsg && (
+                <p
+                  className={`text-sm font-semibold ${pwMsg.includes('!') ? 'text-green-600' : 'text-red-500'}`}
+                >
+                  {pwMsg}
+                </p>
+              )}
               <button
                 type="submit"
                 disabled={changingPw}
@@ -186,28 +230,40 @@ export default function PerfilPage() {
 
           {/* Quick links */}
           <div className="grid grid-cols-2 gap-4">
-            <Link href="/pedidos" className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all">
+            <Link
+              href="/pedidos"
+              className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all"
+            >
               <span className="text-2xl">📦</span>
               <div>
                 <p className="font-bold text-foreground text-sm">Mis Pedidos</p>
                 <p className="text-xs text-muted-foreground">Ver historial</p>
               </div>
             </Link>
-            <Link href="/favoritos" className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all">
+            <Link
+              href="/favoritos"
+              className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all"
+            >
               <span className="text-2xl">❤️</span>
               <div>
                 <p className="font-bold text-foreground text-sm">Mis Favoritos</p>
                 <p className="text-xs text-muted-foreground">Ver guardados</p>
               </div>
             </Link>
-            <Link href="/direcciones" className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all">
+            <Link
+              href="/direcciones"
+              className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all"
+            >
               <span className="text-2xl">Ubicacion</span>
               <div>
                 <p className="font-bold text-foreground text-sm">Mis Direcciones</p>
                 <p className="text-xs text-muted-foreground">Gestionar entregas</p>
               </div>
             </Link>
-            <Link href="/cotizaciones" className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all">
+            <Link
+              href="/cotizaciones"
+              className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all"
+            >
               <span className="text-2xl">Cotizacion</span>
               <div>
                 <p className="font-bold text-foreground text-sm">Mis Cotizaciones</p>

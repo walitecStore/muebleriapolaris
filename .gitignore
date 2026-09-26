@@ -1,6 +1,10 @@
 # Node modules
 node_modules/
-package-lock.json
+
+# Local environment files (keep safe templates tracked)
+.env
+.env.*
+!.env.example
 
 # Next.js build output
 .next/
@@ -24,6 +28,10 @@ Thumbs.db
 
 # Optional: if using TypeScript
 *.tsbuildinfo
+
+# Temporary files
+*.tmp
+*.temp
 
 # Optional: if using testing tools
 coverage/

@@ -17,7 +17,7 @@ export function calculateStraightDistanceKm(
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number,
+  lon2: number
 ): number {
   const earthRadiusKm = 6371;
 
@@ -26,9 +26,7 @@ export function calculateStraightDistanceKm(
 
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -38,22 +36,19 @@ export function calculateStraightDistanceKm(
 export async function calculateShipping(
   latitude: number,
   longitude: number,
-  category: string,
+  category: string
 ): Promise<ShippingResult> {
   const distanceKm = calculateStraightDistanceKm(
     ORIGIN.latitude,
     ORIGIN.longitude,
     latitude,
-    longitude,
+    longitude
   );
 
   const normalizedCategory = category.toUpperCase();
 
   // Productos pequeños:
-  if (
-    normalizedCategory === 'PUF' ||
-    normalizedCategory === 'DECORATIVO'
-  ) {
+  if (normalizedCategory === 'PUF' || normalizedCategory === 'DECORATIVO') {
     return {
       distanceKm,
       shippingCost: 0,

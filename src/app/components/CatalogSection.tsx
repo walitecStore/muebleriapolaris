@@ -1,12 +1,6 @@
 'use client';
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 
@@ -23,13 +17,7 @@ import { useCart } from './CartContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { useAuth } from '@/contexts/AuthContext';
 
-type SortOption =
-  | 'recommended'
-  | 'popular'
-  | 'rating'
-  | 'price-low'
-  | 'price-high'
-  | 'newest';
+type SortOption = 'recommended' | 'popular' | 'rating' | 'price-low' | 'price-high' | 'newest';
 
 type PriceRange = 'all' | '0-500' | '500-1000' | '1000-1500' | '1500-2000' | '2000+';
 
@@ -46,27 +34,55 @@ type CategoryOption = (typeof CATEGORY_OPTIONS)[number];
 
 const CATEGORY_ALIASES: Record<CategoryOption, string[]> = {
   'Sofás Europeo': [
-    'Sofás Europeo', 'Sofas Europeo', 'Sofá Europeo', 'Sofa Europeo',
-    'Sofás Europeos', 'Sofas Europeos', 'Europeo', 'EUROPA', 'europeo', 'europa',
+    'Sofás Europeo',
+    'Sofas Europeo',
+    'Sofá Europeo',
+    'Sofa Europeo',
+    'Sofás Europeos',
+    'Sofas Europeos',
+    'Europeo',
+    'EUROPA',
+    'europeo',
+    'europa',
   ],
   'Sofás Modulares': [
-    'Sofás Modulares', 'Sofas Modulares', 'Sofá Modular', 'Sofa Modular',
-    'Modulares', 'Modular', 'MODULAR',
+    'Sofás Modulares',
+    'Sofas Modulares',
+    'Sofá Modular',
+    'Sofa Modular',
+    'Modulares',
+    'Modular',
+    'MODULAR',
   ],
   'Sofás Seccionales': [
-    'Sofás Seccionales', 'Sofas Seccionales', 'Sofá Seccional', 'Sofa Seccional',
-    'Seccionales', 'Seccional', 'SECCIONAL',
+    'Sofás Seccionales',
+    'Sofas Seccionales',
+    'Sofá Seccional',
+    'Sofa Seccional',
+    'Seccionales',
+    'Seccional',
+    'SECCIONAL',
   ],
-  'Sofás Cama': [
-    'Sofás Cama', 'Sofas Cama', 'Sofá Cama', 'Sofa Cama', 'Cama', 'CAMA',
-  ],
+  'Sofás Cama': ['Sofás Cama', 'Sofas Cama', 'Sofá Cama', 'Sofa Cama', 'Cama', 'CAMA'],
   'Sofás 3-2-1': [
-    'Sofás 3-2-1', 'Sofas 3-2-1', 'Sofá 3-2-1', 'Sofa 3-2-1',
-    '3-2-1', '3 2 1', '3_2_1',
+    'Sofás 3-2-1',
+    'Sofas 3-2-1',
+    'Sofá 3-2-1',
+    'Sofa 3-2-1',
+    '3-2-1',
+    '3 2 1',
+    '3_2_1',
   ],
   'Pufs y Decorativos': [
-    'Pufs y Decorativos', 'Puffs y Decorativos', 'Puf y Decorativos', 'Puff y Decorativos',
-    'Pufs', 'Puffs', 'Puf', 'Puff', 'PUFS_DECORATIVOS',
+    'Pufs y Decorativos',
+    'Puffs y Decorativos',
+    'Puf y Decorativos',
+    'Puff y Decorativos',
+    'Pufs',
+    'Puffs',
+    'Puf',
+    'Puff',
+    'PUFS_DECORATIVOS',
   ],
 };
 
@@ -142,24 +158,22 @@ function matchesPriceRange(price: number, range: PriceRange): boolean {
 }
 
 function getSearchText(sofa: SofaProduct): string {
-  return normalizeText([
-    sofa.name,
-    sofa.category,
-    sofa.style,
-    sofa.color,
-    sofa.seats,
-    sofa.description,
-    sofa.sku,
-    ...(sofa.features ?? []),
-    ...Object.values(sofa.specs ?? {}),
-  ].join(' '));
+  return normalizeText(
+    [
+      sofa.name,
+      sofa.category,
+      sofa.style,
+      sofa.color,
+      sofa.seats,
+      sofa.description,
+      sofa.sku,
+      ...(sofa.features ?? []),
+      ...Object.values(sofa.specs ?? {}),
+    ].join(' ')
+  );
 }
 
-
-function getSimilarityScore(
-  source: SofaProduct,
-  candidate: SofaProduct,
-): number {
+function getSimilarityScore(source: SofaProduct, candidate: SofaProduct): number {
   if (source.id === candidate.id) return -1;
 
   let score = 0;
@@ -229,9 +243,7 @@ function productMatchesColor(sofa: SofaProduct, selectedColors: string[]): boole
       blanco: ['nube', 'hueso'],
     };
 
-    return (synonyms[wanted] ?? []).some((alias) =>
-      productColor.includes(normalizeText(alias)),
-    );
+    return (synonyms[wanted] ?? []).some((alias) => productColor.includes(normalizeText(alias)));
   });
 }
 
@@ -272,7 +284,8 @@ export default function CatalogSection() {
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('polaris_recent_products') ?? '[]');
-      if (Array.isArray(saved)) setRecentIds(saved.filter((id) => Number.isFinite(Number(id))).map(Number));
+      if (Array.isArray(saved))
+        setRecentIds(saved.filter((id) => Number.isFinite(Number(id))).map(Number));
     } catch {
       setRecentIds([]);
     }
@@ -327,7 +340,7 @@ export default function CatalogSection() {
 
         console.warn(
           '[CatalogSection] No se pudo cargar /api/products. Se usará el catálogo local.',
-          error,
+          error
         );
 
         // Fallback seguro: la tienda sigue funcionando aunque la API esté
@@ -349,18 +362,12 @@ export default function CatalogSection() {
   }, []);
 
   const toggleFilter = useCallback(
-    (
-      value: string,
-      current: string[],
-      setter: React.Dispatch<React.SetStateAction<string[]>>,
-    ) => {
+    (value: string, current: string[], setter: React.Dispatch<React.SetStateAction<string[]>>) => {
       setter(
-        current.includes(value)
-          ? current.filter((item) => item !== value)
-          : [...current, value],
+        current.includes(value) ? current.filter((item) => item !== value) : [...current, value]
       );
     },
-    [],
+    []
   );
 
   const clearAll = useCallback(() => {
@@ -403,15 +410,7 @@ export default function CatalogSection() {
       const priceOk = matchesPriceRange(parsePrice(sofa.price), priceRange);
       const ratingOk = Number(sofa.rating ?? 0) >= minRating;
 
-      return (
-        searchOk &&
-        categoryOk &&
-        styleOk &&
-        colorOk &&
-        seatsOk &&
-        priceOk &&
-        ratingOk
-      );
+      return searchOk && categoryOk && styleOk && colorOk && seatsOk && priceOk && ratingOk;
     });
 
     return [...result].sort((a, b) => {
@@ -460,15 +459,15 @@ export default function CatalogSection() {
       recentIds
         .map((id) => catalogProducts.find((sofa) => sofa.id === id))
         .filter(Boolean) as SofaProduct[],
-    [recentIds, catalogProducts],
+    [recentIds, catalogProducts]
   );
 
   const recommendationSource = useMemo(
     () =>
       recommendationSourceId
-        ? catalogProducts.find((sofa) => sofa.id === recommendationSourceId) ?? null
+        ? (catalogProducts.find((sofa) => sofa.id === recommendationSourceId) ?? null)
         : null,
-    [recommendationSourceId, catalogProducts],
+    [recommendationSourceId, catalogProducts]
   );
 
   const recommendations = useMemo(() => {
@@ -494,14 +493,8 @@ export default function CatalogSection() {
     priceRange !== 'all' ||
     minRating > 0;
 
-
-
   return (
-    <section
-      id="catalogo"
-      ref={catalogRef}
-      className="py-16 sm:py-20 bg-muted/30 scroll-mt-24"
-    >
+    <section id="catalogo" ref={catalogRef} className="py-16 sm:py-20 bg-muted/30 scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Encabezado */}
         <div className="text-center mb-8 sm:mb-10">
@@ -510,13 +503,12 @@ export default function CatalogSection() {
           </span>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-3">
-            Encuentra tu{' '}
-            <span className="text-gradient-teal">sofá ideal</span>
+            Encuentra tu <span className="text-gradient-teal">sofá ideal</span>
           </h2>
 
           <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto">
-            Busca por nombre, color, estilo, plazas, precio o características.
-            El catálogo prioriza productos populares y mejor valorados.
+            Busca por nombre, color, estilo, plazas, precio o características. El catálogo prioriza
+            productos populares y mejor valorados.
           </p>
         </div>
 
@@ -595,7 +587,7 @@ export default function CatalogSection() {
             >
               Todos
             </button>
-{CATEGORY_OPTIONS.map((category) => {
+            {CATEGORY_OPTIONS.map((category) => {
               const isActive = activeCategory === category;
 
               return (
@@ -691,16 +683,15 @@ export default function CatalogSection() {
         {/* Chips activos */}
         {hasFilters && (
           <div className="flex flex-wrap items-center gap-2 mb-5">
-            <span className="text-xs font-bold text-muted-foreground">
-              Filtros:
-            </span>
+            <span className="text-xs font-bold text-muted-foreground">Filtros:</span>
 
-            {search && (
-              <ActiveChip label={`“${search}”`} onRemove={() => setSearch('')} />
-            )}
+            {search && <ActiveChip label={`“${search}”`} onRemove={() => setSearch('')} />}
 
             {activeCategory && (
-              <ActiveChip label={activeCategory.replace('Sofás ', '')} onRemove={() => setActiveCategory('')} />
+              <ActiveChip
+                label={activeCategory.replace('Sofás ', '')}
+                onRemove={() => setActiveCategory('')}
+              />
             )}
 
             {activeStyles.map((item) => (
@@ -735,10 +726,7 @@ export default function CatalogSection() {
             )}
 
             {minRating > 0 && (
-              <ActiveChip
-                label={`⭐ ${minRating}+`}
-                onRemove={() => setMinRating(0)}
-              />
+              <ActiveChip label={`⭐ ${minRating}+`} onRemove={() => setMinRating(0)} />
             )}
 
             <button
@@ -754,11 +742,8 @@ export default function CatalogSection() {
         {/* Contador + recomendación */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <p className="text-sm text-muted-foreground font-medium">
-            Mostrando{' '}
-            <span className="font-extrabold text-foreground">{filtered.length}</span>{' '}
-            de{' '}
-            <span className="font-extrabold text-foreground">{catalogProducts.length}</span>{' '}
-            modelos
+            Mostrando <span className="font-extrabold text-foreground">{filtered.length}</span> de{' '}
+            <span className="font-extrabold text-foreground">{catalogProducts.length}</span> modelos
           </p>
 
           <div className="flex items-center gap-2">
@@ -830,19 +815,13 @@ export default function CatalogSection() {
                   await toggleFavorite(String(sofa.id), sofa.name);
                 }}
                 onViewed={() => {
-                  const next = [
-                    sofa.id,
-                    ...recentIds.filter((id) => id !== sofa.id),
-                  ].slice(0, 8);
+                  const next = [sofa.id, ...recentIds.filter((id) => id !== sofa.id)].slice(0, 8);
 
                   setRecentIds(next);
                   setRecommendationSourceId(sofa.id);
 
                   try {
-                    localStorage.setItem(
-                      'polaris_recent_products',
-                      JSON.stringify(next),
-                    );
+                    localStorage.setItem('polaris_recent_products', JSON.stringify(next));
                   } catch {
                     // No bloquear la navegación si localStorage está deshabilitado.
                   }
@@ -851,7 +830,6 @@ export default function CatalogSection() {
             ))}
           </div>
         )}
-
 
         {/* Recomendaciones inteligentes */}
         {recommendationSource && recommendations.length > 0 && (
@@ -866,10 +844,7 @@ export default function CatalogSection() {
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   Seleccionamos modelos parecidos a{' '}
-                  <span className="font-bold text-foreground">
-                    {recommendationSource.name}
-                  </span>
-                  .
+                  <span className="font-bold text-foreground">{recommendationSource.name}</span>.
                 </p>
               </div>
 
@@ -955,9 +930,7 @@ export default function CatalogSection() {
                     />
                   </div>
                   <div className="p-3">
-                    <p className="font-bold text-sm text-foreground line-clamp-1">
-                      {sofa.name}
-                    </p>
+                    <p className="font-bold text-sm text-foreground line-clamp-1">{sofa.name}</p>
                     <p className="text-primary font-extrabold mt-1">{sofa.price}</p>
                   </div>
                 </Link>
@@ -986,13 +959,7 @@ export default function CatalogSection() {
   );
 }
 
-function FilterGroup({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
       <p className="text-xs font-extrabold text-muted-foreground uppercase tracking-widest mb-3">
@@ -1027,13 +994,7 @@ function FilterButton({
   );
 }
 
-function ActiveChip({
-  label,
-  onRemove,
-}: {
-  label: string;
-  onRemove: () => void;
-}) {
+function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
     <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold px-3 py-1.5 rounded-full">
       {label}
@@ -1172,9 +1133,7 @@ function FinderSelect({
 }) {
   return (
     <label className="block">
-      <span className="block text-sm font-extrabold text-foreground mb-2">
-        {label}
-      </span>
+      <span className="block text-sm font-extrabold text-foreground mb-2">{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -1190,8 +1149,6 @@ function FinderSelect({
     </label>
   );
 }
-
-
 
 function RecommendationCard({
   sofa,
@@ -1239,8 +1196,18 @@ function RecommendationCard({
           aria-label={favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
           aria-pressed={favorite}
         >
-          <svg viewBox="0 0 24 24" fill={favorite ? '#ef4444' : 'none'} stroke={favorite ? '#ef4444' : '#374151'} strokeWidth={2} className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+          <svg
+            viewBox="0 0 24 24"
+            fill={favorite ? '#ef4444' : 'none'}
+            stroke={favorite ? '#ef4444' : '#374151'}
+            strokeWidth={2}
+            className="w-5 h-5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+            />
           </svg>
         </button>
       </div>
@@ -1258,7 +1225,11 @@ function RecommendationCard({
 
         <div className="flex items-end justify-between gap-3 mt-4">
           <span className="text-xl font-extrabold text-primary">{sofa.price}</span>
-          <button type="button" onClick={onAdd} className={`px-3 py-2 rounded-xl text-xs font-extrabold ${added ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>
+          <button
+            type="button"
+            onClick={onAdd}
+            className={`px-3 py-2 rounded-xl text-xs font-extrabold ${added ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
+          >
             {added ? '✓ Agregado' : '🛒 Agregar'}
           </button>
         </div>
@@ -1293,8 +1264,7 @@ function CatalogCard({
   const badge =
     sofa.id === 12
       ? '⭐ Exclusivo'
-      : getCommercialBadge(sofa) ||
-        (rank < 3 ? '✨ Recomendado' : '');
+      : getCommercialBadge(sofa) || (rank < 3 ? '✨ Recomendado' : '');
 
   return (
     <article className="catalog-card card-hover bg-card rounded-2xl overflow-hidden border border-border shadow-sm flex flex-col">
@@ -1328,22 +1298,40 @@ function CatalogCard({
           aria-label={favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
           aria-pressed={favorite}
         >
-          <svg viewBox="0 0 24 24" fill={favorite ? '#ef4444' : 'none'} stroke={favorite ? '#ef4444' : '#374151'} strokeWidth={2} className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+          <svg
+            viewBox="0 0 24 24"
+            fill={favorite ? '#ef4444' : 'none'}
+            stroke={favorite ? '#ef4444' : '#374151'}
+            strokeWidth={2}
+            className="w-5 h-5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+            />
           </svg>
         </button>
       </div>
 
       <div className="p-4 flex-1 flex flex-col">
         <Link href={`/productos/${sofa.id}`} onClick={onViewed} className="hover:text-primary">
-          <h3 className="font-extrabold text-base sm:text-lg text-foreground line-clamp-2">{sofa.name}</h3>
+          <h3 className="font-extrabold text-base sm:text-lg text-foreground line-clamp-2">
+            {sofa.name}
+          </h3>
         </Link>
 
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{sofa.description}</p>
 
         <div className="flex flex-wrap gap-2 mt-3">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-muted text-[11px] font-bold">{sofa.category}</span>
-          {sofa.subcategory && <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold">{sofa.subcategory}</span>}
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-muted text-[11px] font-bold">
+            {sofa.category}
+          </span>
+          {sofa.subcategory && (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
+              {sofa.subcategory}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2 mt-3">

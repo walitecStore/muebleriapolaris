@@ -6,7 +6,12 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AppImage from '@/components/ui/AppImage';
-import { getCategoryBySlug, buildWhatsAppUrl, type CatalogProduct, type CatalogCategory,  } from '../catalogoData';
+import {
+  getCategoryBySlug,
+  buildWhatsAppUrl,
+  type CatalogProduct,
+  type CatalogCategory,
+} from '../catalogoData';
 import { useAutoColor } from '@/app/components/useAutoColor';
 import { useCart } from '@/app/components/CartContext';
 
@@ -16,7 +21,9 @@ const ITEMS_PER_PAGE = 12;
 function ProductCard({ product }: { product: CatalogProduct }) {
   const isPlaceholder = product.name === 'Próximamente';
   const waUrl = buildWhatsAppUrl(product.name);
-  const { color: autoColor, loading: colorLoading } = useAutoColor(isPlaceholder ? '' : product.image);
+  const { color: autoColor, loading: colorLoading } = useAutoColor(
+    isPlaceholder ? '' : product.image
+  );
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -56,7 +63,9 @@ function ProductCard({ product }: { product: CatalogProduct }) {
         )}
         {product.previousPrice && !isPlaceholder && (
           <div className="absolute top-3 left-3">
-            <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">OFERTA</span>
+            <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+              OFERTA
+            </span>
           </div>
         )}
         {/* Auto color indicator badge */}
@@ -101,7 +110,9 @@ function ProductCard({ product }: { product: CatalogProduct }) {
           <div className="flex items-baseline gap-2 mb-3">
             <span className="text-lg font-extrabold text-primary">{product.price}</span>
             {product.previousPrice && (
-              <span className="text-sm text-muted-foreground line-through">{product.previousPrice}</span>
+              <span className="text-sm text-muted-foreground line-through">
+                {product.previousPrice}
+              </span>
             )}
           </div>
 
@@ -119,7 +130,9 @@ function ProductCard({ product }: { product: CatalogProduct }) {
                   >
                     −
                   </button>
-                  <span className="text-sm font-extrabold text-foreground w-6 text-center">{quantity}</span>
+                  <span className="text-sm font-extrabold text-foreground w-6 text-center">
+                    {quantity}
+                  </span>
                   <button
                     onClick={() => setQuantity((q) => q + 1)}
                     className="w-7 h-7 rounded-full border border-border bg-white flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary transition-all text-base font-bold leading-none"
@@ -135,20 +148,31 @@ function ProductCard({ product }: { product: CatalogProduct }) {
                 onClick={handleAddToCart}
                 className={`flex items-center justify-center gap-2 w-full text-sm font-bold py-2.5 rounded-xl transition-all duration-200 ${
                   added
-                    ? 'bg-green-500 text-white' :'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30'
                 }`}
               >
                 {added ? (
                   <>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                     ¡Agregado!
                   </>
                 ) : (
                   <>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
                     </svg>
                     Agregar al carrito
                   </>
@@ -211,7 +235,9 @@ function Pagination({
       </button>
       {pages.map((p, i) =>
         p === '...' ? (
-          <span key={`dots-${i}`} className="px-2 text-muted-foreground">…</span>
+          <span key={`dots-${i}`} className="px-2 text-muted-foreground">
+            …
+          </span>
         ) : (
           <button
             key={p}
@@ -241,7 +267,9 @@ function Pagination({
 export default function CategoriaPage() {
   const params = useParams();
   const router = useRouter();
-  const rawSlug = Array.isArray(params.categoria) ? params.categoria[0] : (params.categoria as string) ?? '';
+  const rawSlug = Array.isArray(params.categoria)
+    ? params.categoria[0]
+    : ((params.categoria as string) ?? '');
 
   const [activeSubSlug, setActiveSubSlug] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -258,7 +286,7 @@ export default function CategoriaPage() {
     : null;
   const activeProducts: CatalogProduct[] = activeSub
     ? activeSub.products
-    : category?.products ?? [];
+    : (category?.products ?? []);
 
   const colorOptions = useMemo(() => {
     const vals = activeProducts.map((p) => p.color).filter(Boolean) as string[];
@@ -295,7 +323,9 @@ export default function CategoriaPage() {
 
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  useEffect(() => { setPage(1); }, [search, filterColor, filterMaterial, filterPrice, activeSubSlug]);
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterColor, filterMaterial, filterPrice, activeSubSlug]);
 
   const scrollTop = () => topRef.current?.scrollIntoView({ behavior: 'smooth' });
 
@@ -306,7 +336,9 @@ export default function CategoriaPage() {
         <main className="min-h-screen flex items-center justify-center pt-20">
           <div className="text-center">
             <p className="text-2xl font-bold text-foreground mb-4">Categoría no encontrada</p>
-            <Link href="/catalogo" className="text-primary hover:underline">← Volver al catálogo</Link>
+            <Link href="/catalogo" className="text-primary hover:underline">
+              ← Volver al catálogo
+            </Link>
           </div>
         </main>
         <Footer />
@@ -322,14 +354,24 @@ export default function CategoriaPage() {
       <main className="min-h-screen bg-muted/20 pt-20" ref={topRef}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap mb-4" aria-label="Breadcrumb">
-            <Link href="/" className="hover:text-primary transition-colors">Inicio</Link>
+          <nav
+            className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap mb-4"
+            aria-label="Breadcrumb"
+          >
+            <Link href="/" className="hover:text-primary transition-colors">
+              Inicio
+            </Link>
             <span>/</span>
-            <Link href="/catalogo" className="hover:text-primary transition-colors">Catálogo</Link>
+            <Link href="/catalogo" className="hover:text-primary transition-colors">
+              Catálogo
+            </Link>
             <span>/</span>
             {activeSub ? (
               <>
-                <button onClick={() => setActiveSubSlug(null)} className="hover:text-primary transition-colors">
+                <button
+                  onClick={() => setActiveSubSlug(null)}
+                  className="hover:text-primary transition-colors"
+                >
                   {category.label}
                 </button>
                 <span>/</span>
@@ -343,13 +385,25 @@ export default function CategoriaPage() {
           {/* Back button — prominent solid style */}
           <button
             onClick={() => {
-              if (activeSub) { setActiveSubSlug(null); }
-              else { router.push('/catalogo'); }
+              if (activeSub) {
+                setActiveSubSlug(null);
+              } else {
+                router.push('/catalogo');
+              }
             }}
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200 hover:-translate-x-0.5 mb-6"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-              <path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                fillRule="evenodd"
+                d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z"
+                clipRule="evenodd"
+              />
             </svg>
             {activeSub ? `Volver a ${category.label}` : 'Volver al Catálogo'}
           </button>
@@ -373,11 +427,18 @@ export default function CategoriaPage() {
                   onClick={() => setActiveSubSlug(sub.slug)}
                   className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-3 rounded-xl text-sm font-bold hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 transition-all duration-200 hover:-translate-y-0.5"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-4 h-4"
+                  >
                     <path d="M2 3a1 1 0 00-1 1v1a1 1 0 001 1h16a1 1 0 001-1V4a1 1 0 00-1-1H2zM2 9a1 1 0 000 2h16a1 1 0 000-2H2zM2 15a1 1 0 000 2h16a1 1 0 000-2H2z" />
                   </svg>
                   {sub.label}
-                  <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">{sub.capacity}</span>
+                  <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">
+                    {sub.capacity}
+                  </span>
                 </button>
               ))}
             </div>
@@ -387,8 +448,17 @@ export default function CategoriaPage() {
           <div className="bg-card rounded-2xl border border-border p-5 mb-8 shadow-sm">
             {/* Search */}
             <div className="relative mb-4">
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+              <svg
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+                  clipRule="evenodd"
+                />
               </svg>
               <input
                 type="text"
@@ -398,8 +468,16 @@ export default function CategoriaPage() {
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
               {search && (
-                <button onClick={() => setSearch('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-4 h-4"
+                  >
                     <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
                   </svg>
                 </button>
@@ -415,7 +493,11 @@ export default function CategoriaPage() {
                   className="px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 >
                   <option value="">Todos los colores</option>
-                  {colorOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+                  {colorOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               )}
 
@@ -426,7 +508,11 @@ export default function CategoriaPage() {
                   className="px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 >
                   <option value="">Todos los materiales</option>
-                  {materialOptions.map((m) => <option key={m} value={m}>{m}</option>)}
+                  {materialOptions.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
                 </select>
               )}
 
@@ -443,7 +529,12 @@ export default function CategoriaPage() {
 
               {(filterColor || filterMaterial || filterPrice || search) && (
                 <button
-                  onClick={() => { setFilterColor(''); setFilterMaterial(''); setFilterPrice(''); setSearch(''); }}
+                  onClick={() => {
+                    setFilterColor('');
+                    setFilterMaterial('');
+                    setFilterPrice('');
+                    setSearch('');
+                  }}
                   className="px-3 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary transition-all"
                 >
                   Limpiar filtros
@@ -455,8 +546,11 @@ export default function CategoriaPage() {
           {/* Results count */}
           <div className="flex items-center justify-between mb-6">
             <p className="text-sm text-muted-foreground">
-              Mostrando <span className="font-bold text-foreground">{Math.min(paginated.length, filtered.length)}</span> de{' '}
-              <span className="font-bold text-foreground">{filtered.length}</span> productos
+              Mostrando{' '}
+              <span className="font-bold text-foreground">
+                {Math.min(paginated.length, filtered.length)}
+              </span>{' '}
+              de <span className="font-bold text-foreground">{filtered.length}</span> productos
             </p>
             <p className="text-xs text-muted-foreground hidden sm:block">
               Capacidad total: {activeSub ? activeSub.capacity : category.capacity} modelos
@@ -468,9 +562,16 @@ export default function CategoriaPage() {
             <div className="text-center py-20">
               <div className="text-5xl mb-4">🛋️</div>
               <p className="text-foreground font-bold text-xl mb-2">No encontramos productos</p>
-              <p className="text-muted-foreground text-sm mb-6">Prueba con otros filtros o términos de búsqueda</p>
+              <p className="text-muted-foreground text-sm mb-6">
+                Prueba con otros filtros o términos de búsqueda
+              </p>
               <button
-                onClick={() => { setSearch(''); setFilterColor(''); setFilterMaterial(''); setFilterPrice(''); }}
+                onClick={() => {
+                  setSearch('');
+                  setFilterColor('');
+                  setFilterMaterial('');
+                  setFilterPrice('');
+                }}
                 className="px-6 py-3 bg-primary text-primary-foreground font-bold rounded-full hover:bg-primary/90 transition-colors"
               >
                 Ver todos los productos
@@ -489,7 +590,10 @@ export default function CategoriaPage() {
             total={filtered.length}
             page={page}
             perPage={ITEMS_PER_PAGE}
-            onChange={(p) => { setPage(p); scrollTop(); }}
+            onChange={(p) => {
+              setPage(p);
+              scrollTop();
+            }}
           />
         </div>
       </main>

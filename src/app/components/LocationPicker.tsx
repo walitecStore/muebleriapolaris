@@ -1,15 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import {
-  MapContainer,
-  Marker,
-  TileLayer,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useEffect, useState } from 'react';
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 interface LocationPickerProps {
   latitude: number | null;
@@ -20,12 +14,9 @@ interface LocationPickerProps {
 const LIMA_CENTER: [number, number] = [-12.0464, -77.0428];
 
 const markerIcon = L.icon({
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
 });
@@ -64,23 +55,15 @@ function RecenterMap({
   return null;
 }
 
-export default function LocationPicker({
-  latitude,
-  longitude,
-  onChange,
-}: LocationPickerProps) {
+export default function LocationPicker({ latitude, longitude, onChange }: LocationPickerProps) {
   const [loadingLocation, setLoadingLocation] = useState(false);
 
   const position: [number, number] =
-    latitude !== null && longitude !== null
-      ? [latitude, longitude]
-      : LIMA_CENTER;
+    latitude !== null && longitude !== null ? [latitude, longitude] : LIMA_CENTER;
 
   const handleCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert(
-        "Tu navegador no permite obtener automáticamente tu ubicación."
-      );
+      alert('Tu navegador no permite obtener automáticamente tu ubicación.');
       return;
     }
 
@@ -96,7 +79,7 @@ export default function LocationPicker({
       },
       () => {
         alert(
-          "No fue posible obtener tu ubicación. Puedes seleccionar el punto directamente en el mapa."
+          'No fue posible obtener tu ubicación. Puedes seleccionar el punto directamente en el mapa.'
         );
 
         setLoadingLocation(false);
@@ -113,9 +96,7 @@ export default function LocationPicker({
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-gray-900">
-            📍 Ubicación de entrega
-          </h3>
+          <h3 className="text-sm font-semibold text-gray-900">📍 Ubicación de entrega</h3>
 
           <p className="mt-1 text-xs text-gray-500">
             Selecciona exactamente dónde deseas recibir tu pedido.
@@ -128,9 +109,7 @@ export default function LocationPicker({
           disabled={loadingLocation}
           className="shrink-0 rounded-lg border border-green-600 px-3 py-2 text-xs font-semibold text-green-700 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loadingLocation
-            ? "Obteniendo..."
-            : "📍 Mi ubicación"}
+          {loadingLocation ? 'Obteniendo...' : '📍 Mi ubicación'}
         </button>
       </div>
 
@@ -148,33 +127,21 @@ export default function LocationPicker({
 
           <MapClickHandler onChange={onChange} />
 
-          <RecenterMap
-            latitude={latitude}
-            longitude={longitude}
-          />
+          <RecenterMap latitude={latitude} longitude={longitude} />
 
           {latitude !== null && longitude !== null && (
-            <Marker
-              position={[latitude, longitude]}
-              icon={markerIcon}
-            />
+            <Marker position={[latitude, longitude]} icon={markerIcon} />
           )}
         </MapContainer>
       </div>
 
       {latitude !== null && longitude !== null ? (
         <div className="rounded-lg bg-green-50 p-3 text-xs text-green-800">
-          <p className="font-semibold">
-            ✓ Ubicación seleccionada
-          </p>
+          <p className="font-semibold">✓ Ubicación seleccionada</p>
 
-          <p className="mt-1">
-            Latitud: {latitude.toFixed(6)}
-          </p>
+          <p className="mt-1">Latitud: {latitude.toFixed(6)}</p>
 
-          <p>
-            Longitud: {longitude.toFixed(6)}
-          </p>
+          <p>Longitud: {longitude.toFixed(6)}</p>
         </div>
       ) : (
         <div className="rounded-lg bg-gray-50 p-3 text-xs text-gray-500">

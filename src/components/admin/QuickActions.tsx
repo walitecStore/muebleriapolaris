@@ -1,15 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  Plus,
-  ShoppingCart,
-  Gift,
-  BarChart3,
-  Package,
-  Users,
-  ArrowUpRight,
-} from 'lucide-react';
+import { Plus, ShoppingCart, Gift, BarChart3, Package, Users, ArrowUpRight } from 'lucide-react';
 
 const actions = [
   {
@@ -87,20 +79,15 @@ export default function QuickActions() {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-5">
-        <h2 className="text-lg font-bold text-slate-900">
-          Acciones rápidas
-        </h2>
+        <h2 className="text-lg font-bold text-slate-900">Acciones rápidas</h2>
 
-        <p className="text-sm text-slate-500">
-          Accede rápidamente a las funciones principales
-        </p>
+        <p className="text-sm text-slate-500">Accede rápidamente a las funciones principales</p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {actions.map((action) => {
           const Icon = action.icon;
-          const colors =
-            colorClasses[action.color as keyof typeof colorClasses];
+          const colors = colorClasses[action.color as keyof typeof colorClasses];
 
           return (
             <Link
@@ -115,13 +102,9 @@ export default function QuickActions() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-slate-800">
-                  {action.title}
-                </p>
+                <p className="truncate text-sm font-bold text-slate-800">{action.title}</p>
 
-                <p className="truncate text-xs text-slate-400">
-                  {action.description}
-                </p>
+                <p className="truncate text-xs text-slate-400">{action.description}</p>
               </div>
 
               <ArrowUpRight

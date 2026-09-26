@@ -4,13 +4,7 @@ import React from 'react';
 import clsx from 'clsx';
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?:
-    | 'primary'
-    | 'secondary'
-    | 'success'
-    | 'warning'
-    | 'danger'
-    | 'dark';
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'dark';
 
   size?: 'sm' | 'md' | 'lg';
 }
