@@ -1,93 +1,75 @@
 'use client';
 
-import {
-    Package,
-    ShoppingCart,
-    Users,
-    DollarSign
-} from 'lucide-react';
+import { Package, ShoppingCart, Users, DollarSign } from 'lucide-react';
 
 interface StatsCardsProps {
+  totalProducts: number;
 
-    totalProducts: number;
+  totalOrders: number;
 
-    totalOrders: number;
+  totalUsers: number;
 
-    totalUsers: number;
-
-    totalSales: number;
-
+  totalSales: number;
 }
 
 const cards = [
+  {
+    title: 'Productos',
+    icon: Package,
+    color: 'bg-cyan-500',
+    key: 'products',
+  },
 
-    {
-        title: 'Productos',
-        icon: Package,
-        color: 'bg-cyan-500',
-        key: 'products'
-    },
+  {
+    title: 'Pedidos',
+    icon: ShoppingCart,
+    color: 'bg-orange-500',
+    key: 'orders',
+  },
 
-    {
-        title: 'Pedidos',
-        icon: ShoppingCart,
-        color: 'bg-orange-500',
-        key: 'orders'
-    },
+  {
+    title: 'Clientes',
+    icon: Users,
+    color: 'bg-green-500',
+    key: 'users',
+  },
 
-    {
-        title: 'Clientes',
-        icon: Users,
-        color: 'bg-green-500',
-        key: 'users'
-    },
-
-    {
-        title: 'Ventas',
-        icon: DollarSign,
-        color: 'bg-purple-500',
-        key: 'sales'
-    }
-
+  {
+    title: 'Ventas',
+    icon: DollarSign,
+    color: 'bg-purple-500',
+    key: 'sales',
+  },
 ];
 
 export default function StatsCards({
+  totalProducts,
 
-    totalProducts,
+  totalOrders,
 
-    totalOrders,
+  totalUsers,
 
-    totalUsers,
-
-    totalSales
-
+  totalSales,
 }: StatsCardsProps) {
+  const values = {
+    products: totalProducts,
 
-    const values = {
+    orders: totalOrders,
 
-        products: totalProducts,
+    users: totalUsers,
 
-        orders: totalOrders,
+    sales: `S/ ${totalSales.toFixed(2)}`,
+  };
 
-        users: totalUsers,
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      {cards.map((card) => {
+        const Icon = card.icon;
 
-        sales: `S/ ${totalSales.toFixed(2)}`
-
-    };
-
-    return (
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-
-            {cards.map((card) => {
-
-                const Icon = card.icon;
-
-                return (
-
-                    <div
-                        key={card.key}
-                        className="
+        return (
+          <div
+            key={card.key}
+            className="
                             bg-white
                             rounded-2xl
                             shadow-sm
@@ -99,34 +81,20 @@ export default function StatsCards({
                             transition-all
                             duration-300
                         "
-                    >
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-500 text-sm">{card.title}</p>
 
-                        <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-black mt-2">
+                  {values[card.key as keyof typeof values]}
+                </h2>
 
-                            <div>
+                <p className="text-xs text-emerald-500 mt-3">▲ Actualizado en tiempo real</p>
+              </div>
 
-                                <p className="text-slate-500 text-sm">
-
-                                    {card.title}
-
-                                </p>
-
-                                <h2 className="text-3xl font-black mt-2">
-
-                                    {values[card.key as keyof typeof values]}
-
-                                </h2>
-
-                                <p className="text-xs text-emerald-500 mt-3">
-
-                                    ▲ Actualizado en tiempo real
-
-                                </p>
-
-                            </div>
-
-                            <div
-                                className={`
+              <div
+                className={`
                                     w-14
                                     h-14
                                     rounded-xl
@@ -136,22 +104,13 @@ export default function StatsCards({
                                     text-white
                                     ${card.color}
                                 `}
-                            >
-
-                                <Icon size={28} />
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                );
-
-            })}
-
-        </div>
-
-    );
-
+              >
+                <Icon size={28} />
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }

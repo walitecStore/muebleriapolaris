@@ -1,5 +1,5 @@
-import { createClient } from "./supabase/client";
-import { sofaProducts } from "@/app/components/catalogData";
+import { createClient } from './supabase/client';
+import { sofaProducts } from '@/app/components/catalogData';
 
 type SupabaseError = {
   code?: string;
@@ -18,44 +18,41 @@ type ProductRow = {
   name?: string;
 };
 
-function logSupabaseError(
-  context: string,
-  error: SupabaseError | null | undefined,
-) {
-  console.error("========================================");
+function logSupabaseError(context: string, error: SupabaseError | null | undefined) {
+  console.error('========================================');
   console.error(`❌ ERROR EN SUPABASE: ${context}`);
-  console.error("Código:", error?.code ?? "Sin código");
-  console.error("Mensaje:", error?.message ?? "Sin mensaje");
-  console.error("Detalles:", error?.details ?? "Sin detalles");
-  console.error("Hint:", error?.hint ?? "Sin hint");
-  console.error("Objeto completo:", error);
-  console.error("========================================");
+  console.error('Código:', error?.code ?? 'Sin código');
+  console.error('Mensaje:', error?.message ?? 'Sin mensaje');
+  console.error('Detalles:', error?.details ?? 'Sin detalles');
+  console.error('Hint:', error?.hint ?? 'Sin hint');
+  console.error('Objeto completo:', error);
+  console.error('========================================');
 }
 
 function normalizeText(value: unknown): string {
-  return String(value ?? "")
+  return String(value ?? '')
     .trim()
     .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
 }
 
 function createSlug(value: unknown): string {
   return normalizeText(value)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 function parsePrice(value: unknown): number {
-  const raw = String(value ?? "");
+  const raw = String(value ?? '');
 
   const numeric = raw
-    .replace(/[^\d.,]/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
+    .replace(/[^\d.,]/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.');
 
   const price = Number(numeric);
 
@@ -67,27 +64,25 @@ function parsePrice(value: unknown): number {
 }
 
 function getProductImage(product: (typeof sofaProducts)[number]): string {
-  const image = String(product.image ?? "").trim();
+  const image = String(product.image ?? '').trim();
 
   return image;
 }
 
-function getProductDescription(
-  product: (typeof sofaProducts)[number],
-): string {
-  const description = String(product.description ?? "").trim();
+function getProductDescription(product: (typeof sofaProducts)[number]): string {
+  const description = String(product.description ?? '').trim();
 
   return description || `Sofá ${product.name}`;
 }
 
 async function findCategoryId(
   supabase: ReturnType<typeof createClient>,
-  categoryName: string,
+  categoryName: string
 ): Promise<number | string | null> {
   const normalizedCategory = normalizeText(categoryName);
 
   if (!normalizedCategory) {
-    console.warn("⚠️ Producto sin categoría.");
+    console.warn('⚠️ Producto sin categoría.');
     return null;
   }
 
@@ -96,16 +91,13 @@ async function findCategoryId(
    */
   try {
     const { data, error } = await supabase
-      .from("categories")
-      .select("id, name")
-      .eq("name", categoryName.trim())
+      .from('categories')
+      .select('id, name')
+      .eq('name', categoryName.trim())
       .maybeSingle();
 
     if (error) {
-      logSupabaseError(
-        `Buscando categoría exacta "${categoryName}"`,
-        error,
-      );
+      logSupabaseError(`Buscando categoría exacta "${categoryName}"`, error);
       return null;
     }
 
@@ -113,10 +105,7 @@ async function findCategoryId(
       return data.id;
     }
   } catch (error) {
-    console.error(
-      `❌ Fallo de red buscando categoría "${categoryName}".`,
-      error,
-    );
+    console.error(`❌ Fallo de red buscando categoría "${categoryName}".`, error);
     return null;
   }
 
@@ -125,85 +114,68 @@ async function findCategoryId(
    * para comparar ignorando mayúsculas, tildes y espacios.
    */
   try {
-    const { data, error } = await supabase
-      .from("categories")
-      .select("id, name");
+    const { data, error } = await supabase.from('categories').select('id, name');
 
     if (error) {
-      logSupabaseError(
-        `Obteniendo categorías para "${categoryName}"`,
-        error,
-      );
+      logSupabaseError(`Obteniendo categorías para "${categoryName}"`, error);
       return null;
     }
 
     const categories = (data ?? []) as CategoryRow[];
 
     const found = categories.find(
-      (category) =>
-        normalizeText(category.name) === normalizedCategory,
+      (category) => normalizeText(category.name) === normalizedCategory
     );
 
     if (found?.id != null) {
       return found.id;
     }
 
-    console.warn(
-      `⚠️ Categoría no encontrada: "${categoryName}"`,
-    );
+    console.warn(`⚠️ Categoría no encontrada: "${categoryName}"`);
 
     console.warn(
-      "Categorías disponibles:",
-      categories.map((category) => category.name),
+      'Categorías disponibles:',
+      categories.map((category) => category.name)
     );
 
     return null;
   } catch (error) {
-    console.error(
-      `❌ Fallo de red obteniendo categorías para "${categoryName}".`,
-      error,
-    );
+    console.error(`❌ Fallo de red obteniendo categorías para "${categoryName}".`, error);
     return null;
   }
 }
 
 async function productAlreadyExists(
   supabase: ReturnType<typeof createClient>,
-  productName: string,
+  productName: string
 ): Promise<boolean | null> {
   try {
     const { data, error } = await supabase
-      .from("products")
-      .select("id, name")
-      .eq("name", productName.trim())
+      .from('products')
+      .select('id, name')
+      .eq('name', productName.trim())
       .maybeSingle();
 
     if (error) {
-      logSupabaseError(
-        `Comprobando producto "${productName}"`,
-        error,
-      );
+      logSupabaseError(`Comprobando producto "${productName}"`, error);
 
       return null;
     }
 
     return Boolean(data?.id);
   } catch (error) {
-    console.error(
-      `❌ Fallo de red comprobando "${productName}".`,
-      error,
-    );
+    console.error(`❌ Fallo de red comprobando "${productName}".`, error);
 
     return null;
   }
 }
 
 export async function insertProducts() {
-  console.log("");
-  console.log("========================================");
-  console.log("🛋️ MUEBLERÍA POLARIS");
-  console.log("🚀 INICIANDO CARGA DE PRODUCTOS");
-  console.log("========================================");
+  console.log('');
+  console.log('========================================');
+  console.log('🛋️ MUEBLERÍA POLARIS');
+  console.log('🚀 INICIANDO CARGA DE PRODUCTOS');
+  console.log('========================================');
 
   /*
    * Crear cliente de Supabase.
@@ -214,30 +186,25 @@ export async function insertProducts() {
     supabase = createClient();
 
     if (!supabase) {
-      console.error(
-        "❌ No se pudo crear el cliente de Supabase.",
-      );
+      console.error('❌ No se pudo crear el cliente de Supabase.');
 
       return {
         success: false,
         inserted: 0,
         skipped: 0,
         failed: 0,
-        message: "No se pudo crear el cliente de Supabase.",
+        message: 'No se pudo crear el cliente de Supabase.',
       };
     }
   } catch (error) {
-    console.error(
-      "❌ Error creando el cliente de Supabase:",
-      error,
-    );
+    console.error('❌ Error creando el cliente de Supabase:', error);
 
     return {
       success: false,
       inserted: 0,
       skipped: 0,
       failed: 0,
-      message: "Error creando el cliente de Supabase.",
+      message: 'Error creando el cliente de Supabase.',
     };
   }
 
@@ -245,22 +212,18 @@ export async function insertProducts() {
    * Validamos que exista el catálogo local.
    */
   if (!Array.isArray(sofaProducts) || sofaProducts.length === 0) {
-    console.error(
-      "❌ sofaProducts está vacío o no es un arreglo.",
-    );
+    console.error('❌ sofaProducts está vacío o no es un arreglo.');
 
     return {
       success: false,
       inserted: 0,
       skipped: 0,
       failed: 0,
-      message: "No hay productos para insertar.",
+      message: 'No hay productos para insertar.',
     };
   }
 
-  console.log(
-    `📦 Productos encontrados para importar: ${sofaProducts.length}`,
-  );
+  console.log(`📦 Productos encontrados para importar: ${sofaProducts.length}`);
 
   let inserted = 0;
   let skipped = 0;
@@ -270,27 +233,25 @@ export async function insertProducts() {
    * Procesamos producto por producto.
    */
   for (const product of sofaProducts) {
-    const productName = String(product.name ?? "").trim();
-    const categoryName = String(product.category ?? "").trim();
+    const productName = String(product.name ?? '').trim();
+    const categoryName = String(product.category ?? '').trim();
 
-    console.log("");
-    console.log("----------------------------------------");
-    console.log(`🛋️ Procesando: ${productName || "SIN NOMBRE"}`);
-    console.log(`📁 Categoría: ${categoryName || "SIN CATEGORÍA"}`);
+    console.log('');
+    console.log('----------------------------------------');
+    console.log(`🛋️ Procesando: ${productName || 'SIN NOMBRE'}`);
+    console.log(`📁 Categoría: ${categoryName || 'SIN CATEGORÍA'}`);
 
     /*
      * Validación básica.
      */
     if (!productName) {
-      console.error("❌ Producto sin nombre. Se omite.");
+      console.error('❌ Producto sin nombre. Se omite.');
       failed++;
       continue;
     }
 
     if (!categoryName) {
-      console.error(
-        `❌ "${productName}" no tiene categoría. Se omite.`,
-      );
+      console.error(`❌ "${productName}" no tiene categoría. Se omite.`);
       failed++;
       continue;
     }
@@ -298,10 +259,7 @@ export async function insertProducts() {
     /*
      * Comprobar si el producto ya existe.
      */
-    const exists = await productAlreadyExists(
-      supabase,
-      productName,
-    );
+    const exists = await productAlreadyExists(supabase, productName);
 
     /*
      * null significa que ocurrió un problema de comunicación.
@@ -309,18 +267,14 @@ export async function insertProducts() {
      * desconocidos.
      */
     if (exists === null) {
-      console.error(
-        `❌ No se pudo comprobar "${productName}" por un problema de conexión.`,
-      );
+      console.error(`❌ No se pudo comprobar "${productName}" por un problema de conexión.`);
 
       failed++;
       continue;
     }
 
     if (exists) {
-      console.log(
-        `ℹ️ Ya existe: ${productName}`,
-      );
+      console.log(`ℹ️ Ya existe: ${productName}`);
 
       skipped++;
       continue;
@@ -329,23 +283,16 @@ export async function insertProducts() {
     /*
      * Buscar categoría.
      */
-    const categoryId = await findCategoryId(
-      supabase,
-      categoryName,
-    );
+    const categoryId = await findCategoryId(supabase, categoryName);
 
     if (categoryId === null) {
-      console.error(
-        `❌ No se encontró la categoría "${categoryName}".`,
-      );
+      console.error(`❌ No se encontró la categoría "${categoryName}".`);
 
       failed++;
       continue;
     }
 
-    console.log(
-      `✅ Categoría encontrada. ID: ${categoryId}`,
-    );
+    console.log(`✅ Categoría encontrada. ID: ${categoryId}`);
 
     /*
      * Preparar datos.
@@ -356,18 +303,14 @@ export async function insertProducts() {
     const slug = createSlug(productName);
 
     if (!slug) {
-      console.error(
-        `❌ No se pudo generar slug para "${productName}".`,
-      );
+      console.error(`❌ No se pudo generar slug para "${productName}".`);
 
       failed++;
       continue;
     }
 
     if (price <= 0) {
-      console.warn(
-        `⚠️ El producto "${productName}" tiene precio 0 o inválido.`,
-      );
+      console.warn(`⚠️ El producto "${productName}" tiene precio 0 o inválido.`);
     }
 
     /*
@@ -375,7 +318,7 @@ export async function insertProducts() {
      */
     try {
       const { data, error } = await supabase
-        .from("products")
+        .from('products')
         .insert({
           category_id: categoryId,
           name: productName,
@@ -387,14 +330,11 @@ export async function insertProducts() {
           stock: 10,
           is_active: true,
         })
-        .select("id, name")
+        .select('id, name')
         .single();
 
       if (error) {
-        logSupabaseError(
-          `Insertando "${productName}"`,
-          error,
-        );
+        logSupabaseError(`Insertando "${productName}"`, error);
 
         failed++;
         continue;
@@ -402,21 +342,15 @@ export async function insertProducts() {
 
       const insertedProduct = data as ProductRow | null;
 
-      console.log(
-        `✅ INSERTADO: ${insertedProduct?.name ?? productName}`,
-      );
+      console.log(`✅ INSERTADO: ${insertedProduct?.name ?? productName}`);
 
       if (insertedProduct?.id != null) {
-        console.log(
-          `🆔 ID generado: ${insertedProduct.id}`,
-        );
+        console.log(`🆔 ID generado: ${insertedProduct.id}`);
       }
 
       inserted++;
     } catch (error) {
-      console.error(
-        `❌ FALLÓ LA INSERCIÓN DE "${productName}"`,
-      );
+      console.error(`❌ FALLÓ LA INSERCIÓN DE "${productName}"`);
 
       console.error(error);
 
@@ -427,15 +361,15 @@ export async function insertProducts() {
   /*
    * Resumen final.
    */
-  console.log("");
-  console.log("========================================");
-  console.log("🏁 FIN DE LA CARGA");
-  console.log("========================================");
+  console.log('');
+  console.log('========================================');
+  console.log('🏁 FIN DE LA CARGA');
+  console.log('========================================');
   console.log(`📦 Total encontrados: ${sofaProducts.length}`);
   console.log(`✅ Insertados: ${inserted}`);
   console.log(`ℹ️ Ya existentes: ${skipped}`);
   console.log(`❌ Fallidos: ${failed}`);
-  console.log("========================================");
+  console.log('========================================');
 
   return {
     success: failed === 0,

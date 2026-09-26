@@ -5,13 +5,13 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 // ─── Segment definitions ───────────────────────────────────────────────────
 const SEGMENTS = [
   { label: 'S/15 de descuento', value: 15, color: '#16a34a', textColor: '#fff', isDiscount: true },
-  { label: 'S/3 de descuento',  value: 3,  color: '#4ade80', textColor: '#fff', isDiscount: true },
-  { label: 'No aplica',         value: 0,  color: '#dc2626', textColor: '#fff', isDiscount: false },
+  { label: 'S/3 de descuento', value: 3, color: '#4ade80', textColor: '#fff', isDiscount: true },
+  { label: 'No aplica', value: 0, color: '#dc2626', textColor: '#fff', isDiscount: false },
   { label: 'S/20 de descuento', value: 20, color: '#15803d', textColor: '#fff', isDiscount: true },
-  { label: 'S/1 de descuento',  value: 1,  color: '#7dd3fc', textColor: '#1e3a5f', isDiscount: true },
-  { label: 'No aplica',         value: 0,  color: '#dc2626', textColor: '#fff', isDiscount: false },
+  { label: 'S/1 de descuento', value: 1, color: '#7dd3fc', textColor: '#1e3a5f', isDiscount: true },
+  { label: 'No aplica', value: 0, color: '#dc2626', textColor: '#fff', isDiscount: false },
   { label: '⭐ S/50 descuento', value: 50, color: '#d97706', textColor: '#fff', isDiscount: true },
-  { label: 'No aplica',         value: 0,  color: '#dc2626', textColor: '#fff', isDiscount: false },
+  { label: 'No aplica', value: 0, color: '#dc2626', textColor: '#fff', isDiscount: false },
 ];
 
 // ─── Probability weights ───────────────────────────────────────────────────
@@ -45,8 +45,26 @@ function Confetti() {
     if (!ctx) return;
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    const pieces: { x: number; y: number; vx: number; vy: number; color: string; size: number; angle: number; spin: number }[] = [];
-    const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98FB98'];
+    const pieces: {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      color: string;
+      size: number;
+      angle: number;
+      spin: number;
+    }[] = [];
+    const colors = [
+      '#FFD700',
+      '#FF6B6B',
+      '#4ECDC4',
+      '#45B7D1',
+      '#96CEB4',
+      '#FFEAA7',
+      '#DDA0DD',
+      '#98FB98',
+    ];
     for (let i = 0; i < 150; i++) {
       pieces.push({
         x: Math.random() * canvas.width,
@@ -63,7 +81,9 @@ function Confetti() {
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       pieces.forEach((p) => {
-        p.x += p.vx; p.y += p.vy; p.angle += p.spin;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.angle += p.spin;
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.angle);
@@ -75,9 +95,18 @@ function Confetti() {
     };
     animate();
     const timer = setTimeout(() => cancelAnimationFrame(frame), 4000);
-    return () => { cancelAnimationFrame(frame); clearTimeout(timer); };
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
   }, []);
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[200]" aria-hidden="true" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-none z-[200]"
+      aria-hidden="true"
+    />
+  );
 }
 
 // ─── Roulette Wheel ────────────────────────────────────────────────────────
@@ -96,7 +125,14 @@ function RouletteWheel({ rotation, spinning }: { rotation: number; spinning: boo
     const segAngle = (Math.PI * 2) / SEGMENTS.length;
 
     // Outer glow ring
-    const gradient = ctx.createRadialGradient(CENTER, CENTER, RADIUS - 5, CENTER, CENTER, RADIUS + 8);
+    const gradient = ctx.createRadialGradient(
+      CENTER,
+      CENTER,
+      RADIUS - 5,
+      CENTER,
+      CENTER,
+      RADIUS + 8
+    );
     gradient.addColorStop(0, 'rgba(255,215,0,0.6)');
     gradient.addColorStop(1, 'rgba(255,215,0,0)');
     ctx.beginPath();
@@ -159,7 +195,13 @@ function RouletteWheel({ rotation, spinning }: { rotation: number; spinning: boo
 
   return (
     <div className={`relative ${spinning ? 'drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]' : ''}`}>
-      <canvas ref={canvasRef} width={SIZE} height={SIZE} className="rounded-full" aria-label="Ruleta de descuentos" />
+      <canvas
+        ref={canvasRef}
+        width={SIZE}
+        height={SIZE}
+        className="rounded-full"
+        aria-label="Ruleta de descuentos"
+      />
       {/* Lights around wheel */}
       <div className="absolute inset-0 rounded-full pointer-events-none">
         {Array.from({ length: 16 }).map((_, i) => (
@@ -171,7 +213,9 @@ function RouletteWheel({ rotation, spinning }: { rotation: number; spinning: boo
               left: `${50 + 48 * Math.sin((i * Math.PI * 2) / 16)}%`,
               transform: 'translate(-50%, -50%)',
               backgroundColor: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'][i % 4],
-              boxShadow: spinning ? `0 0 8px 2px ${['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'][i % 4]}` : 'none',
+              boxShadow: spinning
+                ? `0 0 8px 2px ${['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'][i % 4]}`
+                : 'none',
               opacity: spinning ? (i % 2 === 0 ? 1 : 0.3) : 0.6,
             }}
           />
@@ -182,20 +226,37 @@ function RouletteWheel({ rotation, spinning }: { rotation: number; spinning: boo
 }
 
 // ─── Winner Modal ──────────────────────────────────────────────────────────
-function WinnerModal({ segment, code, onClose }: { segment: typeof SEGMENTS[0]; code: string; onClose: () => void }) {
+function WinnerModal({
+  segment,
+  code,
+  onClose,
+}: {
+  segment: (typeof SEGMENTS)[0];
+  code: string;
+  onClose: () => void;
+}) {
   const waMsg = encodeURIComponent(
     `Hola.\n\nParticiipé en la ruleta de Mueblería Polaris.\n\nGané un descuento de ${segment.label.replace('⭐ ', '')}.\n\nMi código es:\n${code}\n\nDeseo utilizar mi descuento para comprar uno de sus productos.\n\nMuchas gracias.`
   );
   const waUrl = `https://wa.me/51916832791?text=${waMsg}`;
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
         className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 flex flex-col items-center gap-5 border border-yellow-200"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
         style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fff 50%, #f0fdf4 100%)' }}
       >
-        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors" aria-label="Cerrar">×</button>
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors"
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
 
         <div className="text-5xl animate-bounce">🎉</div>
         <div className="text-center">
@@ -241,12 +302,23 @@ function WinnerModal({ segment, code, onClose }: { segment: typeof SEGMENTS[0]; 
 // ─── No Prize Modal ────────────────────────────────────────────────────────
 function NoPrizeModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 flex flex-col items-center gap-4 text-center" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 flex flex-col items-center gap-4 text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="text-5xl">😔</div>
         <h2 className="text-xl font-extrabold text-gray-900">Esta vez no fue</h2>
-        <p className="text-gray-600 text-sm">No obtuviste descuento en esta oportunidad. ¡Vuelve mañana para intentarlo de nuevo!</p>
-        <button onClick={onClose} className="w-full px-6 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all">
+        <p className="text-gray-600 text-sm">
+          No obtuviste descuento en esta oportunidad. ¡Vuelve mañana para intentarlo de nuevo!
+        </p>
+        <button
+          onClick={onClose}
+          className="w-full px-6 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all"
+        >
           Entendido
         </button>
       </div>
@@ -258,7 +330,7 @@ function NoPrizeModal({ onClose }: { onClose: () => void }) {
 export default function RouletteSection() {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
-  const [winner, setWinner] = useState<typeof SEGMENTS[0] | null>(null);
+  const [winner, setWinner] = useState<(typeof SEGMENTS)[0] | null>(null);
   const [winCode, setWinCode] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showNoModal, setShowNoModal] = useState(false);
@@ -280,7 +352,9 @@ export default function RouletteSection() {
   const spin = useCallback(() => {
     if (spinning) return;
     if (!canSpin()) {
-      setCooldownMsg('Ya utilizaste tu oportunidad de hoy. Vuelve mañana para intentar nuevamente.');
+      setCooldownMsg(
+        'Ya utilizaste tu oportunidad de hoy. Vuelve mañana para intentar nuevamente.'
+      );
       return;
     }
     setCooldownMsg('');
@@ -290,7 +364,7 @@ export default function RouletteSection() {
     localStorage.setItem('polaris_spin_count', String(spinCount));
 
     // Determine winner with weighted probability
-    let weights = [...WEIGHTS];
+    const weights = [...WEIGHTS];
     // Block S/50 if within 200 spins of last jackpot
     if (spinCount - lastJackpot < 200) weights[6] = 0;
 
@@ -310,21 +384,27 @@ export default function RouletteSection() {
     const totalSpin = 1800 + needed; // 5 full rotations + exact landing
 
     setSpinning(true);
-    setRotation(r => r + totalSpin);
+    setRotation((r) => r + totalSpin);
 
     // Play spin sound via AudioContext
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = new AudioCtx();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
       osc.frequency.setValueAtTime(200, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.5);
       gain.gain.setValueAtTime(0.1, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-      osc.start(); osc.stop(ctx.currentTime + 0.5);
-    } catch {}
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } catch {
+      // Audio feedback is optional and may be blocked by the browser.
+    }
 
     // Spin duration ~4s
     setTimeout(() => {
@@ -333,27 +413,42 @@ export default function RouletteSection() {
 
       // Stop sound + bounce effect handled by CSS transition
       try {
-        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const AudioCtx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         const ctx = new AudioCtx();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(ctx.destination);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
         osc.type = 'square';
         osc.frequency.setValueAtTime(440, ctx.currentTime);
         gain.gain.setValueAtTime(0.15, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-        osc.start(); osc.stop(ctx.currentTime + 0.3);
-      } catch {}
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } catch {
+        // Audio feedback is optional and may be blocked by the browser.
+      }
 
       setWinner(winSegment);
       if (winSegment.isDiscount) {
-        let code = generateCode();
+        const code = generateCode();
         setWinCode(code);
         setShowConfetti(true);
         setShowModal(true);
         // Particles
-        setParticles(Array.from({ length: 20 }, (_, i) => ({ id: i, x: Math.random() * 100, y: Math.random() * 100 })));
-        setTimeout(() => { setShowConfetti(false); setParticles([]); }, 5000);
+        setParticles(
+          Array.from({ length: 20 }, (_, i) => ({
+            id: i,
+            x: Math.random() * 100,
+            y: Math.random() * 100,
+          }))
+        );
+        setTimeout(() => {
+          setShowConfetti(false);
+          setParticles([]);
+        }, 5000);
       } else {
         setShowNoModal(true);
       }
@@ -361,7 +456,11 @@ export default function RouletteSection() {
   }, [spinning, canSpin]);
 
   return (
-    <section id="ruleta" className="py-20 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)' }}>
+    <section
+      id="ruleta"
+      className="py-20 relative overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)' }}
+    >
       {showConfetti && <Confetti />}
 
       {/* Background particles */}
@@ -408,13 +507,17 @@ export default function RouletteSection() {
           <div
             className="relative"
             style={{
-              filter: spinning ? 'drop-shadow(0 0 30px rgba(255,215,0,0.5))' : 'drop-shadow(0 0 15px rgba(255,215,0,0.2))',
+              filter: spinning
+                ? 'drop-shadow(0 0 30px rgba(255,215,0,0.5))'
+                : 'drop-shadow(0 0 15px rgba(255,215,0,0.2))',
               transition: 'filter 0.3s',
             }}
           >
             <div
               style={{
-                transition: spinning ? 'transform 4.2s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
+                transition: spinning
+                  ? 'transform 4.2s cubic-bezier(0.17, 0.67, 0.12, 0.99)'
+                  : 'none',
                 transform: `rotate(${rotation}deg)`,
               }}
             >
@@ -422,7 +525,7 @@ export default function RouletteSection() {
             </div>
 
             {/* Prize particles on win */}
-            {particles.map(p => (
+            {particles.map((p) => (
               <div
                 key={p.id}
                 className="absolute w-2 h-2 rounded-full bg-yellow-400 animate-ping pointer-events-none"
@@ -444,15 +547,32 @@ export default function RouletteSection() {
             disabled={spinning}
             className={`relative px-10 py-5 rounded-2xl font-extrabold text-xl text-white transition-all duration-300 ${
               spinning
-                ? 'bg-gray-600 cursor-not-allowed opacity-60' :'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/40 active:scale-95'
+                ? 'bg-gray-600 cursor-not-allowed opacity-60'
+                : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/40 active:scale-95'
             }`}
             style={!spinning ? { boxShadow: '0 0 30px rgba(34,197,94,0.4)' } : {}}
           >
             {spinning ? (
               <span className="flex items-center gap-3">
-                <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                <svg
+                  className="w-6 h-6 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
                 </svg>
                 Girando...
               </span>
@@ -464,18 +584,28 @@ export default function RouletteSection() {
           {/* Disclaimer */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 max-w-lg text-center">
             <p className="text-gray-300 text-sm leading-relaxed">
-              🎁 <strong className="text-white">Todos los descuentos</strong> obtenidos mediante esta ruleta únicamente aplican para la compra de cualquiera de nuestros productos. No pueden canjearse por dinero en efectivo ni combinarse con otras promociones.
+              🎁 <strong className="text-white">Todos los descuentos</strong> obtenidos mediante
+              esta ruleta únicamente aplican para la compra de cualquiera de nuestros productos. No
+              pueden canjearse por dinero en efectivo ni combinarse con otras promociones.
             </p>
           </div>
 
           {/* Segments legend */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-lg">
-            {SEGMENTS.filter((s, i, arr) => arr.findIndex(x => x.label === s.label) === i).map((seg) => (
-              <div key={seg.label} className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2">
-                <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: seg.color }} />
-                <span className="text-xs text-gray-300 font-medium truncate">{seg.label}</span>
-              </div>
-            ))}
+            {SEGMENTS.filter((s, i, arr) => arr.findIndex((x) => x.label === s.label) === i).map(
+              (seg) => (
+                <div
+                  key={seg.label}
+                  className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2"
+                >
+                  <span
+                    className="w-3 h-3 rounded-full shrink-0"
+                    style={{ backgroundColor: seg.color }}
+                  />
+                  <span className="text-xs text-gray-300 font-medium truncate">{seg.label}</span>
+                </div>
+              )
+            )}
           </div>
         </div>
       </div>
@@ -484,9 +614,7 @@ export default function RouletteSection() {
       {showModal && winner && (
         <WinnerModal segment={winner} code={winCode} onClose={() => setShowModal(false)} />
       )}
-      {showNoModal && (
-        <NoPrizeModal onClose={() => setShowNoModal(false)} />
-      )}
+      {showNoModal && <NoPrizeModal onClose={() => setShowNoModal(false)} />}
     </section>
   );
 }

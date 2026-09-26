@@ -34,7 +34,9 @@ export default function LoginPage() {
       router.replace('/');
     } catch (err: any) {
       setError(
-        err?.message === 'Invalid login credentials' ?'Correo o contraseña incorrectos.' : err?.message ||'Error al iniciar sesión.'
+        err?.message === 'Invalid login credentials'
+          ? 'Correo o contraseña incorrectos.'
+          : err?.message || 'Error al iniciar sesión.'
       );
     } finally {
       setLoading(false);
@@ -51,7 +53,9 @@ export default function LoginPage() {
             {/* Logo */}
             <div className="flex flex-col items-center gap-3 mb-8">
               <AppLogo size={52} />
-              <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Iniciar sesión</h1>
+              <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
+                Iniciar sesión
+              </h1>
               <p className="text-sm text-muted-foreground text-center">
                 Bienvenido de vuelta a Mueblería Polaris
               </p>
@@ -67,7 +71,10 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-1.5">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-semibold text-foreground mb-1.5"
+                >
                   Correo electrónico
                 </label>
                 <input
@@ -84,7 +91,10 @@ export default function LoginPage() {
 
               {/* Password */}
               <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-foreground mb-1.5">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-semibold text-foreground mb-1.5"
+                >
                   Contraseña
                 </label>
                 <input
@@ -100,7 +110,12 @@ export default function LoginPage() {
               </div>
 
               <div className="text-right">
-                <Link href="/recuperar-contrasena" className="text-xs font-bold text-primary hover:underline">Olvide mi contrasena</Link>
+                <Link
+                  href="/recuperar-contrasena"
+                  className="text-xs font-bold text-primary hover:underline"
+                >
+                  Olvide mi contrasena
+                </Link>
               </div>
 
               {/* Submit */}
@@ -112,8 +127,19 @@ export default function LoginPage() {
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
                     <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
                     </svg>
                     Ingresando...
                   </span>

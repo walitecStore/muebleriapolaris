@@ -30,11 +30,7 @@ const AppLogo = memo(function AppLogo({
     ];
 
     if (onClick) {
-      classes.push(
-        'cursor-pointer',
-        'hover:scale-105',
-        'active:scale-95'
-      );
+      classes.push('cursor-pointer', 'hover:scale-105', 'active:scale-95');
     }
 
     if (className) {
@@ -45,11 +41,7 @@ const AppLogo = memo(function AppLogo({
   }, [className, onClick]);
 
   return (
-    <div
-      className={containerClassName}
-      onClick={onClick}
-      aria-label="Logo Mueblería Polaris"
-    >
+    <div className={containerClassName} onClick={onClick} aria-label="Logo Mueblería Polaris">
       {src ? (
         <div
           className="

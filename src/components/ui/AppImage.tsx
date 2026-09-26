@@ -1,12 +1,6 @@
 'use client';
 
-import React, {
-  useState,
-  useCallback,
-  useMemo,
-  memo,
-  useEffect,
-} from 'react';
+import React, { useState, useCallback, useMemo, memo, useEffect } from 'react';
 import Image from 'next/image';
 
 interface AppImageProps {
@@ -115,14 +109,11 @@ const AppImage = memo(function AppImage({
    * configurados en next.config.js.
    */
   const isExternalUrl = useMemo(
-    () =>
-      typeof imageSrc === 'string' &&
-      /^https?:\/\//i.test(imageSrc),
-    [imageSrc],
+    () => typeof imageSrc === 'string' && /^https?:\/\//i.test(imageSrc),
+    [imageSrc]
   );
 
-  const resolvedUnoptimized =
-    unoptimized || isExternalUrl;
+  const resolvedUnoptimized = unoptimized || isExternalUrl;
 
   const handleError = useCallback(() => {
     /**
@@ -150,12 +141,7 @@ const AppImage = memo(function AppImage({
     }
 
     if (onClick) {
-      classes.push(
-        'cursor-pointer',
-        'hover:opacity-90',
-        'transition-opacity',
-        'duration-200',
-      );
+      classes.push('cursor-pointer', 'hover:opacity-90', 'transition-opacity', 'duration-200');
     }
 
     return classes.filter(Boolean).join(' ');
@@ -167,20 +153,14 @@ const AppImage = memo(function AppImage({
       alt,
       className: imageClassName,
       quality,
-      placeholder:
-        placeholder === 'blur' && blurDataURL
-          ? 'blur'
-          : 'empty',
+      placeholder: placeholder === 'blur' && blurDataURL ? 'blur' : 'empty',
       unoptimized: resolvedUnoptimized,
       onError: handleError,
       onLoad: handleLoad,
       onClick,
     };
 
-    if (
-      placeholder === 'blur' &&
-      blurDataURL
-    ) {
+    if (placeholder === 'blur' && blurDataURL) {
       baseProps.blurDataURL = blurDataURL;
     }
 
@@ -208,16 +188,11 @@ const AppImage = memo(function AppImage({
 
   if (fill) {
     return (
-      <div
-        className="relative w-full h-full"
-      >
+      <div className="relative w-full h-full">
         <Image
           {...imageProps}
           fill
-          sizes={
-            sizes ||
-            '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-          }
+          sizes={sizes || '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'}
           style={{
             objectFit: 'cover',
           }}
@@ -228,16 +203,10 @@ const AppImage = memo(function AppImage({
   }
 
   return (
-    <Image
-      {...imageProps}
-      width={width || 400}
-      height={height || 300}
-      sizes={sizes}
-      {...props}
-    />
+    <Image {...imageProps} width={width || 400} height={height || 300} sizes={sizes} {...props} />
   );
 });
 
 AppImage.displayName = 'AppImage';
 
-export default AppImage; 
+export default AppImage;

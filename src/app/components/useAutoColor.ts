@@ -12,59 +12,68 @@ export interface NamedColor {
 }
 
 export const NAMED_COLORS: NamedColor[] = [
-  { name: 'Blanco',       emoji: '⚪', r: 255, g: 255, b: 255 },
-  { name: 'Negro',        emoji: '⚫', r: 20,  g: 20,  b: 20  },
-  { name: 'Gris Claro',   emoji: '🔘', r: 190, g: 190, b: 190 },
-  { name: 'Gris Oscuro',  emoji: '🔘', r: 90,  g: 90,  b: 90  },
-  { name: 'Plata',        emoji: '🔘', r: 192, g: 192, b: 192 },
-  { name: 'Humo',         emoji: '🔘', r: 112, g: 112, b: 112 },
-  { name: 'Beige',        emoji: '🟤', r: 220, g: 200, b: 170 },
-  { name: 'Arena',        emoji: '🟤', r: 210, g: 190, b: 150 },
-  { name: 'Crema',        emoji: '⚪', r: 240, g: 230, b: 200 },
-  { name: 'Marfil',       emoji: '⚪', r: 245, g: 240, b: 220 },
-  { name: 'Café',         emoji: '🟤', r: 120, g: 70,  b: 40  },
-  { name: 'Chocolate',    emoji: '🟤', r: 90,  g: 45,  b: 20  },
-  { name: 'Marrón',       emoji: '🟤', r: 140, g: 80,  b: 50  },
-  { name: 'Camel',        emoji: '🟤', r: 190, g: 140, b: 80  },
-  { name: 'Caramelo',     emoji: '🟤', r: 200, g: 130, b: 60  },
-  { name: 'Mostaza',      emoji: '🟡', r: 210, g: 170, b: 30  },
-  { name: 'Amarillo',     emoji: '🟡', r: 255, g: 230, b: 30  },
-  { name: 'Dorado',       emoji: '🟡', r: 215, g: 175, b: 55  },
-  { name: 'Naranja',      emoji: '🟠', r: 230, g: 120, b: 30  },
-  { name: 'Rojo',         emoji: '🔴', r: 200, g: 40,  b: 40  },
-  { name: 'Vino',         emoji: '🔴', r: 130, g: 20,  b: 40  },
-  { name: 'Bordó',        emoji: '🔴', r: 110, g: 15,  b: 30  },
-  { name: 'Rosado',       emoji: '🩷', r: 240, g: 150, b: 170 },
-  { name: 'Fucsia',       emoji: '🩷', r: 220, g: 50,  b: 130 },
-  { name: 'Morado',       emoji: '🟣', r: 130, g: 50,  b: 160 },
-  { name: 'Lila',         emoji: '🟣', r: 180, g: 130, b: 210 },
-  { name: 'Azul Marino',  emoji: '🔵', r: 20,  g: 40,  b: 100 },
-  { name: 'Azul Rey',     emoji: '🔵', r: 40,  g: 80,  b: 200 },
-  { name: 'Azul Claro',   emoji: '🔵', r: 100, g: 160, b: 220 },
-  { name: 'Celeste',      emoji: '🔵', r: 130, g: 200, b: 240 },
-  { name: 'Turquesa',     emoji: '🩵', r: 50,  g: 190, b: 190 },
-  { name: 'Verde Claro',  emoji: '🟢', r: 130, g: 200, b: 100 },
-  { name: 'Verde Oscuro', emoji: '🟢', r: 30,  g: 100, b: 50  },
-  { name: 'Verde Olivo',  emoji: '🟢', r: 100, g: 120, b: 50  },
-  { name: 'Esmeralda',    emoji: '🟢', r: 30,  g: 150, b: 100 },
-  { name: 'Pistacho',     emoji: '🟢', r: 160, g: 210, b: 120 },
+  { name: 'Blanco', emoji: '⚪', r: 255, g: 255, b: 255 },
+  { name: 'Negro', emoji: '⚫', r: 20, g: 20, b: 20 },
+  { name: 'Gris Claro', emoji: '🔘', r: 190, g: 190, b: 190 },
+  { name: 'Gris Oscuro', emoji: '🔘', r: 90, g: 90, b: 90 },
+  { name: 'Plata', emoji: '🔘', r: 192, g: 192, b: 192 },
+  { name: 'Humo', emoji: '🔘', r: 112, g: 112, b: 112 },
+  { name: 'Beige', emoji: '🟤', r: 220, g: 200, b: 170 },
+  { name: 'Arena', emoji: '🟤', r: 210, g: 190, b: 150 },
+  { name: 'Crema', emoji: '⚪', r: 240, g: 230, b: 200 },
+  { name: 'Marfil', emoji: '⚪', r: 245, g: 240, b: 220 },
+  { name: 'Café', emoji: '🟤', r: 120, g: 70, b: 40 },
+  { name: 'Chocolate', emoji: '🟤', r: 90, g: 45, b: 20 },
+  { name: 'Marrón', emoji: '🟤', r: 140, g: 80, b: 50 },
+  { name: 'Camel', emoji: '🟤', r: 190, g: 140, b: 80 },
+  { name: 'Caramelo', emoji: '🟤', r: 200, g: 130, b: 60 },
+  { name: 'Mostaza', emoji: '🟡', r: 210, g: 170, b: 30 },
+  { name: 'Amarillo', emoji: '🟡', r: 255, g: 230, b: 30 },
+  { name: 'Dorado', emoji: '🟡', r: 215, g: 175, b: 55 },
+  { name: 'Naranja', emoji: '🟠', r: 230, g: 120, b: 30 },
+  { name: 'Rojo', emoji: '🔴', r: 200, g: 40, b: 40 },
+  { name: 'Vino', emoji: '🔴', r: 130, g: 20, b: 40 },
+  { name: 'Bordó', emoji: '🔴', r: 110, g: 15, b: 30 },
+  { name: 'Rosado', emoji: '🩷', r: 240, g: 150, b: 170 },
+  { name: 'Fucsia', emoji: '🩷', r: 220, g: 50, b: 130 },
+  { name: 'Morado', emoji: '🟣', r: 130, g: 50, b: 160 },
+  { name: 'Lila', emoji: '🟣', r: 180, g: 130, b: 210 },
+  { name: 'Azul Marino', emoji: '🔵', r: 20, g: 40, b: 100 },
+  { name: 'Azul Rey', emoji: '🔵', r: 40, g: 80, b: 200 },
+  { name: 'Azul Claro', emoji: '🔵', r: 100, g: 160, b: 220 },
+  { name: 'Celeste', emoji: '🔵', r: 130, g: 200, b: 240 },
+  { name: 'Turquesa', emoji: '🩵', r: 50, g: 190, b: 190 },
+  { name: 'Verde Claro', emoji: '🟢', r: 130, g: 200, b: 100 },
+  { name: 'Verde Oscuro', emoji: '🟢', r: 30, g: 100, b: 50 },
+  { name: 'Verde Olivo', emoji: '🟢', r: 100, g: 120, b: 50 },
+  { name: 'Esmeralda', emoji: '🟢', r: 30, g: 150, b: 100 },
+  { name: 'Pistacho', emoji: '🟢', r: 160, g: 210, b: 120 },
 ];
 
 // ─── Convert RGB to HSL ───────────────────────────────────────────────────────
 function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
-  const rn = r / 255, gn = g / 255, bn = b / 255;
+  const rn = r / 255,
+    gn = g / 255,
+    bn = b / 255;
   const max = Math.max(rn, gn, bn);
   const min = Math.min(rn, gn, bn);
   const l = (max + min) / 2;
-  let h = 0, s = 0;
+  let h = 0,
+    s = 0;
 
   if (max !== min) {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
     switch (max) {
-      case rn: h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6; break;
-      case gn: h = ((bn - rn) / d + 2) / 6; break;
-      case bn: h = ((rn - gn) / d + 4) / 6; break;
+      case rn:
+        h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6;
+        break;
+      case gn:
+        h = ((bn - rn) / d + 2) / 6;
+        break;
+      case bn:
+        h = ((rn - gn) / d + 4) / 6;
+        break;
     }
   }
   return { h: h * 360, s: s * 100, l: l * 100 };
@@ -153,8 +162,14 @@ function extractDominantColor(imageUrl: string): Promise<NamedColor> {
         const { data } = ctx.getImageData(0, 0, size, size);
 
         // Separate chromatic and achromatic pixel buckets
-        const chromaticBuckets = new Map<string, { r: number; g: number; b: number; count: number; weight: number }>();
-        const achromaticBuckets = new Map<string, { r: number; g: number; b: number; count: number; weight: number }>();
+        const chromaticBuckets = new Map<
+          string,
+          { r: number; g: number; b: number; count: number; weight: number }
+        >();
+        const achromaticBuckets = new Map<
+          string,
+          { r: number; g: number; b: number; count: number; weight: number }
+        >();
 
         for (let py = 0; py < size; py++) {
           for (let px = 0; px < size; px++) {
@@ -199,17 +214,23 @@ function extractDominantColor(imageUrl: string): Promise<NamedColor> {
 
         // Calculate total weighted counts
         let totalChromaticWeight = 0;
-        chromaticBuckets.forEach(v => { totalChromaticWeight += v.weight; });
+        chromaticBuckets.forEach((v) => {
+          totalChromaticWeight += v.weight;
+        });
 
         let totalAchromaticWeight = 0;
-        achromaticBuckets.forEach(v => { totalAchromaticWeight += v.weight; });
+        achromaticBuckets.forEach((v) => {
+          totalAchromaticWeight += v.weight;
+        });
 
         // Strategy: if there are significant chromatic pixels (>6% of non-excluded pixels),
         // use the dominant chromatic color. Otherwise fall back to achromatic.
         const totalWeight = totalChromaticWeight + totalAchromaticWeight;
         const chromaticRatio = totalWeight > 0 ? totalChromaticWeight / totalWeight : 0;
 
-        let dominantR = 128, dominantG = 128, dominantB = 128;
+        let dominantR = 128,
+          dominantG = 128,
+          dominantB = 128;
         let usedChromatic = false;
 
         if (chromaticRatio > 0.06 && chromaticBuckets.size > 0) {
@@ -240,7 +261,7 @@ function extractDominantColor(imageUrl: string): Promise<NamedColor> {
         // If chromatic was used, only match against chromatic named colors
         // to avoid misidentifying a blue sofa as gray
         const candidateColors = usedChromatic
-          ? NAMED_COLORS.filter(nc => {
+          ? NAMED_COLORS.filter((nc) => {
               const { s } = rgbToHsl(nc.r, nc.g, nc.b);
               return s > 10; // only chromatic named colors
             })
