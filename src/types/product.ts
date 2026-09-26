@@ -1,5 +1,4 @@
 export interface Product {
-
   id: string;
 
   category_id: string;
@@ -23,5 +22,4 @@ export interface Product {
   created_at: string;
 
   updated_at: string;
-
 }

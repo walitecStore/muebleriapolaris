@@ -7,7 +7,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AppImage from '@/components/ui/AppImage';
 import { WhatsAppIcon } from '@/components/Header';
-import { sofaProducts, colorMap, type SofaReview, type SofaProduct } from '@/app/components/catalogData';
+import {
+  sofaProducts,
+  colorMap,
+  type SofaReview,
+  type SofaProduct,
+} from '@/app/components/catalogData';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -30,7 +35,13 @@ function StarRating({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md
   );
 }
 
-function InteractiveStarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+function InteractiveStarRating({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) {
   const [hover, setHover] = useState(0);
   return (
     <div className="flex items-center gap-1">
@@ -61,7 +72,11 @@ function VerifiedBadge() {
   return (
     <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+        <path
+          fillRule="evenodd"
+          d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+          clipRule="evenodd"
+        />
       </svg>
       Compra verificada
     </span>
@@ -73,7 +88,9 @@ function ReviewCard({ review }: { review: SofaReview }) {
     <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full ${review.avatarColor} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
+          <div
+            className={`w-10 h-10 rounded-full ${review.avatarColor} flex items-center justify-center text-white font-bold text-sm shrink-0`}
+          >
             {review.initials}
           </div>
           <div>
@@ -94,7 +111,10 @@ function ReviewCard({ review }: { review: SofaReview }) {
       {review.tags && review.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {review.tags.map((tag) => (
-            <span key={tag} className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+            <span
+              key={tag}
+              className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full"
+            >
               {tag}
             </span>
           ))}
@@ -110,11 +130,19 @@ function ReviewCard({ review }: { review: SofaReview }) {
   );
 }
 
-const avatarColors = ['bg-primary', 'bg-secondary', 'bg-accent', 'bg-emerald-500', 'bg-purple-500', 'bg-orange-500'];
+const avatarColors = [
+  'bg-primary',
+  'bg-secondary',
+  'bg-accent',
+  'bg-emerald-500',
+  'bg-purple-500',
+  'bg-orange-500',
+];
 
 const PRODUCT_VIDEO_BASE = '/videos/productos';
-function getProductVideoUrl(productId: number) { return `${PRODUCT_VIDEO_BASE}/${productId}.mp4`; }
-
+function getProductVideoUrl(productId: number) {
+  return `${PRODUCT_VIDEO_BASE}/${productId}.mp4`;
+}
 
 type ProductMedia = {
   type: 'image' | 'video';
@@ -163,7 +191,6 @@ function VideoMedia({
   );
 }
 
-
 export default function ProductPage() {
   const params = useParams();
   const router = useRouter();
@@ -179,7 +206,13 @@ export default function ProductPage() {
   const [selectedColor, setSelectedColor] = useState<string>(sofa?.color ?? '');
   const [localReviews, setLocalReviews] = useState<SofaReview[]>([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewForm, setReviewForm] = useState({ name: '', location: '', rating: 5, title: '', text: '' });
+  const [reviewForm, setReviewForm] = useState({
+    name: '',
+    location: '',
+    rating: 5,
+    title: '',
+    text: '',
+  });
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -204,7 +237,9 @@ export default function ProductPage() {
         const supabase = createClient();
         const { data, error } = await supabase
           .from('product_reviews')
-          .select('id, name, location, rating, title, text, created_at, verified, helpful, tags, avatar_color')
+          .select(
+            'id, name, location, rating, title, text, created_at, verified, helpful, tags, avatar_color'
+          )
           .eq('catalog_product_id', sofa.id)
           .eq('status', 'published')
           .order('created_at', { ascending: false });
@@ -217,7 +252,12 @@ export default function ProductPage() {
         const remoteReviews: SofaReview[] = (data ?? []).map((r: any) => ({
           id: r.id,
           name: r.name,
-          initials: String(r.name ?? 'CL').split(/\s+/).map((w: string) => w[0]).join('').toUpperCase().slice(0, 2),
+          initials: String(r.name ?? 'CL')
+            .split(/\s+/)
+            .map((w: string) => w[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2),
           location: r.location || 'Perú',
           rating: Number(r.rating) || 5,
           title: r.title || 'Mi reseña',
@@ -285,15 +325,15 @@ export default function ProductPage() {
       }
 
       // Trim extremes so one bright background region does not dominate.
-      samples.sort((a, b) =>
-        (a[0] + a[1] + a[2]) - (b[0] + b[1] + b[2])
-      );
+      samples.sort((a, b) => a[0] + a[1] + a[2] - (b[0] + b[1] + b[2]));
       const usable = samples.slice(
         Math.floor(samples.length * 0.15),
         Math.ceil(samples.length * 0.85)
       );
 
-      let r = 0, g = 0, b = 0;
+      let r = 0,
+        g = 0,
+        b = 0;
       for (const sample of usable) {
         r += sample[0];
         g += sample[1];
@@ -360,7 +400,13 @@ export default function ProductPage() {
 
     if (!sofa || !reviewForm.name.trim() || !reviewForm.text.trim() || !reviewForm.rating) return;
 
-    const initials = reviewForm.name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const initials = reviewForm.name
+      .trim()
+      .split(/\s+/)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
 
     try {
       const supabase = createClient();
@@ -381,7 +427,9 @@ export default function ProductPage() {
           avatar_color: avatarColors[Math.floor(Math.random() * avatarColors.length)],
           status: 'published',
         })
-        .select('id, name, location, rating, title, text, created_at, verified, helpful, tags, avatar_color')
+        .select(
+          'id, name, location, rating, title, text, created_at, verified, helpful, tags, avatar_color'
+        )
         .single();
 
       if (error) throw error;
@@ -401,10 +449,13 @@ export default function ProductPage() {
         avatarColor: data.avatar_color || 'bg-primary',
       };
 
-      setLocalReviews(prev => [newReview, ...prev]);
+      setLocalReviews((prev) => [newReview, ...prev]);
 
       const current = JSON.parse(localStorage.getItem(`reviews_${sofa.id}`) || '[]');
-      localStorage.setItem(`reviews_${sofa.id}`, JSON.stringify([newReview, ...current].slice(0, 50)));
+      localStorage.setItem(
+        `reviews_${sofa.id}`,
+        JSON.stringify([newReview, ...current].slice(0, 50))
+      );
 
       setReviewForm({ name: '', location: '', rating: 5, title: '', text: '' });
       setShowReviewForm(false);
@@ -430,8 +481,11 @@ export default function ProductPage() {
       };
 
       const current = JSON.parse(localStorage.getItem(`reviews_${sofa.id}`) || '[]');
-      localStorage.setItem(`reviews_${sofa.id}`, JSON.stringify([fallbackReview, ...current].slice(0, 50)));
-      setLocalReviews(prev => [fallbackReview, ...prev]);
+      localStorage.setItem(
+        `reviews_${sofa.id}`,
+        JSON.stringify([fallbackReview, ...current].slice(0, 50))
+      );
+      setLocalReviews((prev) => [fallbackReview, ...prev]);
       setReviewForm({ name: '', location: '', rating: 5, title: '', text: '' });
       setShowReviewForm(false);
       setReviewSubmitted(true);
@@ -447,7 +501,9 @@ export default function ProductPage() {
           <div className="text-center">
             <div className="text-6xl mb-4">🛋️</div>
             <h1 className="text-2xl font-extrabold text-foreground mb-2">Producto no encontrado</h1>
-            <p className="text-muted-foreground mb-6">El sofá que buscas no existe o fue removido.</p>
+            <p className="text-muted-foreground mb-6">
+              El sofá que buscas no existe o fue removido.
+            </p>
             <Link
               href="/#catalogo"
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full font-bold hover:bg-primary/90 transition-colors"
@@ -472,11 +528,13 @@ export default function ProductPage() {
       label: `Vista ${index + 1}`,
     })),
     ...(videoUrl
-      ? [{
-          type: 'video' as const,
-          src: videoUrl,
-          label: 'Video del producto',
-        }]
+      ? [
+          {
+            type: 'video' as const,
+            src: videoUrl,
+            label: 'Video del producto',
+          },
+        ]
       : []),
   ];
 
@@ -499,20 +557,40 @@ export default function ProductPage() {
       <main className="pt-20 sm:pt-24 pb-20 min-h-screen bg-background">
         {/* Breadcrumb + Back button */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
-            <Link href="/" className="hover:text-primary transition-colors font-medium">Inicio</Link>
+          <nav
+            className="flex items-center gap-2 text-sm text-muted-foreground"
+            aria-label="Breadcrumb"
+          >
+            <Link href="/" className="hover:text-primary transition-colors font-medium">
+              Inicio
+            </Link>
             <span>/</span>
-            <Link href="/#catalogo" className="hover:text-primary transition-colors font-medium">Catálogo</Link>
+            <Link href="/#catalogo" className="hover:text-primary transition-colors font-medium">
+              Catálogo
+            </Link>
             <span>/</span>
-            <span className="text-foreground font-semibold truncate max-w-[200px]">{sofa.name}</span>
+            <span className="text-foreground font-semibold truncate max-w-[200px]">
+              {sofa.name}
+            </span>
           </nav>
           <button
             onClick={() => router.back()}
             className="flex items-center gap-2 px-4 py-2 rounded-full border border-border text-sm font-semibold text-muted-foreground hover:text-primary hover:border-primary bg-white transition-all duration-200 hover:shadow-sm shrink-0"
             aria-label="Volver atrás"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             Atrás
           </button>
@@ -521,7 +599,6 @@ export default function ProductPage() {
         {/* Product Hero */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6" ref={heroRef}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-16 items-start">
-
             {/* Gallery */}
             <div className="flex flex-col gap-4 animate-in-up">
               {/* Main image */}
@@ -532,7 +609,8 @@ export default function ProductPage() {
                       <div className="text-6xl mb-4">🎥</div>
                       <h3 className="text-lg font-extrabold text-foreground">Video del producto</h3>
                       <p className="text-sm text-muted-foreground mt-2 max-w-sm">
-                        Este producto aún no tiene un video cargado. El espacio ya está preparado para mostrarlo.
+                        Este producto aún no tiene un video cargado. El espacio ya está preparado
+                        para mostrarlo.
                       </p>
                     </div>
                   ) : (
@@ -566,7 +644,10 @@ export default function ProductPage() {
                 </div>
                 {detectedColor && (
                   <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-full shadow text-xs font-semibold text-foreground">
-                    <span className="w-3 h-3 rounded-full border border-gray-300" style={{ backgroundColor: detectedColor }} />
+                    <span
+                      className="w-3 h-3 rounded-full border border-gray-300"
+                      style={{ backgroundColor: detectedColor }}
+                    />
                     Color detectado
                   </div>
                 )}
@@ -588,7 +669,9 @@ export default function ProductPage() {
                           ? 'border-primary shadow-md shadow-primary/20 scale-105'
                           : 'border-border hover:border-primary/50'
                       }`}
-                      aria-label={item.type === 'video' ? 'Ver video del producto' : `Ver imagen ${idx + 1}`}
+                      aria-label={
+                        item.type === 'video' ? 'Ver video del producto' : `Ver imagen ${idx + 1}`
+                      }
                     >
                       {item.type === 'video' ? (
                         videoError ? (
@@ -599,7 +682,9 @@ export default function ProductPage() {
                           <>
                             <VideoMedia src={item.src} muted />
                             <span className="absolute inset-0 bg-black/25 flex items-center justify-center">
-                              <span className="w-8 h-8 rounded-full bg-white/95 text-primary flex items-center justify-center shadow-lg">▶</span>
+                              <span className="w-8 h-8 rounded-full bg-white/95 text-primary flex items-center justify-center shadow-lg">
+                                ▶
+                              </span>
                             </span>
                           </>
                         )
@@ -623,7 +708,9 @@ export default function ProductPage() {
               {/* Name & rating */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-bold text-primary uppercase tracking-widest">Mueblería Polaris</span>
+                  <span className="text-xs font-bold text-primary uppercase tracking-widest">
+                    Mueblería Polaris
+                  </span>
                   {sofa.availability && (
                     <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                       ✓ {sofa.availability}
@@ -637,7 +724,9 @@ export default function ProductPage() {
                   <div className="flex items-center gap-3 flex-wrap">
                     <StarRating rating={sofa.rating} size="md" />
                     <span className="font-bold text-foreground">{sofa.rating.toFixed(1)}</span>
-                    <span className="text-muted-foreground text-sm">({sofa.reviewCount} reseñas)</span>
+                    <span className="text-muted-foreground text-sm">
+                      ({sofa.reviewCount} reseñas)
+                    </span>
                   </div>
                 )}
               </div>
@@ -660,7 +749,9 @@ export default function ProductPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-sm font-semibold text-muted-foreground">Color:</span>
-                    <span className="text-sm font-extrabold text-foreground">{selectedColor || sofa.color}</span>
+                    <span className="text-sm font-extrabold text-foreground">
+                      {selectedColor || sofa.color}
+                    </span>
                     {detectedColorName && (
                       <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
                         Detectado: {detectedColorName}
@@ -689,7 +780,9 @@ export default function ProductPage() {
                         >
                           <span
                             className="w-4 h-4 rounded-full border border-black/10 shadow-sm"
-                            style={{ backgroundColor: variant.hex ?? colorMap[variant.name] ?? '#d1d5db' }}
+                            style={{
+                              backgroundColor: variant.hex ?? colorMap[variant.name] ?? '#d1d5db',
+                            }}
                           />
                           {variant.name}
                         </button>
@@ -699,7 +792,9 @@ export default function ProductPage() {
                     <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5">
                       <span
                         className="w-5 h-5 rounded-full border border-black/10 shadow-sm"
-                        style={{ backgroundColor: detectedColor ?? colorMap[sofa.color] ?? '#d1d5db' }}
+                        style={{
+                          backgroundColor: detectedColor ?? colorMap[sofa.color] ?? '#d1d5db',
+                        }}
                         title={sofa.color}
                       />
                       <span className="text-xs font-bold text-foreground">{sofa.color}</span>
@@ -724,12 +819,23 @@ export default function ProductPage() {
               {/* Features */}
               {sofa.features && sofa.features.length > 0 && (
                 <div className="bg-muted/50 rounded-2xl p-4 border border-border">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Características principales</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+                    Características principales
+                  </p>
                   <ul className="space-y-2">
                     {sofa.features.map((feat, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                        <svg className="w-4 h-4 text-secondary shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        <svg
+                          className="w-4 h-4 text-secondary shrink-0 mt-0.5"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                          aria-hidden="true"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                         {feat}
                       </li>
@@ -766,9 +872,14 @@ export default function ProductPage() {
                   { icon: '🚚', label: 'Entrega según ubicación' },
                   { icon: '↩️', label: '30 días devolución' },
                 ].map((badge) => (
-                  <div key={badge.label} className="flex flex-col items-center gap-1 bg-muted/50 rounded-xl p-3 border border-border text-center">
+                  <div
+                    key={badge.label}
+                    className="flex flex-col items-center gap-1 bg-muted/50 rounded-xl p-3 border border-border text-center"
+                  >
                     <span className="text-xl">{badge.icon}</span>
-                    <span className="text-xs font-semibold text-muted-foreground leading-tight">{badge.label}</span>
+                    <span className="text-xs font-semibold text-muted-foreground leading-tight">
+                      {badge.label}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -782,7 +893,9 @@ export default function ProductPage() {
             <div className="rounded-3xl border border-border bg-card overflow-hidden shadow-sm">
               <div className="px-5 sm:px-7 py-4 flex items-center justify-between gap-4 border-b border-border">
                 <div>
-                  <p className="text-xs font-extrabold uppercase tracking-widest text-primary">Video del producto</p>
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-primary">
+                    Video del producto
+                  </p>
                   <h2 className="text-lg sm:text-xl font-extrabold text-foreground mt-1">
                     Mira el sofá en movimiento
                   </h2>
@@ -881,8 +994,12 @@ export default function ProductPage() {
             <div className="animate-in-up">
               <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
                 <div className="px-6 py-4 border-b border-border bg-muted/30">
-                  <h2 className="font-extrabold text-foreground text-lg">Especificaciones técnicas</h2>
-                  <p className="text-muted-foreground text-sm mt-0.5">Medidas y materiales del {sofa.name}</p>
+                  <h2 className="font-extrabold text-foreground text-lg">
+                    Especificaciones técnicas
+                  </h2>
+                  <p className="text-muted-foreground text-sm mt-0.5">
+                    Medidas y materiales del {sofa.name}
+                  </p>
                 </div>
                 <div className="divide-y divide-border">
                   {Object.entries(sofa.specs).map(([key, value], idx) => (
@@ -890,7 +1007,9 @@ export default function ProductPage() {
                       key={key}
                       className={`flex items-center justify-between px-6 py-4 gap-4 ${idx % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}
                     >
-                      <span className="text-sm font-semibold text-muted-foreground min-w-[140px]">{key}</span>
+                      <span className="text-sm font-semibold text-muted-foreground min-w-[140px]">
+                        {key}
+                      </span>
                       <span className="text-sm font-bold text-foreground text-right">{value}</span>
                     </div>
                   ))}
@@ -935,7 +1054,9 @@ export default function ProductPage() {
                   <span className="text-2xl">🎉</span>
                   <div>
                     <p className="font-bold text-emerald-700">¡Reseña publicada!</p>
-                    <p className="text-emerald-600 text-sm">Gracias por compartir tu experiencia.</p>
+                    <p className="text-emerald-600 text-sm">
+                      Gracias por compartir tu experiencia.
+                    </p>
                   </div>
                 </div>
               )}
@@ -943,52 +1064,69 @@ export default function ProductPage() {
               {/* Add Review Form */}
               {showReviewForm && (
                 <div className="bg-card border border-primary/20 rounded-2xl p-6 shadow-sm">
-                  <h3 className="font-extrabold text-foreground text-lg mb-5">✏️ Escribir reseña</h3>
+                  <h3 className="font-extrabold text-foreground text-lg mb-5">
+                    ✏️ Escribir reseña
+                  </h3>
                   <form onSubmit={handleReviewSubmit} className="flex flex-col gap-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-foreground mb-1.5">Tu nombre *</label>
+                        <label className="block text-sm font-semibold text-foreground mb-1.5">
+                          Tu nombre *
+                        </label>
                         <input
                           type="text"
                           required
                           value={reviewForm.name}
-                          onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
+                          onChange={(e) => setReviewForm((f) => ({ ...f, name: e.target.value }))}
                           placeholder="Ej: María García"
                           className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-foreground mb-1.5">Ciudad</label>
+                        <label className="block text-sm font-semibold text-foreground mb-1.5">
+                          Ciudad
+                        </label>
                         <input
                           type="text"
                           value={reviewForm.location}
-                          onChange={e => setReviewForm(f => ({ ...f, location: e.target.value }))}
+                          onChange={(e) =>
+                            setReviewForm((f) => ({ ...f, location: e.target.value }))
+                          }
                           placeholder="Ej: Lima, Perú"
                           className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-1.5">Calificación *</label>
-                      <InteractiveStarRating value={reviewForm.rating} onChange={v => setReviewForm(f => ({ ...f, rating: v }))} />
+                      <label className="block text-sm font-semibold text-foreground mb-1.5">
+                        Calificación *
+                      </label>
+                      <InteractiveStarRating
+                        value={reviewForm.rating}
+                        onChange={(v) => setReviewForm((f) => ({ ...f, rating: v }))}
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-1.5">Título de tu reseña</label>
+                      <label className="block text-sm font-semibold text-foreground mb-1.5">
+                        Título de tu reseña
+                      </label>
                       <input
                         type="text"
                         value={reviewForm.title}
-                        onChange={e => setReviewForm(f => ({ ...f, title: e.target.value }))}
+                        onChange={(e) => setReviewForm((f) => ({ ...f, title: e.target.value }))}
                         placeholder="Ej: Excelente calidad"
                         className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-1.5">Tu reseña *</label>
+                      <label className="block text-sm font-semibold text-foreground mb-1.5">
+                        Tu reseña *
+                      </label>
                       <textarea
                         required
                         rows={4}
                         value={reviewForm.text}
-                        onChange={e => setReviewForm(f => ({ ...f, text: e.target.value }))}
+                        onChange={(e) => setReviewForm((f) => ({ ...f, text: e.target.value }))}
                         placeholder="Cuéntanos tu experiencia con este producto..."
                         className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
                       />
@@ -1023,7 +1161,9 @@ export default function ProductPage() {
                 <div className="text-center py-16 bg-card border border-border rounded-2xl">
                   <div className="text-4xl mb-3">💬</div>
                   <p className="font-bold text-foreground mb-1">Sé el primero en opinar</p>
-                  <p className="text-muted-foreground text-sm mb-5">Comparte tu experiencia con este sofá</p>
+                  <p className="text-muted-foreground text-sm mb-5">
+                    Comparte tu experiencia con este sofá
+                  </p>
                   <button
                     onClick={() => setShowReviewForm(true)}
                     className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-5 py-3 rounded-xl hover:bg-primary/90 transition-all"
@@ -1040,8 +1180,12 @@ export default function ProductPage() {
         {relatedSofas.length > 0 && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-16">
             <div className="mb-6">
-              <h2 className="text-2xl font-extrabold text-foreground">También te puede interesar</h2>
-              <p className="text-muted-foreground text-sm mt-1">Sofás similares en estilo o color</p>
+              <h2 className="text-2xl font-extrabold text-foreground">
+                También te puede interesar
+              </h2>
+              <p className="text-muted-foreground text-sm mt-1">
+                Sofás similares en estilo o color
+              </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {relatedSofas.map((related) => (
@@ -1065,8 +1209,12 @@ export default function ProductPage() {
                     </div>
                   </div>
                   <div className="p-4 flex flex-col flex-1">
-                    <h3 className="font-bold text-foreground text-sm mb-1 group-hover:text-primary transition-colors">{related.name}</h3>
-                    <p className="text-muted-foreground text-xs mb-3 flex-1">{related.description}</p>
+                    <h3 className="font-bold text-foreground text-sm mb-1 group-hover:text-primary transition-colors">
+                      {related.name}
+                    </h3>
+                    <p className="text-muted-foreground text-xs mb-3 flex-1">
+                      {related.description}
+                    </p>
                     <div className="flex items-center justify-between">
                       <span className="text-xl font-extrabold text-primary">{related.price}</span>
                       <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full group-hover:bg-primary group-hover:text-white transition-all">

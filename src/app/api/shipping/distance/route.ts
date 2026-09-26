@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
 /**
  * PUNTO DE PARTIDA
@@ -20,13 +20,10 @@ export async function POST(request: Request) {
     const latitude = Number(body.latitude);
     const longitude = Number(body.longitude);
 
-    if (
-      !Number.isFinite(latitude) ||
-      !Number.isFinite(longitude)
-    ) {
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       return NextResponse.json(
         {
-          error: "Coordenadas inválidas.",
+          error: 'Coordenadas inválidas.',
         },
         {
           status: 400,
@@ -34,15 +31,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (
-      latitude < -18 ||
-      latitude > -3 ||
-      longitude < -82 ||
-      longitude > -68
-    ) {
+    if (latitude < -18 || latitude > -3 || longitude < -82 || longitude > -68) {
       return NextResponse.json(
         {
-          error: "La ubicación seleccionada no corresponde a Perú.",
+          error: 'La ubicación seleccionada no corresponde a Perú.',
         },
         {
           status: 400,
@@ -51,23 +43,23 @@ export async function POST(request: Request) {
     }
 
     const routeUrl =
-      "https://router.project-osrm.org/route/v1/driving/" +
+      'https://router.project-osrm.org/route/v1/driving/' +
       `${STORE_LONGITUDE},${STORE_LATITUDE};` +
       `${longitude},${latitude}` +
-      "?overview=false";
+      '?overview=false';
 
     const response = await fetch(routeUrl, {
-      method: "GET",
+      method: 'GET',
       headers: {
-        Accept: "application/json",
+        Accept: 'application/json',
       },
-      cache: "no-store",
+      cache: 'no-store',
     });
 
     if (!response.ok) {
       return NextResponse.json(
         {
-          error: "No fue posible calcular la ruta.",
+          error: 'No fue posible calcular la ruta.',
         },
         {
           status: 502,
@@ -77,14 +69,10 @@ export async function POST(request: Request) {
 
     const data = await response.json();
 
-    if (
-      data.code !== "Ok" ||
-      !Array.isArray(data.routes) ||
-      data.routes.length === 0
-    ) {
+    if (data.code !== 'Ok' || !Array.isArray(data.routes) || data.routes.length === 0) {
       return NextResponse.json(
         {
-          error: "No se encontró una ruta válida.",
+          error: 'No se encontró una ruta válida.',
         },
         {
           status: 422,
@@ -94,11 +82,9 @@ export async function POST(request: Request) {
 
     const route = data.routes[0];
 
-    const distanceKm =
-      Number(route.distance) / 1000;
+    const distanceKm = Number(route.distance) / 1000;
 
-    const durationMinutes =
-      Number(route.duration) / 60;
+    const durationMinutes = Number(route.duration) / 60;
 
     return NextResponse.json({
       success: true,
@@ -106,14 +92,11 @@ export async function POST(request: Request) {
       durationMinutes: Math.round(durationMinutes),
     });
   } catch (error) {
-    console.error(
-      "Error calculando distancia:",
-      error
-    );
+    console.error('Error calculando distancia:', error);
 
     return NextResponse.json(
       {
-        error: "Error interno calculando la distancia.",
+        error: 'Error interno calculando la distancia.',
       },
       {
         status: 500,

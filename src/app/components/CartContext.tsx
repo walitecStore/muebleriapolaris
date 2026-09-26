@@ -39,7 +39,11 @@ function sameItem(item: CartItem, id: CartItem['id'], variantId?: string | null)
 function readGuestCart(): CartItem[] {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
-    return Array.isArray(parsed) ? parsed.filter((item): item is CartItem => Boolean(item && typeof item === 'object' && 'id' in item && 'quantity' in item)) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is CartItem =>
+          Boolean(item && typeof item === 'object' && 'id' in item && 'quantity' in item)
+        )
+      : [];
   } catch {
     return [];
   }
@@ -71,28 +75,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const { data: existingCart, error: cartError } = await supabase
           .from('shopping_carts')
           .select('id')
-.eq('user_id', userId)
+          .eq('user_id', userId)
           .maybeSingle();
 
         if (cartError) return; // La migracion aun no se ha aplicado: se conserva el carrito local.
 
-        const cartId = existingCart?.id ?? (await supabase
-          .from('shopping_carts')
-          .insert({ user_id: userId })
-          .select('id')
-          .single()).data?.id;
+        const cartId =
+          existingCart?.id ??
+          (await supabase.from('shopping_carts').insert({ user_id: userId }).select('id').single())
+            .data?.id;
 
         if (!cartId || cancelled) return;
 
         for (const item of items) {
           const productId = String(item.id);
           if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(productId)) continue;
-          await supabase.from('cart_items').upsert({
-            cart_id: cartId,
-            product_id: productId,
-            variant_id: item.variantId ?? null,
-            quantity: item.quantity,
-          }, { onConflict: 'cart_id,product_id,variant_id' });
+          await supabase.from('cart_items').upsert(
+            {
+              cart_id: cartId,
+              product_id: productId,
+              variant_id: item.variantId ?? null,
+              quantity: item.quantity,
+            },
+            { onConflict: 'cart_id,product_id,variant_id' }
+          );
         }
       } catch {
         // El carrito local nunca se pierde si no hay red o tablas nuevas todavia.
@@ -100,14 +106,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     void syncGuestCart();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user, loading, items]);
 
   const addItem = useCallback((item: Omit<CartItem, 'quantity'>) => {
     setItems((previous) => {
       const existing = previous.find((current) => sameItem(current, item.id, item.variantId));
       return existing
-        ? previous.map((current) => sameItem(current, item.id, item.variantId) ? { ...current, quantity: current.quantity + 1 } : current)
+        ? previous.map((current) =>
+            sameItem(current, item.id, item.variantId)
+              ? { ...current, quantity: current.quantity + 1 }
+              : current
+          )
         : [...previous, { ...item, quantity: 1 }];
     });
     setIsOpen(true);
@@ -117,17 +129,35 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((previous) => previous.filter((item) => !sameItem(item, id, variantId)));
   }, []);
 
-  const updateQuantity = useCallback((id: CartItem['id'], quantity: number, variantId?: string | null) => {
-    setItems((previous) => quantity <= 0
-      ? previous.filter((item) => !sameItem(item, id, variantId))
-      : previous.map((item) => sameItem(item, id, variantId) ? { ...item, quantity } : item));
-  }, []);
+  const updateQuantity = useCallback(
+    (id: CartItem['id'], quantity: number, variantId?: string | null) => {
+      setItems((previous) =>
+        quantity <= 0
+          ? previous.filter((item) => !sameItem(item, id, variantId))
+          : previous.map((item) => (sameItem(item, id, variantId) ? { ...item, quantity } : item))
+      );
+    },
+    []
+  );
 
   const clearCart = useCallback(() => setItems([]), []);
   const totalItems = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
   return (
-    <CartContext.Provider value={{ items, loading, addItem, removeItem, updateQuantity, clearCart, totalItems, isOpen, openCart: () => setIsOpen(true), closeCart: () => setIsOpen(false) }}>
+    <CartContext.Provider
+      value={{
+        items,
+        loading,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clearCart,
+        totalItems,
+        isOpen,
+        openCart: () => setIsOpen(true),
+        closeCart: () => setIsOpen(false),
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

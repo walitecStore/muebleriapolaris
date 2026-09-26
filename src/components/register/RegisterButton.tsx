@@ -6,9 +6,7 @@ interface RegisterButtonProps {
   loading: boolean;
 }
 
-export default function RegisterButton({
-  loading,
-}: RegisterButtonProps) {
+export default function RegisterButton({ loading }: RegisterButtonProps) {
   return (
     <button
       type="submit"
@@ -42,16 +40,12 @@ export default function RegisterButton({
     >
       {loading ? (
         <>
-          <Loader2
-            size={22}
-            className="animate-spin"
-          />
+          <Loader2 size={22} className="animate-spin" />
           Creando cuenta...
         </>
       ) : (
         <>
           Crear cuenta
-
           <ArrowRight size={20} />
         </>
       )}

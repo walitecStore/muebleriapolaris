@@ -149,7 +149,11 @@ function VerifiedBadge() {
   return (
     <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+        <path
+          fillRule="evenodd"
+          d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+          clipRule="evenodd"
+        />
       </svg>
       Compra verificada
     </span>
@@ -181,19 +185,18 @@ export default function TestimonialsSection() {
     return () => observer.disconnect();
   }, []);
 
-  const filtered = activeFilter
-    ? reviews.filter((r) => r.rating === activeFilter)
-    : reviews;
+  const filtered = activeFilter ? reviews.filter((r) => r.rating === activeFilter) : reviews;
 
   const displayed = filtered.slice(0, visibleCount);
 
   return (
     <section id="testimonios" className="py-20 bg-background" ref={ref}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-
         {/* Header */}
         <div className="text-center mb-14 reveal-on-scroll">
-          <span className="inline-block text-primary font-bold text-sm uppercase tracking-widest mb-3">Reseñas verificadas</span>
+          <span className="inline-block text-primary font-bold text-sm uppercase tracking-widest mb-3">
+            Reseñas verificadas
+          </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-4">
             Lo que dicen nuestros <span className="text-gradient-teal">clientes</span>
           </h2>
@@ -205,7 +208,6 @@ export default function TestimonialsSection() {
         {/* Rating overview + distribution */}
         <div className="reveal-on-scroll mb-12">
           <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center shadow-sm">
-
             {/* Big score */}
             <div className="flex flex-col items-center md:items-start gap-3">
               <div className="flex items-end gap-3">
@@ -215,7 +217,9 @@ export default function TestimonialsSection() {
                   <p className="text-muted-foreground text-sm mt-1.5">de 5.0 posible</p>
                 </div>
               </div>
-              <p className="text-muted-foreground text-sm font-medium">Basado en <strong className="text-foreground">500 reseñas verificadas</strong></p>
+              <p className="text-muted-foreground text-sm font-medium">
+                Basado en <strong className="text-foreground">500 reseñas verificadas</strong>
+              </p>
               {/* Social proof pills */}
               <div className="flex flex-wrap gap-2 mt-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full">
@@ -239,8 +243,15 @@ export default function TestimonialsSection() {
                   className={`w-full flex items-center gap-3 group transition-all duration-200 rounded-lg px-2 py-1 ${activeFilter === row.stars ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
                   aria-label={`Filtrar por ${row.stars} estrellas`}
                 >
-                  <span className="text-sm font-semibold text-foreground w-4 shrink-0">{row.stars}</span>
-                  <svg className="w-3.5 h-3.5 text-yellow-400 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                  <span className="text-sm font-semibold text-foreground w-4 shrink-0">
+                    {row.stars}
+                  </span>
+                  <svg
+                    className="w-3.5 h-3.5 text-yellow-400 shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                   <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
@@ -249,7 +260,9 @@ export default function TestimonialsSection() {
                       style={{ width: animatedBars ? `${row.percent}%` : '0%' }}
                     />
                   </div>
-                  <span className="text-xs text-muted-foreground w-8 text-right shrink-0">{row.count}</span>
+                  <span className="text-xs text-muted-foreground w-8 text-right shrink-0">
+                    {row.count}
+                  </span>
                 </button>
               ))}
               {activeFilter && (
@@ -278,15 +291,24 @@ export default function TestimonialsSection() {
               </div>
 
               {/* Review title */}
-              <h3 className="font-bold text-foreground text-sm mb-2 leading-snug">{review.title}</h3>
+              <h3 className="font-bold text-foreground text-sm mb-2 leading-snug">
+                {review.title}
+              </h3>
 
               {/* Review text */}
-              <p className="text-foreground/75 text-sm leading-relaxed mb-4 flex-1">{review.text}</p>
+              <p className="text-foreground/75 text-sm leading-relaxed mb-4 flex-1">
+                {review.text}
+              </p>
 
               {/* Tags */}
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {review.tags.map((tag) => (
-                  <span key={tag} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{tag}</span>
+                  <span
+                    key={tag}
+                    className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full"
+                  >
+                    {tag}
+                  </span>
                 ))}
               </div>
 
@@ -297,16 +319,31 @@ export default function TestimonialsSection() {
 
               {/* Author row */}
               <div className="flex items-center gap-3 pt-4 border-t border-border">
-                <div className={`w-9 h-9 rounded-full ${review.avatarColor} text-white flex items-center justify-center font-bold text-xs shrink-0`}>
+                <div
+                  className={`w-9 h-9 rounded-full ${review.avatarColor} text-white flex items-center justify-center font-bold text-xs shrink-0`}
+                >
                   {review.initials}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-foreground text-sm truncate">{review.name}</div>
-                  <div className="text-muted-foreground text-xs">{review.location} · {review.date}</div>
+                  <div className="text-muted-foreground text-xs">
+                    {review.location} · {review.date}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 1.941l-3.68 4.86M7 20H2v-9.5a2 2 0 012-2h.5" />
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 1.941l-3.68 4.86M7 20H2v-9.5a2 2 0 012-2h.5"
+                    />
                   </svg>
                   <span>{review.helpful}</span>
                 </div>
@@ -324,8 +361,19 @@ export default function TestimonialsSection() {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-primary text-primary font-semibold text-sm hover:bg-primary hover:text-white transition-all duration-200"
               >
                 Ver más reseñas
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
             ) : (
@@ -334,8 +382,19 @@ export default function TestimonialsSection() {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-border text-muted-foreground font-semibold text-sm hover:border-primary hover:text-primary transition-all duration-200"
               >
                 Ver menos
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 15l7-7 7 7"
+                  />
                 </svg>
               </button>
             )}
@@ -363,7 +422,6 @@ export default function TestimonialsSection() {
             </div>
           </div>
         </div>
-
       </div>
     </section>
   );

@@ -15,13 +15,15 @@ import InspirationSection from './components/InspirationSection';
 
 export const metadata: Metadata = {
   title: 'Muebler\u00eda Polaris | Muebles para tu hogar',
-  description: 'Muebles para sala, comedor, dormitorio, oficina y decoraci\u00f3n. Compra f\u00e1cil y recibe asesor\u00eda personalizada.',
+  description:
+    'Muebles para sala, comedor, dormitorio, oficina y decoraci\u00f3n. Compra f\u00e1cil y recibe asesor\u00eda personalizada.',
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'Muebler\u00eda Polaris | Muebles para tu hogar',
-    description: 'Muebles para sala, comedor, dormitorio, oficina y decoraci\u00f3n. Compra f\u00e1cil y recibe asesor\u00eda personalizada.',
+    description:
+      'Muebles para sala, comedor, dormitorio, oficina y decoraci\u00f3n. Compra f\u00e1cil y recibe asesor\u00eda personalizada.',
     images: [{ url: '/assets/images/app_logo.png', width: 1200, height: 630 }],
   },
 };
@@ -35,7 +37,8 @@ export default function HomePage() {
             '@context': 'https://schema.org',
             '@type': 'FurnitureStore',
             name: 'Mueblería Polaris',
-            description: 'Muebles para sala, comedor, dormitorio, oficina y decoraci\u00f3n. Compra f\u00e1cil y recibe asesor\u00eda personalizada.',
+            description:
+              'Muebles para sala, comedor, dormitorio, oficina y decoraci\u00f3n. Compra f\u00e1cil y recibe asesor\u00eda personalizada.',
             url: 'https://muebleriapolaris.com',
             telephone: '+15550000000',
             address: {

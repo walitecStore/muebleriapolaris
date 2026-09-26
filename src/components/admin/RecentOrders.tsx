@@ -1,19 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  ArrowRight,
-  Clock3,
-  PackageCheck,
-  Truck,
-  CircleCheck,
-  Package,
-} from 'lucide-react';
+import { ArrowRight, Clock3, PackageCheck, Truck, CircleCheck, Package } from 'lucide-react';
 
-import {
-  getRecentOrders,
-  type RecentOrder,
-} from '@/lib/dashboardData';
+import { getRecentOrders, type RecentOrder } from '@/lib/dashboardData';
 
 const formatCurrency = (amount: number) => {
   return `S/ ${amount.toLocaleString('es-PE', {
@@ -25,18 +15,11 @@ const formatCurrency = (amount: number) => {
 const normalizeStatus = (status: string) => {
   const value = status.toLowerCase();
 
-  if (
-    value.includes('entreg') ||
-    value.includes('complet')
-  ) {
+  if (value.includes('entreg') || value.includes('complet')) {
     return 'Entregado';
   }
 
-  if (
-    value.includes('camino') ||
-    value.includes('enviado') ||
-    value.includes('envio')
-  ) {
+  if (value.includes('camino') || value.includes('enviado') || value.includes('envio')) {
     return 'En camino';
   }
 
@@ -45,29 +28,23 @@ const normalizeStatus = (status: string) => {
 
 const statusConfig = {
   Preparando: {
-    className:
-      'bg-amber-50 text-amber-700 border-amber-200',
+    className: 'bg-amber-50 text-amber-700 border-amber-200',
     icon: Clock3,
   },
 
   'En camino': {
-    className:
-      'bg-blue-50 text-blue-700 border-blue-200',
+    className: 'bg-blue-50 text-blue-700 border-blue-200',
     icon: Truck,
   },
 
   Entregado: {
-    className:
-      'bg-emerald-50 text-emerald-700 border-emerald-200',
+    className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     icon: CircleCheck,
   },
 };
 
 const getInitials = (name: string) => {
-  const words = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  const words = name.trim().split(/\s+/).filter(Boolean);
 
   if (words.length === 0) {
     return 'CL';
@@ -94,10 +71,7 @@ export default function RecentOrders() {
           setOrders(data);
         }
       } catch (error) {
-        console.error(
-          'Error cargando pedidos recientes:',
-          error,
-        );
+        console.error('Error cargando pedidos recientes:', error);
       } finally {
         if (mounted) {
           setLoading(false);
@@ -123,13 +97,9 @@ export default function RecentOrders() {
             </div>
 
             <div>
-              <h2 className="text-lg font-bold text-slate-900">
-                Pedidos recientes
-              </h2>
+              <h2 className="text-lg font-bold text-slate-900">Pedidos recientes</h2>
 
-              <p className="text-sm text-slate-500">
-                Últimos pedidos registrados
-              </p>
+              <p className="text-sm text-slate-500">Últimos pedidos registrados</p>
             </div>
           </div>
         </div>
@@ -139,10 +109,7 @@ export default function RecentOrders() {
           className="group flex items-center gap-2 text-sm font-bold text-cyan-600 transition hover:text-cyan-700"
         >
           Ver todos
-          <ArrowRight
-            size={16}
-            className="transition-transform group-hover:translate-x-1"
-          />
+          <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
         </button>
       </div>
 
@@ -163,13 +130,9 @@ export default function RecentOrders() {
             <Package size={24} />
           </div>
 
-          <h3 className="mt-4 font-bold text-slate-700">
-            No hay pedidos recientes
-          </h3>
+          <h3 className="mt-4 font-bold text-slate-700">No hay pedidos recientes</h3>
 
-          <p className="mt-1 text-sm text-slate-500">
-            Los nuevos pedidos aparecerán aquí.
-          </p>
+          <p className="mt-1 text-sm text-slate-500">Los nuevos pedidos aparecerán aquí.</p>
         </div>
       )}
 
@@ -207,11 +170,9 @@ export default function RecentOrders() {
 
             <tbody>
               {orders.map((order) => {
-                const status =
-                  normalizeStatus(order.status);
+                const status = normalizeStatus(order.status);
 
-                const config =
-                  statusConfig[status];
+                const config = statusConfig[status];
 
                 const StatusIcon = config.icon;
 
@@ -222,10 +183,7 @@ export default function RecentOrders() {
                   >
                     {/* Pedido */}
                     <td className="px-6 py-5">
-                      <span
-                        className="font-mono text-xs font-bold text-slate-700"
-                        title={order.id}
-                      >
+                      <span className="font-mono text-xs font-bold text-slate-700" title={order.id}>
                         #{order.id.slice(0, 8).toUpperCase()}
                       </span>
                     </td>
@@ -237,25 +195,18 @@ export default function RecentOrders() {
                           {getInitials(order.customer)}
                         </div>
 
-                        <span className="font-medium text-slate-700">
-                          {order.customer}
-                        </span>
+                        <span className="font-medium text-slate-700">{order.customer}</span>
                       </div>
                     </td>
 
                     {/* Producto */}
                     <td className="px-6 py-5">
                       <div>
-                        <span className="text-sm font-medium text-slate-600">
-                          {order.product}
-                        </span>
+                        <span className="text-sm font-medium text-slate-600">{order.product}</span>
 
                         {order.quantity > 0 && (
                           <p className="mt-0.5 text-xs text-slate-400">
-                            {order.quantity}{' '}
-                            {order.quantity === 1
-                              ? 'unidad'
-                              : 'unidades'}
+                            {order.quantity} {order.quantity === 1 ? 'unidad' : 'unidades'}
                           </p>
                         )}
                       </div>
@@ -263,9 +214,7 @@ export default function RecentOrders() {
 
                     {/* Fecha */}
                     <td className="px-6 py-5">
-                      <span className="text-sm text-slate-500">
-                        {order.date}
-                      </span>
+                      <span className="text-sm text-slate-500">{order.date}</span>
                     </td>
 
                     {/* Importe */}
@@ -296,10 +245,7 @@ export default function RecentOrders() {
       {!loading && orders.length > 0 && (
         <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
           <p className="text-sm text-slate-500">
-            Mostrando los últimos{' '}
-            <span className="font-bold text-slate-700">
-              {orders.length}
-            </span>{' '}
+            Mostrando los últimos <span className="font-bold text-slate-700">{orders.length}</span>{' '}
             pedidos
           </p>
 

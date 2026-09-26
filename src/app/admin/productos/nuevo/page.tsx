@@ -74,32 +74,12 @@ const CATEGORY_OPTIONS = [
 ];
 
 const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
-  EUROPA: [
-    'Europeo en Medida Original',
-    'Europeo Mediano',
-    'Europeo Mini',
-    'Europeo Mini Modular',
-  ],
-  MODULAR: [
-    'Modular Fijo',
-    'Modular Suelto',
-  ],
-  SECCIONAL: [
-    'Seccional Fijo',
-    'Seccionales Sueltos',
-    'Seccionales con Parlantes',
-  ],
-  CAMA: [
-    'Sofá Cama Fijo',
-    'Sofás Cama Sueltos',
-  ],
-  '3_2_1': [
-    'Sofás 3-2-1-Sueltos',
-  ],
-  PUFS_DECORATIVOS: [
-    'Pufs',
-    'Decorativos',
-  ],
+  EUROPA: ['Europeo en Medida Original', 'Europeo Mediano', 'Europeo Mini', 'Europeo Mini Modular'],
+  MODULAR: ['Modular Fijo', 'Modular Suelto'],
+  SECCIONAL: ['Seccional Fijo', 'Seccionales Sueltos', 'Seccionales con Parlantes'],
+  CAMA: ['Sofá Cama Fijo', 'Sofás Cama Sueltos'],
+  '3_2_1': ['Sofás 3-2-1-Sueltos'],
+  PUFS_DECORATIVOS: ['Pufs', 'Decorativos'],
   RECLINABLE: [],
   COMEDORES: [],
 };
@@ -145,7 +125,6 @@ function toNumber(value: string, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
-
 function normalizeCategoryText(value: string) {
   return value
     .normalize('NFD')
@@ -157,20 +136,8 @@ function normalizeCategoryText(value: string) {
 }
 
 const CATEGORY_ALIASES: Record<string, string[]> = {
-  EUROPA: [
-    'EUROPA',
-    'Sofás Europeo',
-    'Sofas Europeo',
-    'Sofá Europeo',
-    'Sofa Europeo',
-  ],
-  MODULAR: [
-    'MODULAR',
-    'Sofás Modulares',
-    'Sofas Modulares',
-    'Sofá Modular',
-    'Sofa Modular',
-  ],
+  EUROPA: ['EUROPA', 'Sofás Europeo', 'Sofas Europeo', 'Sofá Europeo', 'Sofa Europeo'],
+  MODULAR: ['MODULAR', 'Sofás Modulares', 'Sofas Modulares', 'Sofá Modular', 'Sofa Modular'],
   SECCIONAL: [
     'SECCIONAL',
     'Sofás Seccionales',
@@ -178,21 +145,8 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
     'Sofá Seccional',
     'Sofa Seccional',
   ],
-  CAMA: [
-    'CAMA',
-    'Sofás Cama',
-    'Sofas Cama',
-    'Sofá Cama',
-    'Sofa Cama',
-  ],
-  '3_2_1': [
-    '3_2_1',
-    '3-2-1',
-    'Sofás 3-2-1',
-    'Sofas 3-2-1',
-    'Sofá 3-2-1',
-    'Sofa 3-2-1',
-  ],
+  CAMA: ['CAMA', 'Sofás Cama', 'Sofas Cama', 'Sofá Cama', 'Sofa Cama'],
+  '3_2_1': ['3_2_1', '3-2-1', 'Sofás 3-2-1', 'Sofas 3-2-1', 'Sofá 3-2-1', 'Sofa 3-2-1'],
   PUFS_DECORATIVOS: [
     'PUFS_DECORATIVOS',
     'PUFS Y DECORATIVOS',
@@ -208,11 +162,7 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
     'Sofá Reclinable',
     'Sofa Reclinable',
   ],
-  COMEDORES: [
-    'COMEDORES',
-    'Comedores',
-    'Comedor',
-  ],
+  COMEDORES: ['COMEDORES', 'Comedores', 'Comedor'],
 };
 
 export default function NuevoProductoPage() {
@@ -264,10 +214,7 @@ export default function NuevoProductoPage() {
     setPreviewImages(parseList(form.imagenes));
   }, [form.imagenes]);
 
-  function updateField<K extends keyof ProductForm>(
-    field: K,
-    value: ProductForm[K]
-  ) {
+  function updateField<K extends keyof ProductForm>(field: K, value: ProductForm[K]) {
     setForm((previous) => ({
       ...previous,
       [field]: value,
@@ -341,14 +288,10 @@ export default function NuevoProductoPage() {
           });
 
         if (uploadError) {
-          throw new Error(
-            `No se pudo subir ${file.name}: ${uploadError.message}`,
-          );
+          throw new Error(`No se pudo subir ${file.name}: ${uploadError.message}`);
         }
 
-        const { data } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(path);
+        const { data } = supabase.storage.from('product-images').getPublicUrl(path);
 
         if (!data.publicUrl) {
           throw new Error(`No se obtuvo la URL pública de ${file.name}.`);
@@ -452,16 +395,12 @@ export default function NuevoProductoPage() {
 
       productPayload.category_id = categoryId;
 
-      const { error } = await supabase
-        .from('products')
-        .insert(productPayload);
+      const { error } = await supabase.from('products').insert(productPayload);
 
       if (error) {
         console.error('ERROR CREANDO PRODUCTO:', error);
 
-        throw new Error(
-          error.message || 'No se pudo crear el producto.'
-        );
+        throw new Error(error.message || 'No se pudo crear el producto.');
       }
 
       console.log('PRODUCTO CREADO CORRECTAMENTE');
@@ -480,9 +419,7 @@ export default function NuevoProductoPage() {
       console.error('ERROR CREANDO PRODUCTO:', error);
 
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Ocurrió un error al crear el producto.'
+        error instanceof Error ? error.message : 'Ocurrió un error al crear el producto.'
       );
     } finally {
       setSaving(false);
@@ -525,19 +462,13 @@ export default function NuevoProductoPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-6">
-              <h2 className="text-lg font-extrabold">
-                1. Información del producto
-              </h2>
-              <p className="text-sm text-slate-500">
-                Datos principales que verá el cliente.
-              </p>
+              <h2 className="text-lg font-extrabold">1. Información del producto</h2>
+              <p className="text-sm text-slate-500">Datos principales que verá el cliente.</p>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-bold">
-                  Nombre del producto *
-                </label>
+                <label className="mb-2 block text-sm font-bold">Nombre del producto *</label>
                 <input
                   value={form.nombre}
                   onChange={(e) => handleNameChange(e.target.value)}
@@ -547,9 +478,7 @@ export default function NuevoProductoPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Slug / babosa *
-                </label>
+                <label className="mb-2 block text-sm font-bold">Slug / babosa *</label>
                 <input
                   value={form.babosa}
                   onChange={(e) => updateField('babosa', e.target.value)}
@@ -562,9 +491,7 @@ export default function NuevoProductoPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Precio *
-                </label>
+                <label className="mb-2 block text-sm font-bold">Precio *</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">
                     S/
@@ -582,25 +509,19 @@ export default function NuevoProductoPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Existencias *
-                </label>
+                <label className="mb-2 block text-sm font-bold">Existencias *</label>
                 <input
                   type="number"
                   min="0"
                   step="1"
                   value={form.existencias}
-                  onChange={(e) =>
-                    updateField('existencias', e.target.value)
-                  }
+                  onChange={(e) => updateField('existencias', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Categoría *
-                </label>
+                <label className="mb-2 block text-sm font-bold">Categoría *</label>
                 <select
                   value={form.categoria}
                   onChange={(e) => {
@@ -651,9 +572,7 @@ export default function NuevoProductoPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Subcategoría
-                </label>
+                <label className="mb-2 block text-sm font-bold">Subcategoría</label>
                 <select
                   value={form.subcategoria}
                   onChange={(e) => updateField('subcategoria', e.target.value)}
@@ -673,14 +592,10 @@ export default function NuevoProductoPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Categoría de envío
-                </label>
+                <label className="mb-2 block text-sm font-bold">Categoría de envío</label>
                 <select
                   value={form.categoria_de_envio}
-                  onChange={(e) =>
-                    updateField('categoria_de_envio', e.target.value)
-                  }
+                  onChange={(e) => updateField('categoria_de_envio', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 >
                   <option value="EUROPA">EUROPA</option>
@@ -688,22 +603,16 @@ export default function NuevoProductoPage() {
                   <option value="SECCIONAL">SECCIONAL</option>
                   <option value="CAMA">CAMA</option>
                   <option value="3_2_1">3-2-1</option>
-                  <option value="PUFS_DECORATIVOS">
-                    PUFS Y DECORATIVOS
-                  </option>
+                  <option value="PUFS_DECORATIVOS">PUFS Y DECORATIVOS</option>
                 </select>
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-bold">
-                  Descripción
-                </label>
+                <label className="mb-2 block text-sm font-bold">Descripción</label>
                 <textarea
                   rows={5}
                   value={form.descripcion}
-                  onChange={(e) =>
-                    updateField('descripcion', e.target.value)
-                  }
+                  onChange={(e) => updateField('descripcion', e.target.value)}
                   placeholder="Describe materiales, comodidad, diseño, medidas y características..."
                   className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
@@ -713,12 +622,9 @@ export default function NuevoProductoPage() {
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-6">
-              <h2 className="text-lg font-extrabold">
-                2. Imágenes del producto
-              </h2>
+              <h2 className="text-lg font-extrabold">2. Imágenes del producto</h2>
               <p className="text-sm text-slate-500">
-                Puedes colocar una imagen principal y varias imágenes de
-                colores/variantes.
+                Puedes colocar una imagen principal y varias imágenes de colores/variantes.
               </p>
             </div>
 
@@ -730,7 +636,9 @@ export default function NuevoProductoPage() {
                   </div>
                   <div className="flex-1">
                     <p className="font-bold">Subir imágenes desde tu computadora</p>
-                    <p className="text-xs text-slate-500">Hasta 10 imágenes · JPG, PNG o WebP · máximo 8 MB cada una.</p>
+                    <p className="text-xs text-slate-500">
+                      Hasta 10 imágenes · JPG, PNG o WebP · máximo 8 MB cada una.
+                    </p>
                   </div>
                   <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-cyan-700">
                     <Upload size={17} />
@@ -748,9 +656,16 @@ export default function NuevoProductoPage() {
                 {selectedFiles.length > 0 && (
                   <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {selectedFiles.map((file, index) => (
-                      <div key={`${file.name}-${index}`} className="relative overflow-hidden rounded-xl border border-slate-200 bg-white">
+                      <div
+                        key={`${file.name}-${index}`}
+                        className="relative overflow-hidden rounded-xl border border-slate-200 bg-white"
+                      >
                         {previewImages[index] && (
-                          <img src={previewImages[index]} alt={file.name} className="h-28 w-full object-cover" />
+                          <img
+                            src={previewImages[index]}
+                            alt={file.name}
+                            className="h-28 w-full object-cover"
+                          />
                         )}
                         <button
                           type="button"
@@ -768,30 +683,22 @@ export default function NuevoProductoPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  URL de imagen principal
-                </label>
+                <label className="mb-2 block text-sm font-bold">URL de imagen principal</label>
                 <input
                   type="url"
                   value={form.url_imagen}
-                  onChange={(e) =>
-                    updateField('url_imagen', e.target.value)
-                  }
+                  onChange={(e) => updateField('url_imagen', e.target.value)}
                   placeholder="https://..."
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Galería de imágenes
-                </label>
+                <label className="mb-2 block text-sm font-bold">Galería de imágenes</label>
                 <textarea
                   rows={5}
                   value={form.imagenes}
-                  onChange={(e) =>
-                    updateField('imagenes', e.target.value)
-                  }
+                  onChange={(e) => updateField('imagenes', e.target.value)}
                   placeholder={`Una URL por línea:
 https://...
 https://...
@@ -800,8 +707,7 @@ https://...`}
                   className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 font-mono text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
                 <p className="mt-1 text-xs text-slate-400">
-                  La primera imagen se usa como principal si no colocas una
-                  URL principal.
+                  La primera imagen se usa como principal si no colocas una URL principal.
                 </p>
               </div>
 
@@ -832,9 +738,7 @@ https://...`}
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-6">
-              <h2 className="text-lg font-extrabold">
-                3. Reconocimiento de color
-              </h2>
+              <h2 className="text-lg font-extrabold">3. Reconocimiento de color</h2>
               <p className="text-sm text-slate-500">
                 Información preparada para el buscador inteligente por color.
               </p>
@@ -842,14 +746,10 @@ https://...`}
 
             <div className="grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Color principal
-                </label>
+                <label className="mb-2 block text-sm font-bold">Color principal</label>
                 <select
                   value={form.color_principal}
-                  onChange={(e) =>
-                    updateField('color_principal', e.target.value)
-                  }
+                  onChange={(e) => updateField('color_principal', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 >
                   <option value="">Seleccionar color</option>
@@ -862,30 +762,22 @@ https://...`}
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Confianza del reconocimiento
-                </label>
+                <label className="mb-2 block text-sm font-bold">Confianza del reconocimiento</label>
                 <input
                   type="number"
                   min="0"
                   max="1"
                   step="0.01"
                   value={form.color_confianza}
-                  onChange={(e) =>
-                    updateField('color_confianza', e.target.value)
-                  }
+                  onChange={(e) => updateField('color_confianza', e.target.value)}
                   placeholder="0.95"
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
-                <p className="mt-1 text-xs text-slate-400">
-                  Usa valores entre 0 y 1.
-                </p>
+                <p className="mt-1 text-xs text-slate-400">Usa valores entre 0 y 1.</p>
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-bold">
-                  Colores disponibles
-                </label>
+                <label className="mb-2 block text-sm font-bold">Colores disponibles</label>
                 <textarea
                   rows={3}
                   value={form.colores}
@@ -899,9 +791,7 @@ https://...`}
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-6">
-              <h2 className="text-lg font-extrabold">
-                4. Video del producto
-              </h2>
+              <h2 className="text-lg font-extrabold">4. Video del producto</h2>
               <p className="text-sm text-slate-500">
                 Pequeño video tipo catálogo para mostrar el modelo.
               </p>
@@ -909,30 +799,22 @@ https://...`}
 
             <div className="grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  URL del video
-                </label>
+                <label className="mb-2 block text-sm font-bold">URL del video</label>
                 <input
                   type="url"
                   value={form.url_video}
-                  onChange={(e) =>
-                    updateField('url_video', e.target.value)
-                  }
+                  onChange={(e) => updateField('url_video', e.target.value)}
                   placeholder="https://..."
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Imagen de portada
-                </label>
+                <label className="mb-2 block text-sm font-bold">Imagen de portada</label>
                 <input
                   type="url"
                   value={form.video_portada_url}
-                  onChange={(e) =>
-                    updateField('video_portada_url', e.target.value)
-                  }
+                  onChange={(e) => updateField('video_portada_url', e.target.value)}
                   placeholder="https://..."
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
@@ -941,21 +823,15 @@ https://...`}
 
             {form.url_video && (
               <div className="mt-5 rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
-                <p className="text-sm font-bold text-cyan-800">
-                  ✓ Video configurado
-                </p>
-                <p className="mt-1 break-all text-xs text-cyan-700">
-                  {form.url_video}
-                </p>
+                <p className="text-sm font-bold text-cyan-800">✓ Video configurado</p>
+                <p className="mt-1 break-all text-xs text-cyan-700">{form.url_video}</p>
               </div>
             )}
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-6">
-              <h2 className="text-lg font-extrabold">
-                5. Inteligencia comercial
-              </h2>
+              <h2 className="text-lg font-extrabold">5. Inteligencia comercial</h2>
               <p className="text-sm text-slate-500">
                 Controla cómo aparecerá el producto en el catálogo.
               </p>
@@ -966,16 +842,12 @@ https://...`}
                 <input
                   type="checkbox"
                   checked={form.destacado}
-                  onChange={(e) =>
-                    updateField('destacado', e.target.checked)
-                  }
+                  onChange={(e) => updateField('destacado', e.target.checked)}
                   className="h-5 w-5 accent-cyan-600"
                 />
                 <div>
                   <p className="font-bold">Producto destacado</p>
-                  <p className="text-xs text-slate-500">
-                    Puede aparecer en Sofás Destacados.
-                  </p>
+                  <p className="text-xs text-slate-500">Puede aparecer en Sofás Destacados.</p>
                 </div>
               </label>
 
@@ -983,9 +855,7 @@ https://...`}
                 <input
                   type="checkbox"
                   checked={form.mas_vendido}
-                  onChange={(e) =>
-                    updateField('mas_vendido', e.target.checked)
-                  }
+                  onChange={(e) => updateField('mas_vendido', e.target.checked)}
                   className="h-5 w-5 accent-cyan-600"
                 />
                 <div>
@@ -999,41 +869,31 @@ https://...`}
 
             <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Orden destacado
-                </label>
+                <label className="mb-2 block text-sm font-bold">Orden destacado</label>
                 <input
                   type="number"
                   min="0"
                   value={form.orden_destacado}
-                  onChange={(e) =>
-                    updateField('orden_destacado', e.target.value)
-                  }
+                  onChange={(e) => updateField('orden_destacado', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Clasificación
-                </label>
+                <label className="mb-2 block text-sm font-bold">Clasificación</label>
                 <input
                   type="number"
                   min="0"
                   max="5"
                   step="0.1"
                   value={form.clasificacion}
-                  onChange={(e) =>
-                    updateField('clasificacion', e.target.value)
-                  }
+                  onChange={(e) => updateField('clasificacion', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Visitas
-                </label>
+                <label className="mb-2 block text-sm font-bold">Visitas</label>
                 <input
                   type="number"
                   min="0"
@@ -1044,34 +904,23 @@ https://...`}
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Favoritos
-                </label>
+                <label className="mb-2 block text-sm font-bold">Favoritos</label>
                 <input
                   type="number"
                   min="0"
                   value={form.favorecer}
-                  onChange={(e) =>
-                    updateField('favorecer', e.target.value)
-                  }
+                  onChange={(e) => updateField('favorecer', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold">
-                  Reseñas
-                </label>
+                <label className="mb-2 block text-sm font-bold">Reseñas</label>
                 <input
                   type="number"
                   min="0"
                   value={form.recuento_de_revisiones}
-                  onChange={(e) =>
-                    updateField(
-                      'recuento_de_revisiones',
-                      e.target.value
-                    )
-                  }
+                  onChange={(e) => updateField('recuento_de_revisiones', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                 />
               </div>

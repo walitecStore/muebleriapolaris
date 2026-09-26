@@ -15,15 +15,13 @@ export default function FavoritesButton() {
 
   return (
     <Link
-      href={user ? "/favoritos" : "/login"}
+      href={user ? '/favoritos' : '/login'}
       className="relative w-11 h-11 rounded-full border border-gray-200 bg-white hover:bg-gray-100 transition-all duration-300 flex items-center justify-center group"
       aria-label="Favoritos"
     >
       <Heart
         className={`w-5 h-5 transition-all duration-300 ${
-          total > 0
-            ? "fill-red-500 text-red-500"
-            : "text-gray-700"
+          total > 0 ? 'fill-red-500 text-red-500' : 'text-gray-700'
         } group-hover:scale-110`}
       />
 

@@ -26,8 +26,7 @@ export default function Card({
           ? 'bg-white/70 backdrop-blur-xl border-white/30 shadow-xl'
           : 'bg-white border-slate-200 shadow-sm',
 
-        hover &&
-          'hover:-translate-y-1 hover:shadow-2xl hover:shadow-cyan-500/10',
+        hover && 'hover:-translate-y-1 hover:shadow-2xl hover:shadow-cyan-500/10',
 
         {
           'p-0': padding === 'none',

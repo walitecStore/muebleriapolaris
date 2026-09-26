@@ -12,7 +12,6 @@ import RegisterButton from './RegisterButton';
 import PasswordStrength from './PasswordStrength';
 
 export default function RegisterForm() {
-
   const router = useRouter();
 
   const { signUp } = useAuth();
@@ -29,10 +28,7 @@ export default function RegisterForm() {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-   const handleRegister = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
-
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setError('');
@@ -48,8 +44,7 @@ export default function RegisterForm() {
       return;
     }
 
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(correo)) {
       setError('El correo electrónico no es válido.');
@@ -77,82 +72,58 @@ export default function RegisterForm() {
     }
 
     try {
-
       setLoading(true);
 
-      await signUp(
-        correo,
-        password,
-        {
-          fullName: nombre,
-          avatarUrl: '',
-        }
-      );
+      await signUp(correo, password, {
+        fullName: nombre,
+        avatarUrl: '',
+      });
 
-      setSuccess(
-        'Tu cuenta fue creada correctamente. Revisa tu correo para confirmar tu cuenta.'
-      );
+      setSuccess('Tu cuenta fue creada correctamente. Revisa tu correo para confirmar tu cuenta.');
 
       setTimeout(() => {
         router.push('/login');
       }, 2500);
-
     } catch (err: unknown) {
-
-  if (err instanceof Error) {
-    setError(err.message);
-  } else {
-    setError('No fue posible crear la cuenta.');
-  }
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('No fue posible crear la cuenta.');
+      }
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
   return (
-<>
-  {error && (
-    <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-      {error}
-    </div>
-  )}
+    <>
+      {error && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+          {error}
+        </div>
+      )}
 
-  {success && (
-    <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-700">
-      {success}
-    </div>
-  )}
+      {success && (
+        <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+          {success}
+        </div>
+      )}
 
-  <form
-    onSubmit={handleRegister}
-    className="space-y-6"
-  >
+      <form onSubmit={handleRegister} className="space-y-6">
+        {/* Nombre */}
 
-    {/* Nombre */}
+        <div>
+          <label className="mb-2 block font-semibold">Nombre completo</label>
 
-    <div>
+          <div className="relative">
+            <User size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
 
-      <label className="mb-2 block font-semibold">
-        Nombre completo
-      </label>
-
-      <div className="relative">
-
-        <User
-          size={20}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-        />
-
-        <input
-          type="text"
-          value={nombre}
-          onChange={(e)=>setNombre(e.target.value)}
-          placeholder="Juan Pérez"
-
-          className="
+            <input
+              type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Juan Pérez"
+              className="
           w-full
           rounded-xl
           border
@@ -172,33 +143,23 @@ export default function RegisterForm() {
           focus:ring-primary/20
           outline-none
           "
-        />
+            />
+          </div>
+        </div>
 
-      </div>
+        {/* Correo */}
 
-    </div>
+        <div>
+          <label className="mb-2 block font-semibold">Correo electrónico</label>
+          <div className="relative">
+            <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
 
-    {/* Correo */}
-
-    <div>
-
-      <label className="mb-2 block font-semibold">
-        Correo electrónico
-        </label>
-      <div className="relative">
-
-        <Mail
-          size={20}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-        />
-
-        <input
-          type="email"
-          value={correo}
-          onChange={(e)=>setCorreo(e.target.value)}
-          placeholder="correo@ejemplo.com"
-
-          className="
+            <input
+              type="email"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
+              placeholder="correo@ejemplo.com"
+              className="
           w-full
           rounded-xl
           border
@@ -218,33 +179,23 @@ export default function RegisterForm() {
           focus:ring-primary/20
           outline-none
           "
-        />
+            />
+          </div>
+        </div>
+        {/* Contraseña */}
 
-      </div>
+        <div>
+          <label className="mb-2 block font-semibold">Contraseña</label>
 
-    </div>
- {/* Contraseña */}
+          <div className="relative">
+            <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
 
-    <div>
-
-      <label className="mb-2 block font-semibold">
-        Contraseña
-      </label>
-
-      <div className="relative">
-
-        <Lock
-          size={20}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-        />
-
-        <input
-          type={mostrarPassword ? 'text' : 'password'}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="********"
-
-          className="
+            <input
+              type={mostrarPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="********"
+              className="
           w-full
           rounded-xl
           border
@@ -264,48 +215,34 @@ export default function RegisterForm() {
           focus:ring-primary/20
           outline-none
           "
-        />
+            />
 
-        <button
-          type="button"
-          onClick={() => setMostrarPassword(!mostrarPassword)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary"
-        >
-          {mostrarPassword ? (
-            <EyeOff size={20} />
-          ) : (
-            <Eye size={20} />
-          )}
-        </button>
+            <button
+              type="button"
+              onClick={() => setMostrarPassword(!mostrarPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary"
+            >
+              {mostrarPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+        </div>
 
-      </div>
+        <PasswordStrength password={password} />
 
-    </div>
+        {/* Confirmar contraseña */}
 
-    <PasswordStrength password={password} />
+        <div>
+          <label className="mb-2 block font-semibold">Confirmar contraseña</label>
 
-    {/* Confirmar contraseña */}
+          <div className="relative">
+            <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
 
-    <div>
-
-      <label className="mb-2 block font-semibold">
-        Confirmar contraseña
-      </label>
-
-      <div className="relative">
-
-        <Lock
-          size={20}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-        />
-
-        <input
-          type={mostrarConfirmar ? 'text' : 'password'}
-          value={confirmar}
-          onChange={(e) => setConfirmar(e.target.value)}
-          placeholder="********"
-
-          className="
+            <input
+              type={mostrarConfirmar ? 'text' : 'password'}
+              value={confirmar}
+              onChange={(e) => setConfirmar(e.target.value)}
+              placeholder="********"
+              className="
           w-full
           rounded-xl
           border
@@ -325,46 +262,31 @@ export default function RegisterForm() {
           focus:ring-primary/20
           outline-none
           "
-        />
+            />
 
-        <button
-          type="button"
-          onClick={() => setMostrarConfirmar(!mostrarConfirmar)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary"
-        >
-          {mostrarConfirmar ? (
-            <EyeOff size={20} />
-          ) : (
-            <Eye size={20} />
-          )}
-        </button>
+            <button
+              type="button"
+              onClick={() => setMostrarConfirmar(!mostrarConfirmar)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary"
+            >
+              {mostrarConfirmar ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+        </div>
 
-      </div>
+        <RegisterButton loading={loading} />
 
-    </div>
+        <div className="text-center pt-6">
+          <p className="text-gray-600">¿Ya tienes una cuenta?</p>
 
-    <RegisterButton loading={loading} />
-
-    <div className="text-center pt-6">
-
-      <p className="text-gray-600">
-
-        ¿Ya tienes una cuenta?
-
-      </p>
-
-      <Link
-        href="/login"
-        className="mt-3 inline-block font-semibold text-primary hover:underline"
-      >
-        Iniciar sesión
-      </Link>
-
-    </div>
-
-  </form>
-
-</>
-
-    );
+          <Link
+            href="/login"
+            className="mt-3 inline-block font-semibold text-primary hover:underline"
+          >
+            Iniciar sesión
+          </Link>
+        </div>
+      </form>
+    </>
+  );
 }

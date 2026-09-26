@@ -9,10 +9,7 @@ import SalesChart from '@/components/admin/SalesChart';
 import RecentOrders from '@/components/admin/RecentOrders';
 import QuickActions from '@/components/admin/QuickActions';
 
-import {
-  getDashboardStats,
-  type DashboardStats,
-} from '@/lib/dashboardData';
+import { getDashboardStats, type DashboardStats } from '@/lib/dashboardData';
 
 const initialStats: DashboardStats = {
   totalProducts: 0,
@@ -84,9 +81,7 @@ export default function AdminV2Page() {
 
         {/* Estado de carga */}
         {loading && (
-          <div className="mt-3 text-right text-xs text-slate-400">
-            Actualizando información...
-          </div>
+          <div className="mt-3 text-right text-xs text-slate-400">Actualizando información...</div>
         )}
       </main>
     </div>

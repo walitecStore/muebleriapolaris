@@ -27,18 +27,25 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   useEffect(() => {
     if (!user || !isOpen) return;
     const supabase = createClient();
-    supabase.from('settings').select('*').eq('user_id', user.id).maybeSingle().then(({ data }) => {
-      if (data) {
-        setTheme((data.theme as Theme) || 'auto');
-        setNotifPromo(data.notif_promociones ?? true);
-        setNotifNuevos(data.notif_nuevos_productos ?? true);
-        setNotifPedidos(data.notif_estado_pedidos ?? true);
-      }
-    });
+    supabase
+      .from('settings')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setTheme((data.theme as Theme) || 'auto');
+          setNotifPromo(data.notif_promociones ?? true);
+          setNotifNuevos(data.notif_nuevos_productos ?? true);
+          setNotifPedidos(data.notif_estado_pedidos ?? true);
+        }
+      });
   }, [user, isOpen]);
 
   useEffect(() => {
-    function handleKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
     if (isOpen) document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
@@ -48,7 +55,13 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     setSaving(true);
     const supabase = createClient();
     await supabase.from('settings').upsert(
-      { user_id: user.id, theme, notif_promociones: notifPromo, notif_nuevos_productos: notifNuevos, notif_estado_pedidos: notifPedidos },
+      {
+        user_id: user.id,
+        theme,
+        notif_promociones: notifPromo,
+        notif_nuevos_productos: notifNuevos,
+        notif_estado_pedidos: notifPedidos,
+      },
       { onConflict: 'user_id' }
     );
     setSaving(false);
@@ -72,7 +85,11 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   return (
     <>
       {isOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[80]" onClick={onClose} aria-hidden="true" />
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[80]"
+          onClick={onClose}
+          aria-hidden="true"
+        />
       )}
       <div
         ref={panelRef}
@@ -86,9 +103,23 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             <span className="text-xl">⚙️</span>
             <h2 className="text-lg font-extrabold text-foreground">Ajustes</h2>
           </div>
-          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors" aria-label="Cerrar">
-            <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <button
+            onClick={onClose}
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+            aria-label="Cerrar"
+          >
+            <svg
+              className="w-5 h-5 text-muted-foreground"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -102,14 +133,20 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                   {user.email?.[0]?.toUpperCase() || '?'}
                 </div>
                 <div>
-                  <p className="font-bold text-foreground text-sm">{user.user_metadata?.full_name || 'Usuario'}</p>
+                  <p className="font-bold text-foreground text-sm">
+                    {user.user_metadata?.full_name || 'Usuario'}
+                  </p>
                   <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
               </div>
             </div>
           ) : (
             <div className="px-5 py-4 border-b border-border">
-              <Link href="/login" onClick={onClose} className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all text-sm">
+              <Link
+                href="/login"
+                onClick={onClose}
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all text-sm"
+              >
                 Iniciar sesión
               </Link>
             </div>
@@ -117,7 +154,9 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
           {/* Cuenta */}
           <div className="px-5 py-4 border-b border-border">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Cuenta</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+              Cuenta
+            </p>
             <div className="space-y-1">
               {menuItems.map((item) => (
                 <Link
@@ -128,8 +167,18 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 >
                   <span className="text-base">{item.icon}</span>
                   {item.label}
-                  <svg className="w-4 h-4 text-muted-foreground ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <svg
+                    className="w-4 h-4 text-muted-foreground ml-auto"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
                   </svg>
                 </Link>
               ))}
@@ -138,17 +187,23 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
           {/* Apariencia */}
           <div className="px-5 py-4 border-b border-border">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Apariencia</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+              Apariencia
+            </p>
             <div className="grid grid-cols-3 gap-2">
               {(['light', 'dark', 'auto'] as Theme[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTheme(t)}
                   className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-xs font-semibold ${
-                    theme === t ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground hover:border-primary/50'
+                    theme === t
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/50'
                   }`}
                 >
-                  <span className="text-lg">{t === 'light' ? '☀️' : t === 'dark' ? '🌙' : '🌓'}</span>
+                  <span className="text-lg">
+                    {t === 'light' ? '☀️' : t === 'dark' ? '🌙' : '🌓'}
+                  </span>
                   {t === 'light' ? 'Claro' : t === 'dark' ? 'Oscuro' : 'Auto'}
                 </button>
               ))}
@@ -157,7 +212,9 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
           {/* Notificaciones */}
           <div className="px-5 py-4 border-b border-border">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Notificaciones</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+              Notificaciones
+            </p>
             <div className="space-y-3">
               {[
                 { label: 'Promociones', value: notifPromo, set: setNotifPromo },
@@ -171,7 +228,9 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                     className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${n.value ? 'bg-primary' : 'bg-muted-foreground/30'}`}
                     aria-label={`${n.label} ${n.value ? 'activado' : 'desactivado'}`}
                   >
-                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${n.value ? 'translate-x-5' : 'translate-x-0'}`} />
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${n.value ? 'translate-x-5' : 'translate-x-0'}`}
+                    />
                   </button>
                 </div>
               ))}
@@ -180,26 +239,57 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
           {/* Seguridad */}
           <div className="px-5 py-4 border-b border-border">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Seguridad</p>
-            <Link href="/perfil#seguridad" onClick={onClose} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+              Seguridad
+            </p>
+            <Link
+              href="/perfil#seguridad"
+              onClick={onClose}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground"
+            >
               <span>🔒</span> Cambiar contraseña
-              <svg className="w-4 h-4 text-muted-foreground ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg
+                className="w-4 h-4 text-muted-foreground ml-auto"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </Link>
           </div>
 
           {/* Información */}
           <div className="px-5 py-4 border-b border-border">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Información</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+              Información
+            </p>
             <div className="space-y-1">
-              <a href="/#contacto" onClick={onClose} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground">
+              <Link
+                href="/#contacto"
+                onClick={onClose}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground"
+              >
                 <span>📄</span> Política de privacidad
-              </a>
-              <a href="/#contacto" onClick={onClose} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground">
+              </Link>
+              <Link
+                href="/#contacto"
+                onClick={onClose}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground"
+              >
                 <span>📋</span> Términos de uso
-              </a>
-              <a href="https://wa.me/51916832791" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground">
+              </Link>
+              <a
+                href="https://wa.me/51916832791"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-semibold text-foreground"
+              >
                 <span>💬</span> Contacto
               </a>
             </div>

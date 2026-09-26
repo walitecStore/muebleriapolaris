@@ -10,16 +10,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import {
-  TrendingUp,
-  TrendingDown,
-  CalendarDays,
-} from 'lucide-react';
+import { TrendingUp, TrendingDown, CalendarDays } from 'lucide-react';
 
-import {
-  getSalesChartData,
-  type SalesChartData,
-} from '@/lib/dashboardData';
+import { getSalesChartData, type SalesChartData } from '@/lib/dashboardData';
 
 const formatCurrency = (value: number) => {
   return `S/ ${value.toLocaleString('es-PE', {
@@ -29,9 +22,7 @@ const formatCurrency = (value: number) => {
 };
 
 export default function SalesChart() {
-  const [salesData, setSalesData] = useState<
-    SalesChartData[]
-  >([]);
+  const [salesData, setSalesData] = useState<SalesChartData[]>([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -46,10 +37,7 @@ export default function SalesChart() {
           setSalesData(data);
         }
       } catch (error) {
-        console.error(
-          'Error cargando gráfico de ventas:',
-          error,
-        );
+        console.error('Error cargando gráfico de ventas:', error);
       } finally {
         if (mounted) {
           setLoading(false);
@@ -68,10 +56,7 @@ export default function SalesChart() {
    * Ventas acumuladas del año
    */
   const totalSales = useMemo(() => {
-    return salesData.reduce(
-      (total, item) => total + Number(item.sales || 0),
-      0,
-    );
+    return salesData.reduce((total, item) => total + Number(item.sales || 0), 0);
   }, [salesData]);
 
   /*
@@ -79,22 +64,17 @@ export default function SalesChart() {
    */
   const currentMonthIndex = new Date().getMonth();
 
-  const currentMonthSales =
-    salesData[currentMonthIndex]?.sales ?? 0;
+  const currentMonthSales = salesData[currentMonthIndex]?.sales ?? 0;
 
   const previousMonthSales =
-    currentMonthIndex > 0
-      ? salesData[currentMonthIndex - 1]?.sales ?? 0
-      : 0;
+    currentMonthIndex > 0 ? (salesData[currentMonthIndex - 1]?.sales ?? 0) : 0;
 
   /*
    * Crecimiento respecto al mes anterior
    */
   const growth =
     previousMonthSales > 0
-      ? ((currentMonthSales - previousMonthSales) /
-          previousMonthSales) *
-        100
+      ? ((currentMonthSales - previousMonthSales) / previousMonthSales) * 100
       : currentMonthSales > 0
         ? 100
         : 0;
@@ -111,13 +91,9 @@ export default function SalesChart() {
           </div>
 
           <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              Ventas
-            </h2>
+            <h2 className="text-lg font-bold text-slate-900">Ventas</h2>
 
-            <p className="text-sm text-slate-500">
-              Rendimiento de ventas durante el año
-            </p>
+            <p className="text-sm text-slate-500">Rendimiento de ventas durante el año</p>
           </div>
         </div>
 
@@ -133,14 +109,10 @@ export default function SalesChart() {
       {/* Resumen */}
       <div className="mb-6 mt-6 flex flex-wrap items-end gap-x-8 gap-y-4">
         <div>
-          <p className="text-sm font-medium text-slate-500">
-            Ventas acumuladas
-          </p>
+          <p className="text-sm font-medium text-slate-500">Ventas acumuladas</p>
 
           <p className="mt-1 text-3xl font-black tracking-tight text-slate-900">
-            {loading
-              ? 'Cargando...'
-              : formatCurrency(totalSales)}
+            {loading ? 'Cargando...' : formatCurrency(totalSales)}
           </p>
         </div>
 
@@ -148,24 +120,15 @@ export default function SalesChart() {
           <>
             <div
               className={`mb-1 flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ${
-                isPositive
-                  ? 'bg-emerald-50 text-emerald-600'
-                  : 'bg-red-50 text-red-600'
+                isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
               }`}
             >
-              {isPositive ? (
-                <TrendingUp size={15} />
-              ) : (
-                <TrendingDown size={15} />
-              )}
-
+              {isPositive ? <TrendingUp size={15} /> : <TrendingDown size={15} />}
               {isPositive ? '+' : ''}
               {growth.toFixed(1)}%
             </div>
 
-            <p className="mb-1 text-sm text-slate-400">
-              vs. mes anterior
-            </p>
+            <p className="mb-1 text-sm text-slate-400">vs. mes anterior</p>
           </>
         )}
       </div>
@@ -176,15 +139,11 @@ export default function SalesChart() {
           <div className="flex h-full items-center justify-center">
             <div className="flex items-center gap-3 text-sm text-slate-500">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-cyan-500" />
-
               Cargando ventas...
             </div>
           </div>
         ) : (
-          <ResponsiveContainer
-            width="100%"
-            height="100%"
-          >
+          <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={salesData}
               margin={{
@@ -195,32 +154,14 @@ export default function SalesChart() {
               }}
             >
               <defs>
-                <linearGradient
-                  id="salesGradient"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="0%"
-                    stopColor="#06b6d4"
-                    stopOpacity={0.28}
-                  />
+                <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.28} />
 
-                  <stop
-                    offset="100%"
-                    stopColor="#06b6d4"
-                    stopOpacity={0.02}
-                  />
+                  <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
 
-              <CartesianGrid
-                strokeDasharray="4 4"
-                vertical={false}
-                stroke="#e2e8f0"
-              />
+              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
 
               <XAxis
                 dataKey="month"
@@ -240,9 +181,7 @@ export default function SalesChart() {
                   fill: '#64748b',
                   fontSize: 12,
                 }}
-                tickFormatter={(value) =>
-                  `S/${Number(value) / 1000}k`
-                }
+                tickFormatter={(value) => `S/${Number(value) / 1000}k`}
                 width={55}
               />
 
@@ -255,8 +194,7 @@ export default function SalesChart() {
                 contentStyle={{
                   borderRadius: '14px',
                   border: '1px solid #e2e8f0',
-                  boxShadow:
-                    '0 10px 30px rgba(15, 23, 42, 0.10)',
+                  boxShadow: '0 10px 30px rgba(15, 23, 42, 0.10)',
                   padding: '12px 14px',
                 }}
                 labelStyle={{
@@ -264,10 +202,7 @@ export default function SalesChart() {
                   fontWeight: 700,
                   marginBottom: 4,
                 }}
-                formatter={(value) => [
-                  formatCurrency(Number(value)),
-                  'Ventas',
-                ]}
+                formatter={(value) => [formatCurrency(Number(value)), 'Ventas']}
               />
 
               <Area
@@ -292,9 +227,7 @@ export default function SalesChart() {
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-cyan-500" />
 
-          <span className="text-sm text-slate-500">
-            Ventas mensuales
-          </span>
+          <span className="text-sm text-slate-500">Ventas mensuales</span>
         </div>
 
         <span className="text-sm font-semibold text-slate-700">

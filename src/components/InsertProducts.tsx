@@ -1,18 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { insertProducts } from "@/lib/insertProducts";
+import { useEffect } from 'react';
+import { insertProducts } from '@/lib/insertProducts';
 
-
-export default function InsertProducts(){
-
-  useEffect(()=>{
-
+export default function InsertProducts() {
+  useEffect(() => {
     insertProducts();
-
-  },[]);
-
+  }, []);
 
   return null;
-
 }

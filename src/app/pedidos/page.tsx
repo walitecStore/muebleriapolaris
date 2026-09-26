@@ -174,10 +174,7 @@ function formatShortDate(value?: string | null) {
 function getStatusLabel(status: OrderStatus) {
   if (status === 'cancelado') return 'Pedido cancelado';
 
-  return (
-    STATUS_STEPS.find((step) => step.key === status)?.label ||
-    status
-  );
+  return STATUS_STEPS.find((step) => step.key === status)?.label || status;
 }
 
 function getAddress(order: Order) {
@@ -185,20 +182,11 @@ function getAddress(order: Order) {
     return order.shipping_address;
   }
 
-  const address = Array.isArray(order.addresses)
-    ? order.addresses[0]
-    : order.addresses;
+  const address = Array.isArray(order.addresses) ? order.addresses[0] : order.addresses;
 
   if (!address) return 'Dirección no registrada';
 
-  return [
-    address.street,
-    address.city,
-    address.state,
-    address.country,
-  ]
-    .filter(Boolean)
-    .join(', ');
+  return [address.street, address.city, address.state, address.country].filter(Boolean).join(', ');
 }
 
 function getWhatsAppNumber() {
@@ -236,9 +224,7 @@ function createWhatsAppMessage(order: Order) {
     '',
     `📍 Dirección: ${getAddress(order)}`,
     '',
-    order.tracking_code
-      ? `🚚 Código de seguimiento: ${order.tracking_code}`
-      : '',
+    order.tracking_code ? `🚚 Código de seguimiento: ${order.tracking_code}` : '',
     '',
     'Quiero consultar sobre mi pedido. Gracias.',
   ]
@@ -271,33 +257,11 @@ function openWhatsApp(order: Order) {
     });
 }
 
-function AnimatedCartBar({
-  status,
-}: {
-  status: OrderStatus;
-}) {
-  if (status === 'cancelado') {
-    return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center">
-        <div className="text-3xl mb-2">❌</div>
-        <p className="font-extrabold text-red-700">
-          Pedido cancelado
-        </p>
-        <p className="text-sm text-red-600 mt-1">
-          Si necesitas ayuda, puedes comunicarte con nosotros por WhatsApp.
-        </p>
-      </div>
-    );
-  }
-
+function AnimatedCartBar({ status }: { status: OrderStatus }) {
   const stepIdx = getStepIndex(status);
-  const progress =
-    stepIdx < 0
-      ? 0
-      : (stepIdx / (STATUS_STEPS.length - 1)) * 100;
+  const progress = stepIdx < 0 ? 0 : (stepIdx / (STATUS_STEPS.length - 1)) * 100;
 
-  const color =
-    STATUS_COLORS[status] || STATUS_COLORS.confirmado;
+  const color = STATUS_COLORS[status] || STATUS_COLORS.confirmado;
 
   const [animProgress, setAnimProgress] = useState(0);
 
@@ -308,6 +272,18 @@ function AnimatedCartBar({
 
     return () => clearTimeout(timer);
   }, [progress]);
+
+  if (status === 'cancelado') {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center">
+        <div className="text-3xl mb-2">❌</div>
+        <p className="font-extrabold text-red-700">Pedido cancelado</p>
+        <p className="text-sm text-red-600 mt-1">
+          Si necesitas ayuda, puedes comunicarte con nosotros por WhatsApp.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -346,24 +322,16 @@ function AnimatedCartBar({
             <div
               key={step.key}
               className={`flex flex-col items-center text-center transition-all duration-500 ${
-                done
-                  ? 'opacity-100'
-                  : 'opacity-35'
+                done ? 'opacity-100' : 'opacity-35'
               }`}
             >
               <div
                 className={`w-11 h-11 rounded-full flex items-center justify-center text-lg border-2 transition-all duration-500 ${
-                  active
-                    ? 'scale-110 shadow-xl'
-                    : ''
+                  active ? 'scale-110 shadow-xl' : ''
                 }`}
                 style={{
-                  backgroundColor: done
-                    ? color
-                    : '#f3f4f6',
-                  borderColor: done
-                    ? color
-                    : '#e5e7eb',
+                  backgroundColor: done ? color : '#f3f4f6',
+                  borderColor: done ? color : '#e5e7eb',
                 }}
               >
                 {step.icon}
@@ -371,9 +339,7 @@ function AnimatedCartBar({
 
               <span
                 className={`text-[11px] mt-2 font-semibold leading-tight ${
-                  active
-                    ? 'text-foreground'
-                    : 'text-muted-foreground'
+                  active ? 'text-foreground' : 'text-muted-foreground'
                 }`}
               >
                 {step.label}
@@ -387,44 +353,27 @@ function AnimatedCartBar({
         <div className="mt-7 rounded-2xl border border-green-200 bg-green-50 p-5 text-center">
           <div className="text-4xl mb-2">🎉</div>
 
-          <p className="font-extrabold text-green-700">
-            ¡Pedido entregado!
-          </p>
+          <p className="font-extrabold text-green-700">¡Pedido entregado!</p>
 
-          <p className="text-sm text-green-600 mt-1">
-            Gracias por confiar en Mueblería Polaris.
-          </p>
+          <p className="text-sm text-green-600 mt-1">Gracias por confiar en Mueblería Polaris.</p>
         </div>
       )}
     </div>
   );
 }
 
-function OrderDetailModal({
-  order,
-  onClose,
-}: {
-  order: Order;
-  onClose: () => void;
-}) {
+function OrderDetailModal({ order, onClose }: { order: Order; onClose: () => void }) {
   const subtotal = Number(
     order.subtotal ??
       order.order_items?.reduce(
         (sum, item) =>
-          sum +
-          Number(
-            item.subtotal ??
-              Number(item.unit_price) *
-                Number(item.quantity)
-          ),
+          sum + Number(item.subtotal ?? Number(item.unit_price) * Number(item.quantity)),
         0
       ) ??
       0
   );
 
-  const shipping = Number(
-    order.shipping_cost || 0
-  );
+  const shipping = Number(order.shipping_cost || 0);
 
   return (
     <div
@@ -438,9 +387,7 @@ function OrderDetailModal({
       <div className="bg-background w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl shadow-2xl border border-border">
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-5 sm:px-7 py-4 flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground">
-              Detalle del pedido
-            </p>
+            <p className="text-xs text-muted-foreground">Detalle del pedido</p>
 
             <h2 className="font-extrabold text-lg sm:text-xl">
               #{order.id.slice(0, 8).toUpperCase()}
@@ -460,20 +407,15 @@ function OrderDetailModal({
         <div className="p-5 sm:p-7 space-y-7">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs text-muted-foreground">
-                Fecha del pedido
-              </p>
+              <p className="text-xs text-muted-foreground">Fecha del pedido</p>
 
-              <p className="font-bold">
-                {formatDate(order.created_at)}
-              </p>
+              <p className="font-bold">{formatDate(order.created_at)}</p>
             </div>
 
             <span
               className="px-4 py-2 rounded-full text-xs font-bold text-white"
               style={{
-                backgroundColor:
-                  STATUS_COLORS[order.status],
+                backgroundColor: STATUS_COLORS[order.status],
               }}
             >
               {getStatusLabel(order.status)}
@@ -481,19 +423,13 @@ function OrderDetailModal({
           </div>
 
           <section>
-            <h3 className="font-extrabold mb-4">
-              🚚 Seguimiento del pedido
-            </h3>
+            <h3 className="font-extrabold mb-4">🚚 Seguimiento del pedido</h3>
 
-            <AnimatedCartBar
-              status={order.status}
-            />
+            <AnimatedCartBar status={order.status} />
           </section>
 
           <section>
-            <h3 className="font-extrabold mb-4">
-              🛋️ Productos
-            </h3>
+            <h3 className="font-extrabold mb-4">🛋️ Productos</h3>
 
             <div className="space-y-3">
               {order.order_items?.map((item) => (
@@ -517,21 +453,15 @@ function OrderDetailModal({
 
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm truncate">
-                      {item.products?.name ||
-                        'Producto'}
+                      {item.products?.name || 'Producto'}
                     </p>
 
-                    <p className="text-xs text-muted-foreground">
-                      Cantidad: {item.quantity}
-                    </p>
+                    <p className="text-xs text-muted-foreground">Cantidad: {item.quantity}</p>
                   </div>
 
                   <div className="text-right">
                     <p className="font-extrabold text-sm">
-                      {formatCurrency(
-                        Number(item.unit_price) *
-                          Number(item.quantity)
-                      )}
+                      {formatCurrency(Number(item.unit_price) * Number(item.quantity))}
                     </p>
 
                     <p className="text-xs text-muted-foreground">
@@ -544,35 +474,23 @@ function OrderDetailModal({
           </section>
 
           <section className="rounded-2xl border border-border p-5">
-            <h3 className="font-extrabold mb-4">
-              💰 Resumen del pedido
-            </h3>
+            <h3 className="font-extrabold mb-4">💰 Resumen del pedido</h3>
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  Productos
-                </span>
+                <span className="text-muted-foreground">Productos</span>
 
-                <span className="font-semibold">
-                  {formatCurrency(subtotal)}
-                </span>
+                <span className="font-semibold">{formatCurrency(subtotal)}</span>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  Envío
-                </span>
+                <span className="text-muted-foreground">Envío</span>
 
-                <span className="font-semibold">
-                  {formatCurrency(shipping)}
-                </span>
+                <span className="font-semibold">{formatCurrency(shipping)}</span>
               </div>
 
               <div className="border-t border-border pt-3 flex justify-between">
-                <span className="font-extrabold">
-                  TOTAL
-                </span>
+                <span className="font-extrabold">TOTAL</span>
 
                 <span className="font-extrabold text-primary text-xl">
                   {formatCurrency(order.total)}
@@ -583,82 +501,57 @@ function OrderDetailModal({
 
           <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-2xl border border-border p-5">
-              <h3 className="font-extrabold mb-3">
-                📍 Entrega
-              </h3>
+              <h3 className="font-extrabold mb-3">📍 Entrega</h3>
 
-              <p className="text-sm text-muted-foreground">
-                {getAddress(order)}
-              </p>
+              <p className="text-sm text-muted-foreground">{getAddress(order)}</p>
 
               {order.shipping_reference && (
                 <p className="text-sm mt-2">
-                  <strong>Referencia:</strong>{' '}
-                  {order.shipping_reference}
+                  <strong>Referencia:</strong> {order.shipping_reference}
                 </p>
               )}
 
               {order.shipping_distance_km && (
                 <p className="text-sm mt-2">
-                  <strong>Distancia:</strong>{' '}
-                  {Number(
-                    order.shipping_distance_km
-                  ).toFixed(2)}{' '}
-                  km
+                  <strong>Distancia:</strong> {Number(order.shipping_distance_km).toFixed(2)} km
                 </p>
               )}
             </div>
 
             <div className="rounded-2xl border border-border p-5">
-              <h3 className="font-extrabold mb-3">
-                💳 Pago
-              </h3>
+              <h3 className="font-extrabold mb-3">💳 Pago</h3>
 
               <p className="text-sm">
-                <strong>Método:</strong>{' '}
-                {order.payment_method ||
-                  'No registrado'}
+                <strong>Método:</strong> {order.payment_method || 'No registrado'}
               </p>
 
               {order.payment_status && (
                 <p className="text-sm mt-2">
-                  <strong>Estado:</strong>{' '}
-                  {order.payment_status}
+                  <strong>Estado:</strong> {order.payment_status}
                 </p>
               )}
             </div>
           </section>
 
-          {(order.tracking_code ||
-            order.estimated_delivery) && (
+          {(order.tracking_code || order.estimated_delivery) && (
             <section className="rounded-2xl border border-border p-5">
-              <h3 className="font-extrabold mb-4">
-                📦 Información de entrega
-              </h3>
+              <h3 className="font-extrabold mb-4">📦 Información de entrega</h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {order.tracking_code && (
                   <div>
-                    <p className="text-xs text-muted-foreground">
-                      Código de seguimiento
-                    </p>
+                    <p className="text-xs text-muted-foreground">Código de seguimiento</p>
 
-                    <p className="font-mono font-bold text-primary mt-1">
-                      {order.tracking_code}
-                    </p>
+                    <p className="font-mono font-bold text-primary mt-1">{order.tracking_code}</p>
                   </div>
                 )}
 
                 {order.estimated_delivery && (
                   <div>
-                    <p className="text-xs text-muted-foreground">
-                      Entrega estimada
-                    </p>
+                    <p className="text-xs text-muted-foreground">Entrega estimada</p>
 
                     <p className="font-bold mt-1 capitalize">
-                      {formatDate(
-                        order.estimated_delivery
-                      )}
+                      {formatDate(order.estimated_delivery)}
                     </p>
                   </div>
                 )}
@@ -698,15 +591,10 @@ function OrderCard({
 }) {
   const stepIdx = getStepIndex(order.status);
 
-  const color =
-    STATUS_COLORS[order.status] ||
-    STATUS_COLORS.confirmado;
+  const color = STATUS_COLORS[order.status] || STATUS_COLORS.confirmado;
 
   const productsCount =
-    order.order_items?.reduce(
-      (sum, item) => sum + Number(item.quantity || 0),
-      0
-    ) || 0;
+    order.order_items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) || 0;
 
   return (
     <article className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
@@ -714,23 +602,15 @@ function OrderCard({
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-5">
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                Pedido
-              </p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Pedido</p>
 
-              <p className="font-extrabold font-mono">
-                #{order.id.slice(0, 8).toUpperCase()}
-              </p>
+              <p className="font-extrabold font-mono">#{order.id.slice(0, 8).toUpperCase()}</p>
             </div>
 
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                Fecha
-              </p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Fecha</p>
 
-              <p className="font-semibold text-sm">
-                {formatShortDate(order.created_at)}
-              </p>
+              <p className="font-semibold text-sm">{formatShortDate(order.created_at)}</p>
             </div>
 
             <div>
@@ -738,19 +618,13 @@ function OrderCard({
                 Productos
               </p>
 
-              <p className="font-semibold text-sm">
-                {productsCount}
-              </p>
+              <p className="font-semibold text-sm">{productsCount}</p>
             </div>
 
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                Total
-              </p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Total</p>
 
-              <p className="font-extrabold text-primary">
-                {formatCurrency(order.total)}
-              </p>
+              <p className="font-extrabold text-primary">{formatCurrency(order.total)}</p>
             </div>
           </div>
 
@@ -760,9 +634,7 @@ function OrderCard({
               backgroundColor: color,
             }}
           >
-            {order.status === 'cancelado'
-              ? '❌'
-              : STATUS_STEPS[stepIdx]?.icon}
+            {order.status === 'cancelado' ? '❌' : STATUS_STEPS[stepIdx]?.icon}
 
             {getStatusLabel(order.status)}
           </span>
@@ -781,40 +653,25 @@ function OrderCard({
             </p>
 
             <span className="text-xs text-muted-foreground">
-              {productsCount}{' '}
-              {productsCount === 1
-                ? 'unidad'
-                : 'unidades'}
+              {productsCount} {productsCount === 1 ? 'unidad' : 'unidades'}
             </span>
           </div>
 
           <div className="space-y-2">
-            {order.order_items
-              .slice(0, 3)
-              .map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between gap-3 text-sm"
-                >
-                  <span className="font-medium truncate">
-                    {item.products?.name ||
-                      'Producto'}
-                  </span>
+            {order.order_items.slice(0, 3).map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="font-medium truncate">{item.products?.name || 'Producto'}</span>
 
-                  <span className="text-muted-foreground whitespace-nowrap">
-                    x{item.quantity} —{' '}
-                    {formatCurrency(
-                      Number(item.unit_price) *
-                        Number(item.quantity)
-                    )}
-                  </span>
-                </div>
-              ))}
+                <span className="text-muted-foreground whitespace-nowrap">
+                  x{item.quantity} —{' '}
+                  {formatCurrency(Number(item.unit_price) * Number(item.quantity))}
+                </span>
+              </div>
+            ))}
 
             {order.order_items.length > 3 && (
               <p className="text-xs text-primary font-semibold">
-                + {order.order_items.length - 3}{' '}
-                producto(s) más
+                + {order.order_items.length - 3} producto(s) más
               </p>
             )}
           </div>
@@ -828,9 +685,7 @@ function OrderCard({
               Entrega
             </p>
 
-            <p className="text-sm mt-1 line-clamp-2">
-              {getAddress(order)}
-            </p>
+            <p className="text-sm mt-1 line-clamp-2">{getAddress(order)}</p>
           </div>
 
           <div>
@@ -838,10 +693,7 @@ function OrderCard({
               Pago
             </p>
 
-            <p className="text-sm mt-1 capitalize">
-              {order.payment_method ||
-                'No registrado'}
-            </p>
+            <p className="text-sm mt-1 capitalize">{order.payment_method || 'No registrado'}</p>
           </div>
         </div>
       </div>
@@ -881,14 +733,11 @@ export default function PedidosPage() {
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState('');
-  const [filter, setFilter] =
-    useState<FilterStatus>('todos');
+  const [filter, setFilter] = useState<FilterStatus>('todos');
 
-  const [selectedOrder, setSelectedOrder] =
-    useState<Order | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  const [refreshing, setRefreshing] =
-    useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchOrders = useCallback(
     async (showRefreshing = false) => {
@@ -933,16 +782,11 @@ export default function PedidosPage() {
         });
 
       if (error) {
-        console.error(
-          'Error cargando pedidos:',
-          error
-        );
+        console.error('Error cargando pedidos:', error);
 
         setOrders([]);
       } else {
-        setOrders(
-          (data as unknown as Order[]) || []
-        );
+        setOrders((data as unknown as Order[]) || []);
       }
 
       setLoading(false);
@@ -996,21 +840,14 @@ export default function PedidosPage() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(
-        ordersChannel
-      );
+      supabase.removeChannel(ordersChannel);
 
-      supabase.removeChannel(
-        itemsChannel
-      );
+      supabase.removeChannel(itemsChannel);
     };
   }, [user, fetchOrders]);
 
   const counters = useMemo(() => {
-    const result: Record<
-      FilterStatus,
-      number
-    > = {
+    const result: Record<FilterStatus, number> = {
       todos: orders.length,
       confirmado: 0,
       preparando: 0,
@@ -1031,13 +868,10 @@ export default function PedidosPage() {
   }, [orders]);
 
   const filteredOrders = useMemo(() => {
-    const normalizedSearch =
-      search.trim().toLowerCase();
+    const normalizedSearch = search.trim().toLowerCase();
 
     return orders.filter((order) => {
-      const matchesFilter =
-        filter === 'todos' ||
-        order.status === filter;
+      const matchesFilter = filter === 'todos' || order.status === filter;
 
       if (!matchesFilter) {
         return false;
@@ -1047,33 +881,20 @@ export default function PedidosPage() {
         return true;
       }
 
-      const orderNumber = order.id
-        .slice(0, 8)
-        .toLowerCase();
+      const orderNumber = order.id.slice(0, 8).toLowerCase();
 
       const productNames =
         order.order_items
-          ?.map(
-            (item) =>
-              item.products?.name || ''
-          )
+          ?.map((item) => item.products?.name || '')
           .join(' ')
           .toLowerCase() || '';
 
-      const tracking =
-        order.tracking_code
-          ?.toLowerCase() || '';
+      const tracking = order.tracking_code?.toLowerCase() || '';
 
       return (
-        orderNumber.includes(
-          normalizedSearch
-        ) ||
-        productNames.includes(
-          normalizedSearch
-        ) ||
-        tracking.includes(
-          normalizedSearch
-        )
+        orderNumber.includes(normalizedSearch) ||
+        productNames.includes(normalizedSearch) ||
+        tracking.includes(normalizedSearch)
       );
     });
   }, [orders, search, filter]);
@@ -1087,9 +908,7 @@ export default function PedidosPage() {
           <div className="flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
 
-            <p className="text-muted-foreground font-medium">
-              Cargando tus pedidos...
-            </p>
+            <p className="text-muted-foreground font-medium">Cargando tus pedidos...</p>
           </div>
         </main>
 
@@ -1105,17 +924,12 @@ export default function PedidosPage() {
 
         <main className="min-h-screen pt-24 pb-20 flex items-center justify-center px-4">
           <div className="max-w-md w-full bg-card border border-border rounded-3xl p-10 text-center shadow-xl">
-            <div className="text-6xl mb-4">
-              📦
-            </div>
+            <div className="text-6xl mb-4">📦</div>
 
-            <h1 className="text-2xl font-extrabold mb-2">
-              Mis Pedidos
-            </h1>
+            <h1 className="text-2xl font-extrabold mb-2">Mis Pedidos</h1>
 
             <p className="text-muted-foreground mb-6">
-              Inicia sesión para consultar tus
-              pedidos y realizar seguimiento.
+              Inicia sesión para consultar tus pedidos y realizar seguimiento.
             </p>
 
             <Link
@@ -1145,7 +959,6 @@ export default function PedidosPage() {
 
       <main className="min-h-screen pt-24 pb-20 bg-background">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
-
           {/* CABECERA */}
           <div className="mb-7">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1155,23 +968,18 @@ export default function PedidosPage() {
                 </h1>
 
                 <p className="text-muted-foreground mt-1">
-                  Consulta y realiza seguimiento de
-                  todas tus compras.
+                  Consulta y realiza seguimiento de todas tus compras.
                 </p>
               </div>
 
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    fetchOrders(true)
-                  }
+                  onClick={() => fetchOrders(true)}
                   disabled={refreshing}
                   className="px-4 py-2.5 rounded-xl border border-border font-bold text-sm hover:bg-muted transition disabled:opacity-50"
                 >
-                  {refreshing
-                    ? '↻ Actualizando...'
-                    : '↻ Actualizar'}
+                  {refreshing ? '↻ Actualizando...' : '↻ Actualizar'}
                 </button>
 
                 <Link
@@ -1187,19 +995,13 @@ export default function PedidosPage() {
           {/* RESUMEN */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground">
-                Todos
-              </p>
+              <p className="text-xs text-muted-foreground">Todos</p>
 
-              <p className="text-2xl font-extrabold mt-1">
-                {counters.todos}
-              </p>
+              <p className="text-2xl font-extrabold mt-1">{counters.todos}</p>
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground">
-                En proceso
-              </p>
+              <p className="text-xs text-muted-foreground">En proceso</p>
 
               <p className="text-2xl font-extrabold mt-1 text-blue-600">
                 {counters.confirmado +
@@ -1210,41 +1012,27 @@ export default function PedidosPage() {
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground">
-                En camino
-              </p>
+              <p className="text-xs text-muted-foreground">En camino</p>
 
-              <p className="text-2xl font-extrabold mt-1 text-purple-600">
-                {counters.camino}
-              </p>
+              <p className="text-2xl font-extrabold mt-1 text-purple-600">{counters.camino}</p>
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground">
-                Entregados
-              </p>
+              <p className="text-xs text-muted-foreground">Entregados</p>
 
-              <p className="text-2xl font-extrabold mt-1 text-green-600">
-                {counters.entregado}
-              </p>
+              <p className="text-2xl font-extrabold mt-1 text-green-600">{counters.entregado}</p>
             </div>
           </div>
 
           {/* BUSCADOR */}
           <div className="bg-card border border-border rounded-2xl p-4 mb-4">
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">
-                🔎
-              </span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🔎</span>
 
               <input
                 type="text"
                 value={search}
-                onChange={(event) =>
-                  setSearch(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar por número de pedido, producto o código de seguimiento..."
                 className="w-full h-12 rounded-xl border border-border bg-background pl-11 pr-4 outline-none focus:ring-2 focus:ring-primary/30"
               />
@@ -1254,26 +1042,20 @@ export default function PedidosPage() {
           {/* FILTROS */}
           <div className="flex gap-2 overflow-x-auto pb-3 mb-5">
             {FILTERS.map((item) => {
-              const active =
-                filter === item.key;
+              const active = filter === item.key;
 
               return (
                 <button
                   key={item.key}
                   type="button"
-                  onClick={() =>
-                    setFilter(item.key)
-                  }
+                  onClick={() => setFilter(item.key)}
                   className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold border transition ${
                     active
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-card border-border hover:bg-muted'
                   }`}
                 >
-                  {item.label}{' '}
-                  <span className="opacity-70">
-                    ({counters[item.key]})
-                  </span>
+                  {item.label} <span className="opacity-70">({counters[item.key]})</span>
                 </button>
               );
             })}
@@ -1283,9 +1065,7 @@ export default function PedidosPage() {
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-muted-foreground">
               {filteredOrders.length}{' '}
-              {filteredOrders.length === 1
-                ? 'pedido encontrado'
-                : 'pedidos encontrados'}
+              {filteredOrders.length === 1 ? 'pedido encontrado' : 'pedidos encontrados'}
             </p>
 
             {(search || filter !== 'todos') && (
@@ -1304,16 +1084,10 @@ export default function PedidosPage() {
 
           {filteredOrders.length === 0 ? (
             <div className="bg-card border border-border rounded-3xl p-10 sm:p-16 text-center">
-              <div className="text-7xl mb-5">
-                {orders.length === 0
-                  ? '🛋️'
-                  : '🔎'}
-              </div>
+              <div className="text-7xl mb-5">{orders.length === 0 ? '🛋️' : '🔎'}</div>
 
               <h2 className="text-xl font-extrabold mb-2">
-                {orders.length === 0
-                  ? 'Aún no tienes pedidos'
-                  : 'No encontramos pedidos'}
+                {orders.length === 0 ? 'Aún no tienes pedidos' : 'No encontramos pedidos'}
               </h2>
 
               <p className="text-muted-foreground max-w-md mx-auto">
@@ -1341,13 +1115,7 @@ export default function PedidosPage() {
           ) : (
             <div className="space-y-6">
               {filteredOrders.map((order) => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  onViewDetail={
-                    setSelectedOrder
-                  }
-                />
+                <OrderCard key={order.id} order={order} onViewDetail={setSelectedOrder} />
               ))}
             </div>
           )}
@@ -1374,12 +1142,7 @@ export default function PedidosPage() {
       <Footer />
 
       {selectedOrder && (
-        <OrderDetailModal
-          order={selectedOrder}
-          onClose={() =>
-            setSelectedOrder(null)
-          }
-        />
+        <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
       )}
     </>
   );
