@@ -371,6 +371,10 @@ export default function CartDrawer() {
   const [savingQuote, setSavingQuote] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>('yape');
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<PaymentMethodId[]>([
+    'yape',
+    'plin',
+  ]);
 
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -434,6 +438,28 @@ export default function CartDrawer() {
 
   useEffect(() => {
     if (!checkoutOpen) return;
+    const supabase = createClient();
+    void supabase
+      .from('payment_methods')
+      .select('code,metadata')
+      .eq('is_active', true)
+      .order('sort_order')
+      .then(({ data }) => {
+        const enabled = (data || [])
+          .filter((entry) => {
+            if (entry.code !== 'bank_transfer') return true;
+            const metadata = (entry.metadata || {}) as Record<string, unknown>;
+            return Boolean(metadata.bank && metadata.account_holder && metadata.account_number);
+          })
+          .map((entry) => entry.code)
+          .filter((code): code is PaymentMethodId =>
+            PAYMENT_METHODS.some((method) => method.id === code)
+          );
+        if (enabled.length) {
+          setEnabledPaymentMethods(enabled);
+          setPaymentMethod((current) => (enabled.includes(current) ? current : enabled[0]));
+        }
+      });
 
     let cancelled = false;
 
@@ -1315,11 +1341,17 @@ export default function CartDrawer() {
                 )}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Link
-                    href="/pedidos"
+                    href={
+                      isPaymentApproved(completedOrder.paymentStatus)
+                        ? '/pedidos'
+                        : `/pago/${completedOrder.id}`
+                    }
                     onClick={closeCart}
                     className="rounded-xl bg-primary px-4 py-3 text-center font-extrabold text-white"
                   >
-                    Ver mi pedido
+                    {isPaymentApproved(completedOrder.paymentStatus)
+                      ? 'Ver mi pedido'
+                      : 'Continuar con el pago'}
                   </Link>
                   <button
                     type="button"
@@ -1522,7 +1554,9 @@ export default function CartDrawer() {
                     </p>
                   </div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {PAYMENT_METHODS.map((method) => (
+                    {PAYMENT_METHODS.filter((method) =>
+                      enabledPaymentMethods.includes(method.id)
+                    ).map((method) => (
                       <button
                         key={method.id}
                         type="button"
