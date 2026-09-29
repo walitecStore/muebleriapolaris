@@ -27,17 +27,6 @@ const STORE_LOCATION = {
   address: 'Av. 12 de Octubre 1805, San Martín de Porres, Lima',
 };
 
-/*
- * Servidor público OSRM.
- *
- * No necesita API KEY.
- *
- * IMPORTANTE:
- * Es un servidor público/demostración.
- * Más adelante podemos cambiarlo por nuestro propio servicio.
- */
-const ROUTING_URL = 'https://router.project-osrm.org';
-
 /* =========================================================
    TIPOS
 ========================================================= */
@@ -58,10 +47,17 @@ interface ProductShippingData {
 interface ShippingQuote {
   distanceKm: number;
   cost: number;
-  categories: {
-    category: string;
-    cost: number;
-  }[];
+  durationMinutes: number | null;
+  shippingType: 'lima_delivery';
+  district: string | null;
+  province: string | null;
+  address: string;
+}
+
+interface ProvinceQuote {
+  district: string | null;
+  province: string | null;
+  address: string;
 }
 
 interface SavedAddress {
@@ -101,6 +97,8 @@ interface LeafletMarker {
   bindPopup: (text: string) => LeafletMarker;
 
   openPopup?: () => LeafletMarker;
+  on: (event: string, callback: (event: any) => void) => LeafletMarker;
+  getLatLng: () => { lat: number; lng: number };
 }
 
 declare global {
@@ -363,6 +361,7 @@ export default function CartDrawer() {
   const [referenceAddress, setReferenceAddress] = useState('');
 
   const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(null);
+  const [provinceQuote, setProvinceQuote] = useState<ProvinceQuote | null>(null);
 
   const [loadingShipping, setLoadingShipping] = useState(false);
 
@@ -414,6 +413,20 @@ export default function CartDrawer() {
   const totalItems = useMemo(() => {
     return items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   }, [items]);
+
+  // Una tarifa deja de ser válida si cambia cualquier producto o cantidad.
+  const cartShippingFingerprint = items
+    .map((item) => `${item.id}:${item.variantId ?? ''}:${item.quantity}`)
+    .join('|');
+  const previousCartFingerprint = useRef(cartShippingFingerprint);
+  useEffect(() => {
+    if (previousCartFingerprint.current !== cartShippingFingerprint) {
+      previousCartFingerprint.current = cartShippingFingerprint;
+      setShippingQuote(null);
+      setProvinceQuote(null);
+      setSuccessMessage('El carrito cambió. Recalcula el envío para continuar.');
+    }
+  }, [cartShippingFingerprint]);
 
   /* =======================================================
      INICIALIZAR MAPA
@@ -468,11 +481,17 @@ export default function CartDrawer() {
           lng: STORE_LOCATION.lng,
         };
 
-        const marker = L.marker([initialLocation.lat, initialLocation.lng])
+        const marker = L.marker([initialLocation.lat, initialLocation.lng], { draggable: true })
           .addTo(map)
           .bindPopup('📍 Ubicación de entrega');
 
         markerRef.current = marker;
+        marker.on('dragend', () => {
+          const point = marker.getLatLng();
+          setSelectedLocation({ lat: Number(point.lat), lng: Number(point.lng) });
+          setShippingQuote(null);
+          setProvinceQuote(null);
+        });
 
         /*
          * Si todavía no existe una ubicación
@@ -503,6 +522,7 @@ export default function CartDrawer() {
           setSelectedLocation(location);
 
           setShippingQuote(null);
+          setProvinceQuote(null);
 
           marker.setLatLng([lat, lng]).bindPopup('📍 Ubicación seleccionada').openPopup?.();
         });
@@ -588,6 +608,7 @@ export default function CartDrawer() {
         setSelectedLocation(location);
 
         setShippingQuote(null);
+        setProvinceQuote(null);
 
         setLoadingLocation(false);
       },
@@ -772,101 +793,6 @@ export default function CartDrawer() {
   }, [items]);
 
   /* =======================================================
-     CALCULAR DISTANCIA REAL POR CARRETERA
-  ======================================================= */
-
-  const calculateRoadDistance = useCallback(async (destination: Coordinates): Promise<number> => {
-    const url =
-      `${ROUTING_URL}/route/v1/driving/` +
-      `${STORE_LOCATION.lng},${STORE_LOCATION.lat};` +
-      `${destination.lng},${destination.lat}` +
-      `?overview=false&alternatives=false&steps=false`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`El servicio de rutas respondió ${response.status}.`);
-    }
-
-    const data = await response.json();
-
-    if (data.code !== 'Ok' || !data.routes?.length) {
-      throw new Error('No se encontró una ruta por carretera para esa ubicación.');
-    }
-
-    const meters = Number(data.routes[0].distance);
-
-    const km = meters / 1000;
-
-    if (!Number.isFinite(km) || km <= 0) {
-      throw new Error('La distancia calculada no es válida.');
-    }
-
-    return km;
-  }, []);
-
-  /* =======================================================
-     CONSULTAR TARIFA EN API/SUPABASE
-  ======================================================= */
-
-  const requestShippingPrice = useCallback(
-    async (category: string, distanceKm: number): Promise<number> => {
-      const response = await fetch('/api/shipping', {
-        method: 'POST',
-
-        headers: {
-          'Content-Type': 'application/json',
-        },
-
-        body: JSON.stringify({
-          category,
-          distanceKm,
-        }),
-      });
-
-      let data: any = null;
-
-      try {
-        data = await response.json();
-      } catch {
-        data = null;
-      }
-
-      if (!response.ok) {
-        throw new Error(data?.error || `No se pudo calcular el envío para ${category}.`);
-      }
-
-      /*
-       * Soportamos distintos nombres por robustez.
-       */
-      const possibleValues = [
-        data?.cost,
-        data?.shippingCost,
-        data?.shipping_cost,
-        data?.data?.cost,
-        data?.data?.shippingCost,
-        data?.data?.shipping_cost,
-      ];
-
-      const cost = possibleValues
-        .map((value) => Number(value))
-        .find((value) => Number.isFinite(value));
-
-      if (cost === undefined || cost < 0) {
-        throw new Error(`La API de envío no devolvió un costo válido para ${category}.`);
-      }
-
-      return cost;
-    },
-    []
-  );
-
-  /* =======================================================
      CALCULAR ENVÍO COMPLETO
   ======================================================= */
 
@@ -898,47 +824,43 @@ export default function CartDrawer() {
        */
       const products = await getProductsShippingData();
 
-      /*
-       * 2. Distancia por carretera.
-       */
-      const distanceKm = await calculateRoadDistance(selectedLocation);
-
-      /*
-       * 3. Categorías únicas.
-       *
-       * Si hay varios productos de la misma categoría,
-       * no repetimos automáticamente la tarifa.
-       */
       const uniqueCategories = Array.from(
         new Set(products.map((product) => product.shipping_category))
       );
-
-      /*
-       * 4. Calcular tarifa por categoría.
-       */
-      const categoryQuotes: {
-        category: string;
-        cost: number;
-      }[] = [];
-
-      for (const category of uniqueCategories) {
-        const cost = await requestShippingPrice(category, distanceKm);
-
-        categoryQuotes.push({
-          category,
-          cost,
-        });
-      }
-
-      const totalShipping = categoryQuotes.reduce((sum, quote) => sum + quote.cost, 0);
-
-      setShippingQuote({
-        distanceKm,
-        cost: totalShipping,
-        categories: categoryQuotes,
+      const response = await fetch('/api/shipping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          latitude: selectedLocation.lat,
+          longitude: selectedLocation.lng,
+          categories: uniqueCategories,
+        }),
       });
-
-      setSuccessMessage(`Envío calculado para ${formatDistance(distanceKm)}.`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'No se pudo calcular el envío.');
+      if (data.status === 'requires_quote') {
+        setShippingQuote(null);
+        setProvinceQuote({
+          district: data.destination?.district ?? null,
+          province: data.destination?.province ?? null,
+          address: data.destination?.address || 'Ubicación seleccionada',
+        });
+        setSuccessMessage('Envío a provincia: requiere cotización');
+        return;
+      }
+      setProvinceQuote(null);
+      setShippingQuote({
+        distanceKm: Number(data.destination.distanceKm),
+        durationMinutes: data.destination.durationMinutes ?? null,
+        cost: Number(data.shippingCost),
+        shippingType: 'lima_delivery',
+        district: data.destination.district ?? null,
+        province: data.destination.province ?? null,
+        address: data.destination.address,
+      });
+      setSuccessMessage(
+        `Envío calculado para ${formatDistance(Number(data.destination.distanceKm))}.`
+      );
     } catch (error: any) {
       console.error('Error calculando envío:', error);
 
@@ -948,14 +870,7 @@ export default function CartDrawer() {
     } finally {
       setLoadingShipping(false);
     }
-  }, [
-    items,
-    selectedLocation,
-    loadingShipping,
-    getProductsShippingData,
-    calculateRoadDistance,
-    requestShippingPrice,
-  ]);
+  }, [items, selectedLocation, loadingShipping, getProductsShippingData]);
 
   /* =======================================================
      ABRIR CHECKOUT
@@ -1058,8 +973,7 @@ export default function CartDrawer() {
           shipping: {
             latitude: selectedLocation.lat,
             longitude: selectedLocation.lng,
-            distanceKm: shippingQuote.distanceKm,
-            address: referenceAddress.trim() || 'Ubicación seleccionada en mapa',
+            reference: referenceAddress.trim(),
           },
         }),
       });
@@ -1106,6 +1020,7 @@ export default function CartDrawer() {
   useEffect(() => {
     if (items.length === 0 && !completedOrder) {
       setShippingQuote(null);
+      setProvinceQuote(null);
       setSelectedLocation(null);
       setReferenceAddress('');
       setCheckoutOpen(false);
@@ -1119,6 +1034,16 @@ export default function CartDrawer() {
   const cartWhatsAppUrl = useMemo(() => {
     return buildWhatsAppCartUrl(items);
   }, [items]);
+
+  const provinceWhatsAppUrl = useMemo(() => {
+    const details = provinceQuote
+      ? `${provinceQuote.address}${referenceAddress.trim() ? `\nReferencia: ${referenceAddress.trim()}` : ''}`
+      : '';
+    const message = `Hola Mueblería Polaris, deseo cotizar únicamente el envío a provincia.\nDestino: ${details}\nProductos:\n${items
+      .map((item) => `• ${item.quantity}x ${item.name}`)
+      .join('\n')}`;
+    return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`;
+  }, [items, provinceQuote, referenceAddress]);
 
   /* =======================================================
      RENDER
@@ -1538,13 +1463,18 @@ export default function CartDrawer() {
                     </div>
 
                     <div className="border-t border-green-200 mt-3 pt-3 space-y-2">
-                      {shippingQuote.categories.map((category) => (
-                        <div key={category.category} className="flex justify-between text-sm">
-                          <span>{category.category}</span>
-
-                          <strong>{formatMoney(category.cost)}</strong>
+                      <div className="flex justify-between gap-3 text-sm">
+                        <span>Destino</span>
+                        <strong className="text-right">
+                          {shippingQuote.district || shippingQuote.province || 'Lima Metropolitana'}
+                        </strong>
+                      </div>
+                      {shippingQuote.durationMinutes && (
+                        <div className="flex justify-between text-sm">
+                          <span>Tiempo estimado de ruta</span>
+                          <strong>{shippingQuote.durationMinutes} min</strong>
                         </div>
-                      ))}
+                      )}
 
                       <div className="border-t border-green-200 pt-2 flex justify-between">
                         <span className="font-bold">Envío total</span>
@@ -1554,6 +1484,28 @@ export default function CartDrawer() {
                         </strong>
                       </div>
                     </div>
+                  </section>
+                )}
+
+                {provinceQuote && (
+                  <section className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                    <div>
+                      <p className="font-extrabold text-amber-900">
+                        Envío a provincia: requiere cotización
+                      </p>
+                      <p className="mt-1 text-xs text-amber-800">
+                        {provinceQuote.district || provinceQuote.province || provinceQuote.address}.
+                        No se creará un pedido ni se marcará un pago desde WhatsApp.
+                      </p>
+                    </div>
+                    <a
+                      href={provinceWhatsAppUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block w-full rounded-xl bg-[#25D366] px-4 py-3 text-center text-sm font-extrabold text-white"
+                    >
+                      Cotizar envío por WhatsApp
+                    </a>
                   </section>
                 )}
 
@@ -1689,7 +1641,7 @@ export default function CartDrawer() {
                   disabled={savingOrder || !selectedLocation || !shippingQuote}
                   className="w-full bg-primary hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-extrabold py-3.5 rounded-xl transition-all"
                 >
-                  {savingOrder ? '⏳ Iniciando pago...' : 'Continuar al pago'}
+                  {savingOrder ? '⏳ Confirmando pedido...' : 'Confirmar y realizar pedido'}
                 </button>
 
                 <button

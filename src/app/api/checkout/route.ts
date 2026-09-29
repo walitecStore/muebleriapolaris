@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { PAYMENT_METHODS, type PaymentMethodId } from '@/lib/payments';
+import { verifyShippingDestination } from '@/lib/server/shipping';
 
 type CheckoutBody = {
   items?: { productId?: string; variantId?: string | null; quantity?: number }[];
   paymentMethod?: PaymentMethodId;
-  shipping?: { latitude?: number; longitude?: number; distanceKm?: number; address?: string };
+  shipping?: { latitude?: number; longitude?: number; address?: string; reference?: string };
 };
-
-const STORE_LOCATION = { lat: -11.993057, lng: -77.071283 };
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -34,23 +33,39 @@ export async function POST(request: Request) {
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return NextResponse.json({ error: 'La ubicación de entrega no es válida.' }, { status: 400 });
   }
-  const routeResponse = await fetch(
-    `https://router.project-osrm.org/route/v1/driving/${STORE_LOCATION.lng},${STORE_LOCATION.lat};${longitude},${latitude}?overview=false&alternatives=false&steps=false`,
-    { headers: { Accept: 'application/json' }, cache: 'no-store' }
-  );
-  const route = routeResponse.ok ? await routeResponse.json() : null;
-  const verifiedDistanceKm = Number(route?.routes?.[0]?.distance) / 1000;
-  if (!Number.isFinite(verifiedDistanceKm) || verifiedDistanceKm <= 0) {
+  let destination;
+  try {
+    destination = await verifyShippingDestination(latitude, longitude);
+  } catch (error) {
     return NextResponse.json(
-      { error: 'No se pudo verificar la distancia de entrega.' },
+      { error: error instanceof Error ? error.message : 'No se pudo verificar el destino.' },
       { status: 400 }
+    );
+  }
+  if (!destination.isLimaMetropolitana) {
+    return NextResponse.json(
+      { error: 'Envío a provincia: requiere cotización. No se creó ningún pedido.' },
+      { status: 409 }
     );
   }
 
   const { data, error } = await supabase.rpc('create_validated_order', {
     p_items: body.items,
     p_payment_method: method.id,
-    p_shipping: { ...body.shipping, latitude, longitude, distanceKm: verifiedDistanceKm },
+    p_shipping: {
+      latitude,
+      longitude,
+      distanceKm: destination.distanceKm,
+      durationMinutes: destination.durationMinutes,
+      address: destination.address,
+      reference: body.shipping.reference || body.shipping.address || '',
+      district: destination.district,
+      province: destination.province,
+      department: destination.department,
+      shippingType: 'lima_delivery',
+      quoteStatus: 'calculated',
+      routeProvider: destination.provider,
+    },
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
