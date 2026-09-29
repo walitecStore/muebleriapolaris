@@ -140,7 +140,7 @@ const avatarColors = [
 ];
 
 const PRODUCT_VIDEO_BASE = '/videos/productos';
-function getProductVideoUrl(productId: number) {
+function getProductVideoUrl(productId: string | number) {
   return `${PRODUCT_VIDEO_BASE}/${productId}.mp4`;
 }
 
@@ -151,7 +151,8 @@ type ProductMedia = {
   color?: string;
 };
 
-type ProductWithMedia = SofaProduct & {
+type ProductWithMedia = Omit<SofaProduct, 'id'> & {
+  id: string | number;
   video?: string;
   videoUrl?: string;
   colorVariants?: Array<{
@@ -195,8 +196,12 @@ export default function ProductPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const productId = Number(params?.id);
-  const sofa = sofaProducts.find((p) => p.id === productId) as ProductWithMedia | undefined;
+  const productId = Array.isArray(params?.id) ? params.id[0] : String(params?.id ?? '');
+  const legacyProduct = sofaProducts.find((p) => String(p.id) === productId) as
+    | ProductWithMedia
+    | undefined;
+  const [sofa, setSofa] = useState<ProductWithMedia | undefined>(legacyProduct);
+  const [productLoading, setProductLoading] = useState(true);
 
   const [activeMedia, setActiveMedia] = useState(0);
   const [videoError, setVideoError] = useState(false);
@@ -216,6 +221,68 @@ export default function ProductPage() {
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProduct() {
+      try {
+        const response = await fetch(
+          `/api/products?active=true&id=${encodeURIComponent(productId)}`
+        );
+        const payload = await response.json();
+        const product = payload?.products?.[0];
+        if (!response.ok || !product) return;
+        const attributes = Array.isArray(product.attributes) ? product.attributes : [];
+        const specs = Object.fromEntries(
+          attributes.map((attribute: any) => {
+            const values = Array.isArray(attribute.values) ? attribute.values : [];
+            const value = values
+              .map((item: any) => item.value_text ?? item.value_number ?? item.value_boolean)
+              .join(', ');
+            return [String(attribute.name ?? 'Atributo'), value || '—'];
+          })
+        );
+        const variants = Array.isArray(product.variants) ? product.variants : [];
+        const remote: ProductWithMedia = {
+          id: product.id,
+          category: product.category || 'Sofás Europeo',
+          subcategory: product.subcategory || undefined,
+          name: product.name,
+          style: 'Moderno',
+          color: product.color || 'Gris',
+          seats: '3 plazas',
+          price: product.price,
+          description: product.description || '',
+          image: product.image,
+          gallery: product.images,
+          sku: product.sku || undefined,
+          availability: product.availability,
+          rating: Number(product.rating) || undefined,
+          reviewCount: Number(product.reviewCount) || 0,
+          specs,
+          features: [product.brand, product.material].filter(Boolean),
+          colorVariants: variants
+            .filter((variant: any) => variant.image_url)
+            .map((variant: any) => ({
+              name: variant.name,
+              image: variant.image_url,
+            })),
+        };
+        if (!cancelled) setSofa(remote);
+      } catch (error) {
+        console.warn(
+          'No se pudo cargar el producto desde Supabase; se conserva el fallback legacy.',
+          error
+        );
+      } finally {
+        if (!cancelled) setProductLoading(false);
+      }
+    }
+    void loadProduct();
+    return () => {
+      cancelled = true;
+    };
+  }, [productId]);
 
   useEffect(() => {
     setVideoError(false);
@@ -493,6 +560,10 @@ export default function ProductPage() {
     }
   };
 
+  if (productLoading && !sofa) {
+    return <main className="min-h-screen grid place-items-center">Cargando producto…</main>;
+  }
+
   if (!sofa) {
     return (
       <>
@@ -547,7 +618,9 @@ export default function ProductPage() {
   const allReviews = [...(sofa.reviews ?? []), ...localReviews];
 
   const relatedSofas = sofaProducts
-    .filter((p) => p.id !== sofa.id && (p.style === sofa.style || p.color === sofa.color))
+    .filter(
+      (p) => String(p.id) !== String(sofa.id) && (p.style === sofa.style || p.color === sofa.color)
+    )
     .slice(0, 3);
 
   return (

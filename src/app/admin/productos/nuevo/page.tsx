@@ -395,12 +395,40 @@ export default function NuevoProductoPage() {
 
       productPayload.category_id = categoryId;
 
-      const { error } = await supabase.from('products').insert(productPayload);
+      if (form.subcategoria.trim()) {
+        const { data: normalizedSubcategory } = await supabase
+          .from('subcategories')
+          .select('id')
+          .eq('category_id', categoryId)
+          .ilike('name', form.subcategoria.trim())
+          .maybeSingle();
+        productPayload.subcategory_id = normalizedSubcategory?.id ?? null;
+      }
+
+      const { data: createdProduct, error } = await supabase
+        .from('products')
+        .insert(productPayload)
+        .select('id')
+        .single();
 
       if (error) {
         console.error('ERROR CREANDO PRODUCTO:', error);
 
         throw new Error(error.message || 'No se pudo crear el producto.');
+      }
+
+      if (createdProduct?.id && allImages.length > 0) {
+        const { error: imagesError } = await supabase.from('product_images').insert(
+          allImages.map((url, index) => ({
+            product_id: createdProduct.id,
+            url,
+            alt_text: form.nombre.trim(),
+            sort_order: index,
+            is_primary: index === 0,
+          }))
+        );
+        if (imagesError)
+          console.warn('Producto creado, pero no se normalizaron sus imágenes:', imagesError);
       }
 
       console.log('PRODUCTO CREADO CORRECTAMENTE');

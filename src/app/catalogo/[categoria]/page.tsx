@@ -278,15 +278,56 @@ export default function CategoriaPage() {
   const [filterPrice, setFilterPrice] = useState('');
   const [page, setPage] = useState(1);
   const topRef = useRef<HTMLDivElement>(null);
+  const [remoteProducts, setRemoteProducts] = useState<CatalogProduct[] | null>(null);
 
   const category = getCategoryBySlug(rawSlug);
 
   const activeSub = activeSubSlug
     ? category?.subcatalogs.find((s) => s.slug === activeSubSlug)
     : null;
-  const activeProducts: CatalogProduct[] = activeSub
-    ? activeSub.products
-    : (category?.products ?? []);
+  const activeProducts: CatalogProduct[] = remoteProducts
+    ? remoteProducts.filter((product) => !activeSub || product.subcategory === activeSub.label)
+    : activeSub
+      ? activeSub.products
+      : (category?.products ?? []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProducts() {
+      try {
+        const response = await fetch(
+          `/api/products?active=true&category=${encodeURIComponent(category?.label ?? rawSlug)}`
+        );
+        const payload = await response.json();
+        if (!response.ok || !Array.isArray(payload.products) || payload.products.length === 0)
+          return;
+        const products: CatalogProduct[] = payload.products.map((product: any) => ({
+          id: String(product.id),
+          name: product.name,
+          measures: '',
+          price: product.price,
+          previousPrice:
+            product.salePriceValue != null ? `S/ ${product.regularPriceValue}` : undefined,
+          image: product.image,
+          alt: product.name,
+          category: product.category,
+          subcategory: product.subcategory || undefined,
+          color: product.color || undefined,
+          material: product.material || undefined,
+        }));
+        if (!cancelled) setRemoteProducts(products);
+      } catch (error) {
+        console.warn(
+          'No se pudo cargar la categoría desde Supabase; se mantiene el catálogo local.',
+          error
+        );
+      }
+    }
+    void loadProducts();
+    return () => {
+      cancelled = true;
+    };
+  }, [category?.label, rawSlug]);
 
   const colorOptions = useMemo(() => {
     const vals = activeProducts.map((p) => p.color).filter(Boolean) as string[];
