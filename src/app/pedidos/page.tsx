@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { isPaymentApproved, paymentStatusLabel } from '@/lib/payments';
 
 type OrderStatus =
   | 'confirmado'
@@ -30,6 +31,9 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal?: number | null;
+  product_name?: string | null;
+  product_image_url?: string | null;
+  variant_name?: string | null;
   products?: Product | null;
 }
 
@@ -42,6 +46,7 @@ interface Address {
 
 interface Order {
   id: string;
+  order_number?: string | null;
   user_id: string;
   status: OrderStatus;
   total: number;
@@ -177,6 +182,18 @@ function getStatusLabel(status: OrderStatus) {
   return STATUS_STEPS.find((step) => step.key === status)?.label || status;
 }
 
+function getOrderNumber(order: Order) {
+  return order.order_number || `POL-${order.id.slice(0, 8).toUpperCase()}`;
+}
+
+function itemName(item: OrderItem) {
+  return item.product_name || item.products?.name || 'Producto';
+}
+
+function itemImage(item: OrderItem) {
+  return item.product_image_url || item.products?.image_url || null;
+}
+
 function getAddress(order: Order) {
   if (order.shipping_address) {
     return order.shipping_address;
@@ -198,38 +215,7 @@ function getWhatsAppNumber() {
 }
 
 function createWhatsAppMessage(order: Order) {
-  const products = order.order_items
-    ?.map(
-      (item) =>
-        `• ${item.quantity}x ${
-          item.products?.name || 'Producto'
-        } — ${formatCurrency(item.unit_price)}`
-    )
-    .join('\n');
-
-  return [
-    'Hola Mueblería Polaris 👋',
-    '',
-    `📦 Pedido #${order.id.slice(0, 8).toUpperCase()}`,
-    '',
-    '🛋️ Productos:',
-    products || '• Productos del pedido',
-    '',
-    `💰 Total: ${formatCurrency(order.total)}`,
-    `🚚 Envío: ${formatCurrency(order.shipping_cost)}`,
-    order.shipping_distance_km
-      ? `📍 Distancia: ${Number(order.shipping_distance_km).toFixed(2)} km`
-      : '',
-    `💳 Método de pago: ${order.payment_method || 'No registrado'}`,
-    '',
-    `📍 Dirección: ${getAddress(order)}`,
-    '',
-    order.tracking_code ? `🚚 Código de seguimiento: ${order.tracking_code}` : '',
-    '',
-    'Quiero consultar sobre mi pedido. Gracias.',
-  ]
-    .filter(Boolean)
-    .join('\n');
+  return `Hola, deseo consultar el estado de mi pedido #${getOrderNumber(order)}.`;
 }
 
 function openWhatsApp(order: Order) {
@@ -389,9 +375,7 @@ function OrderDetailModal({ order, onClose }: { order: Order; onClose: () => voi
           <div>
             <p className="text-xs text-muted-foreground">Detalle del pedido</p>
 
-            <h2 className="font-extrabold text-lg sm:text-xl">
-              #{order.id.slice(0, 8).toUpperCase()}
-            </h2>
+            <h2 className="font-extrabold text-lg sm:text-xl">#{getOrderNumber(order)}</h2>
           </div>
 
           <button
@@ -418,14 +402,27 @@ function OrderDetailModal({ order, onClose }: { order: Order; onClose: () => voi
                 backgroundColor: STATUS_COLORS[order.status],
               }}
             >
-              {getStatusLabel(order.status)}
+              {isPaymentApproved(order.payment_status)
+                ? getStatusLabel(order.status)
+                : paymentStatusLabel(order.payment_status)}
             </span>
           </div>
 
           <section>
             <h3 className="font-extrabold mb-4">🚚 Seguimiento del pedido</h3>
 
-            <AnimatedCartBar status={order.status} />
+            {isPaymentApproved(order.payment_status) ? (
+              <AnimatedCartBar status={order.status} />
+            ) : (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center">
+                <p className="font-extrabold text-amber-900">
+                  {paymentStatusLabel(order.payment_status)}
+                </p>
+                <p className="mt-1 text-sm text-amber-700">
+                  El proceso logístico comenzará cuando el pago sea aprobado.
+                </p>
+              </div>
+            )}
           </section>
 
           <section>
@@ -438,10 +435,10 @@ function OrderDetailModal({ order, onClose }: { order: Order; onClose: () => voi
                   className="flex items-center gap-3 rounded-2xl border border-border p-3"
                 >
                   <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted flex-shrink-0">
-                    {item.products?.image_url ? (
+                    {itemImage(item) ? (
                       <img
-                        src={item.products.image_url}
-                        alt={item.products.name || 'Producto'}
+                        src={itemImage(item)!}
+                        alt={itemName(item)}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -452,9 +449,7 @@ function OrderDetailModal({ order, onClose }: { order: Order; onClose: () => voi
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate">
-                      {item.products?.name || 'Producto'}
-                    </p>
+                    <p className="font-bold text-sm truncate">{itemName(item)}</p>
 
                     <p className="text-xs text-muted-foreground">Cantidad: {item.quantity}</p>
                   </div>
@@ -527,7 +522,7 @@ function OrderDetailModal({ order, onClose }: { order: Order; onClose: () => voi
 
               {order.payment_status && (
                 <p className="text-sm mt-2">
-                  <strong>Estado:</strong> {order.payment_status}
+                  <strong>Estado:</strong> {paymentStatusLabel(order.payment_status)}
                 </p>
               )}
             </div>
@@ -604,7 +599,7 @@ function OrderCard({
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Pedido</p>
 
-              <p className="font-extrabold font-mono">#{order.id.slice(0, 8).toUpperCase()}</p>
+              <p className="font-extrabold font-mono">#{getOrderNumber(order)}</p>
             </div>
 
             <div>
@@ -634,15 +629,32 @@ function OrderCard({
               backgroundColor: color,
             }}
           >
-            {order.status === 'cancelado' ? '❌' : STATUS_STEPS[stepIdx]?.icon}
+            {!isPaymentApproved(order.payment_status)
+              ? '⏳'
+              : order.status === 'cancelado'
+                ? '❌'
+                : STATUS_STEPS[stepIdx]?.icon}
 
-            {getStatusLabel(order.status)}
+            {isPaymentApproved(order.payment_status)
+              ? getStatusLabel(order.status)
+              : paymentStatusLabel(order.payment_status)}
           </span>
         </div>
       </div>
 
       <div className="px-5 sm:px-6 py-6">
-        <AnimatedCartBar status={order.status} />
+        {isPaymentApproved(order.payment_status) ? (
+          <AnimatedCartBar status={order.status} />
+        ) : (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center">
+            <p className="font-extrabold text-amber-900">
+              {paymentStatusLabel(order.payment_status)}
+            </p>
+            <p className="mt-1 text-sm text-amber-700">
+              El proceso logístico comenzará cuando el pago sea aprobado.
+            </p>
+          </div>
+        )}
       </div>
 
       {order.order_items?.length > 0 && (
@@ -657,15 +669,29 @@ function OrderCard({
             </span>
           </div>
 
-          <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {order.order_items.slice(0, 3).map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="font-medium truncate">{item.products?.name || 'Producto'}</span>
-
-                <span className="text-muted-foreground whitespace-nowrap">
-                  x{item.quantity} —{' '}
-                  {formatCurrency(Number(item.unit_price) * Number(item.quantity))}
-                </span>
+              <div
+                key={item.id}
+                className="flex items-center gap-3 rounded-xl border border-border p-2 text-sm"
+              >
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
+                  {itemImage(item) ? (
+                    <img
+                      src={itemImage(item)!}
+                      alt={itemName(item)}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-full items-center justify-center">🛋️</span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-bold">{itemName(item)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    x{item.quantity} · {formatCurrency(item.unit_price)} c/u
+                  </p>
+                </div>
               </div>
             ))}
 
@@ -694,6 +720,9 @@ function OrderCard({
             </p>
 
             <p className="text-sm mt-1 capitalize">{order.payment_method || 'No registrado'}</p>
+            <p className="mt-1 text-xs font-bold text-muted-foreground">
+              {paymentStatusLabel(order.payment_status)}
+            </p>
           </div>
         </div>
       </div>
@@ -705,14 +734,6 @@ function OrderCard({
           className="flex-1 py-3 rounded-2xl bg-primary text-primary-foreground font-extrabold hover:bg-primary/90 transition"
         >
           👁️ Ver detalle
-        </button>
-
-        <button
-          type="button"
-          onClick={() => openWhatsApp(order)}
-          className="flex-1 py-3 rounded-2xl border-2 border-green-500 text-green-600 hover:bg-green-500 hover:text-white font-extrabold transition"
-        >
-          💬 WhatsApp
         </button>
 
         <Link
@@ -763,6 +784,9 @@ export default function PedidosPage() {
             quantity,
             unit_price,
             subtotal,
+            product_name,
+            product_image_url,
+            variant_name,
             products(
               name,
               image_url

@@ -6,6 +6,8 @@ import AppImage from '@/components/ui/AppImage';
 import { useCart } from './CartContext';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { PAYMENT_METHODS, type PaymentMethodId, isPaymentApproved } from '@/lib/payments';
+import Link from 'next/link';
 
 /* =========================================================
    CONFIGURACIÓN GENERAL
@@ -369,7 +371,7 @@ export default function CartDrawer() {
   const [savingOrder, setSavingOrder] = useState(false);
   const [savingQuote, setSavingQuote] = useState(false);
 
-  const [paymentMethod, setPaymentMethod] = useState('WhatsApp');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>('yape');
 
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -377,8 +379,10 @@ export default function CartDrawer() {
 
   const [completedOrder, setCompletedOrder] = useState<{
     id: string;
-    whatsappUrl: string;
     shortId: string;
+    orderNumber: string;
+    paymentStatus: string;
+    paymentMessage: string;
   } | null>(null);
 
   /* =======================================================
@@ -1018,64 +1022,6 @@ export default function CartDrawer() {
      NO CREA PEDIDO
   ======================================================= */
 
-  const quoteWhatsApp = useCallback(() => {
-    if (items.length === 0) {
-      return;
-    }
-
-    const url = buildWhatsAppCartUrl(items, shippingCost, shippingQuote?.distanceKm ?? null);
-
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }, [items, shippingCost, shippingQuote]);
-
-  /* =======================================================
-     WHATSAPP DEL PEDIDO YA REGISTRADO
-  ======================================================= */
-
-  const buildCompletedOrderWhatsAppUrl = useCallback(
-    (orderId: string) => {
-      const shortId = orderId.replace(/-/g, '').slice(0, 8).toUpperCase();
-
-      const productLines = items
-        .map((item) => {
-          const quantity = Math.max(1, Number(item.quantity) || 1);
-          const unitPrice = parsePrice(item.price);
-          const lineTotal = unitPrice * quantity;
-
-          return `• ${quantity}x ${item.name} — ${formatMoney(lineTotal)}`;
-        })
-        .join('\n');
-
-      const address = referenceAddress.trim() || 'Ubicación seleccionada en el mapa';
-
-      const message = `Hola Mueblería Polaris! 👋
-
-🧾 *PEDIDO #${shortId}*
-
-🛋️ *Productos:*
-${productLines}
-
-💰 Subtotal: ${formatMoney(productsTotal)}
-🚚 Envío: ${formatMoney(shippingQuote?.cost ?? 0)}
-━━━━━━━━━━━━━━
-💵 *TOTAL: ${formatMoney(grandTotal)}*
-
-📍 *Entrega:*
-${address}
-
-📏 Distancia: ${formatDistance(shippingQuote?.distanceKm ?? 0)}
-💳 Método de pago: ${paymentMethod}
-
-📌 Referencia de pedido en el sistema:
-${orderId}
-
-Por favor, deseo confirmar mi pedido y coordinar la entrega. Gracias.`;
-
-      return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`;
-    },
-    [items, referenceAddress, productsTotal, shippingQuote, grandTotal, paymentMethod]
-  );
-
   /* =======================================================
      CREAR PEDIDO
   ======================================================= */
@@ -1083,203 +1029,61 @@ Por favor, deseo confirmar mi pedido y coordinar la entrega. Gracias.`;
   const createOrder = useCallback(async () => {
     setErrorMessage('');
     setSuccessMessage('');
-
-    if (savingOrder) {
-      return;
-    }
-
-    if (!user) {
-      setErrorMessage('Debes iniciar sesión para realizar un pedido.');
-
-      return;
-    }
-
-    if (items.length === 0) {
-      setErrorMessage('El carrito está vacío.');
-
-      return;
-    }
-
-    if (!selectedLocation) {
-      setErrorMessage('Selecciona la ubicación de entrega.');
-
-      return;
-    }
-
-    if (!shippingQuote) {
-      setErrorMessage('Primero calcula el costo de envío.');
-
-      return;
-    }
+    if (savingOrder) return;
+    if (!user) return setErrorMessage('Debes iniciar sesión para realizar un pedido.');
+    if (!items.length) return setErrorMessage('El carrito está vacío.');
+    if (!selectedLocation) return setErrorMessage('Selecciona la ubicación de entrega.');
+    if (!shippingQuote) return setErrorMessage('Primero calcula el costo de envío.');
 
     setSavingOrder(true);
-
-    const supabase = createClient();
-
-    let createdOrderId: string | null = null;
-
     try {
-      /*
-       * 1. Volver a consultar los productos.
-       *
-       * Esto evita confiar solamente en los
-       * datos que están en el navegador.
-       */
       const products = await getProductsShippingData();
-
-      /*
-       * 2. Crear order_items en memoria.
-       *
-       * NO incluimos "subtotal".
-       *
-       * Esto es importante porque tu tabla
-       * puede manejar esa columna mediante
-       * valor generado/default.
-       */
-      const orderItems = items.map((item) => {
-        const product = products.find((p) => normalizeText(p.name) === normalizeText(item.name));
-
-        if (!product) {
-          throw new Error(`No se encontró el producto "${item.name}".`);
-        }
-
-        const quantity = Math.max(1, Number(item.quantity) || 1);
-        const unitPrice = Number(product.price);
-
-        if (!Number.isFinite(unitPrice) || unitPrice < 0) {
-          throw new Error(`El precio del producto "${product.name}" no es válido.`);
-        }
-
+      const checkoutItems = items.map((item) => {
+        const product = products.find(
+          (entry) => normalizeText(entry.name) === normalizeText(item.name)
+        );
+        if (!product) throw new Error(`No se encontró el producto "${item.name}".`);
         return {
-          product_id: product.id,
-          product_name: product.name,
-          product_image_url: item.image || null,
-          quantity,
-          unit_price: Number(unitPrice.toFixed(2)),
+          productId: product.id,
+          variantId: item.variantId ?? null,
+          quantity: Math.max(1, Number(item.quantity) || 1),
         };
       });
-
-      /*
-       * 3. Información de envío.
-       *
-       * Guardamos en "notes" porque esa columna
-       * existe en tu tabla orders.
-       */
-      const shippingInformation = {
-        delivery_address: referenceAddress.trim() || 'Ubicación seleccionada en mapa',
-
-        latitude: selectedLocation.lat,
-
-        longitude: selectedLocation.lng,
-
-        distance_km: shippingQuote.distanceKm,
-
-        shipping_cost: shippingQuote.cost,
-
-        shipping_categories: shippingQuote.categories,
-      };
-
-      const notes = JSON.stringify(shippingInformation);
-
-      /*
-       * 4. Crear pedido.
-       */
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-
-          status: 'confirmado',
-
-          subtotal: productsTotal,
-
-          shipping_cost: shippingQuote.cost,
-
-          total: grandTotal,
-
-          payment_method: paymentMethod,
-
-          payment_status: 'pendiente',
-
-          shipping_latitude: selectedLocation.lat,
-          shipping_longitude: selectedLocation.lng,
-          shipping_address: referenceAddress.trim() || 'Ubicación seleccionada en mapa',
-          shipping_reference: referenceAddress.trim() || null,
-          shipping_distance_km: shippingQuote.distanceKm,
-
-          notes,
-        })
-        .select('id')
-        .single();
-
-      if (orderError || !order) {
-        throw new Error(orderError?.message || 'No se pudo crear el pedido.');
-      }
-
-      createdOrderId = String(order.id);
-
-      /*
-       * 5. Insertar productos.
-       */
-      const itemsToInsert = orderItems.map((item) => ({
-        order_id: createdOrderId,
-
-        product_id: item.product_id,
-
-        product_name: item.product_name,
-
-        product_image_url: item.product_image_url,
-
-        quantity: item.quantity,
-
-        unit_price: item.unit_price,
-      }));
-
-      const { error: itemsError } = await supabase.from('order_items').insert(itemsToInsert);
-
-      if (itemsError) {
-        /*
-         * Intentar limpiar pedido huérfano.
-         */
-        try {
-          await supabase.from('orders').delete().eq('id', createdOrderId);
-        } catch {
-          // No interrumpimos el mensaje principal.
-        }
-
-        throw new Error(`No se pudieron guardar los productos del pedido: ${itemsError.message}`);
-      }
-
-      /*
-       * 6. Pedido correctamente creado.
-       *
-       * Guardamos el ID y la URL de WhatsApp ANTES
-       * de limpiar el carrito, porque después los items
-       * dejarán de estar disponibles en el estado local.
-       */
-      const orderId = String(createdOrderId);
-      const shortId = orderId.replace(/-/g, '').slice(0, 8).toUpperCase();
-      const whatsappUrl = buildCompletedOrderWhatsAppUrl(orderId);
-
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: checkoutItems,
+          paymentMethod,
+          shipping: {
+            latitude: selectedLocation.lat,
+            longitude: selectedLocation.lng,
+            distanceKm: shippingQuote.distanceKm,
+            address: referenceAddress.trim() || 'Ubicación seleccionada en mapa',
+          },
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error || 'No se pudo iniciar el pago.');
+      const order = result.order;
+      const orderId = String(order.order_id);
       setCompletedOrder({
         id: orderId,
-        whatsappUrl,
-        shortId,
+        shortId: orderId.replace(/-/g, '').slice(0, 8).toUpperCase(),
+        orderNumber:
+          order.order_number || `POL-${orderId.replace(/-/g, '').slice(0, 8).toUpperCase()}`,
+        paymentStatus: result.payment?.status || order.payment_status || 'pending',
+        paymentMessage: result.payment?.message || 'El pago está pendiente de validación.',
       });
-
-      setSuccessMessage(`¡Pedido registrado correctamente! Pedido #${shortId}`);
-
-      /*
-       * 7. Limpiar carrito.
-       *
-       * El checkout permanece abierto para mostrar la
-       * confirmación y permitir enviar el pedido por WhatsApp.
-       */
-      clearCart();
-    } catch (error: any) {
-      console.error('Error creando pedido:', error);
-
-      setErrorMessage(error?.message || 'No se pudo registrar el pedido.');
+      if (isPaymentApproved(result.payment?.status || order.payment_status)) {
+        clearCart();
+        setSuccessMessage('Pago aprobado. Pedido confirmado.');
+      } else {
+        setSuccessMessage('Solicitud registrada. Conservamos tu carrito hasta aprobar el pago.');
+      }
+    } catch (error) {
+      console.error('Error iniciando checkout:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'No se pudo iniciar el pago.');
     } finally {
       setSavingOrder(false);
     }
@@ -1291,11 +1095,8 @@ Por favor, deseo confirmar mi pedido y coordinar la entrega. Gracias.`;
     shippingQuote,
     paymentMethod,
     referenceAddress,
-    grandTotal,
     getProductsShippingData,
-    buildCompletedOrderWhatsAppUrl,
     clearCart,
-    closeCart,
   ]);
 
   /* =======================================================
@@ -1557,52 +1358,56 @@ Por favor, deseo confirmar mi pedido y coordinar la entrega. Gracias.`;
             </div>
 
             {completedOrder ? (
-              <section className="border-2 border-green-300 bg-green-50 rounded-2xl p-5 space-y-4">
+              <section
+                className={`rounded-3xl border p-6 space-y-5 ${isPaymentApproved(completedOrder.paymentStatus) ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}
+              >
                 <div className="text-center">
-                  <div className="text-5xl mb-2">✅</div>
-                  <h3 className="text-xl font-extrabold text-green-800">¡Pedido registrado!</h3>
-                  <p className="text-sm text-green-700 mt-1">
-                    Tu pedido fue guardado correctamente en nuestro sistema.
+                  <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl shadow-sm">
+                    {isPaymentApproved(completedOrder.paymentStatus) ? '✓' : '⏳'}
+                  </div>
+                  <h3 className="text-xl font-extrabold text-slate-900">
+                    {isPaymentApproved(completedOrder.paymentStatus)
+                      ? 'Pago aprobado'
+                      : 'Pago pendiente'}
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {isPaymentApproved(completedOrder.paymentStatus)
+                      ? '✓ Pedido confirmado'
+                      : completedOrder.paymentMessage}
                   </p>
                 </div>
-
-                <div className="rounded-xl bg-white border border-green-200 p-4 text-center">
+                <div className="rounded-2xl border border-white/80 bg-white p-4 text-center shadow-sm">
                   <p className="text-xs text-muted-foreground">Número de pedido</p>
-                  <p className="text-2xl font-black text-primary tracking-wider">
-                    #{completedOrder.shortId}
+                  <p className="text-2xl font-black tracking-wider text-primary">
+                    #{completedOrder.orderNumber}
                   </p>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    window.open(completedOrder.whatsappUrl, '_blank', 'noopener,noreferrer')
-                  }
-                  className="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-extrabold py-3.5 rounded-xl transition-all"
-                >
-                  💬 Enviar pedido por WhatsApp
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCompletedOrder(null);
-                    setSuccessMessage('');
-                    setErrorMessage('');
-                    setShippingQuote(null);
-                    setSelectedLocation(null);
-                    setReferenceAddress('');
-                    setCheckoutOpen(false);
-                    closeCart();
-                  }}
-                  className="w-full border border-border hover:bg-muted text-foreground font-bold py-3 rounded-xl transition-all"
-                >
-                  Cerrar y continuar comprando
-                </button>
-
-                <p className="text-[11px] text-center text-muted-foreground">
-                  ID interno: {completedOrder.id}
-                </p>
+                {!isPaymentApproved(completedOrder.paymentStatus) && (
+                  <div className="rounded-xl border border-amber-200 bg-white/70 p-3 text-xs text-amber-900">
+                    No confirmaremos el pedido ni vaciaremos tu carrito hasta recibir una validación
+                    verificable del proveedor. Podrás reintentar desde tu historial.
+                  </div>
+                )}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Link
+                    href="/pedidos"
+                    onClick={closeCart}
+                    className="rounded-xl bg-primary px-4 py-3 text-center font-extrabold text-white"
+                  >
+                    Ver mi pedido
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCompletedOrder(null);
+                      setCheckoutOpen(false);
+                      closeCart();
+                    }}
+                    className="rounded-xl border border-border bg-white px-4 py-3 font-bold"
+                  >
+                    Continuar comprando
+                  </button>
+                </div>
               </section>
             ) : (
               <>
@@ -1756,60 +1561,65 @@ Por favor, deseo confirmar mi pedido y coordinar la entrega. Gracias.`;
                 MÉTODO DE PAGO
             ================================================= */}
 
-                <section>
-                  <h4 className="font-extrabold text-sm mb-2">💳 Método de pago</h4>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      {
-                        value: 'WhatsApp',
-                        label: 'WhatsApp',
-                        icon: '💬',
-                      },
-                      {
-                        value: 'Yape / Plin',
-                        label: 'Yape / Plin',
-                        icon: '📱',
-                      },
-                      {
-                        value: 'Transferencia bancaria',
-                        label: 'Transferencia bancaria',
-                        icon: '🏦',
-                      },
-                      {
-                        value: 'Tarjeta',
-                        label: 'Tarjeta',
-                        icon: '💳',
-                      },
-                    ].map((method) => (
+                <section className="rounded-2xl border border-border bg-white p-4">
+                  <div className="mb-3">
+                    <h4 className="font-extrabold text-sm">Método de pago</h4>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Elige cómo deseas pagar. La confirmación depende de la validación del
+                      proveedor.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {PAYMENT_METHODS.map((method) => (
                       <button
-                        key={method.value}
+                        key={method.id}
                         type="button"
-                        onClick={() => setPaymentMethod(method.value)}
-                        className={`
-                      border rounded-xl p-3 text-left
-                      transition-all
-                      ${
-                        paymentMethod === method.value
-                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                          : 'border-border hover:border-primary/50'
-                      }
-                    `}
+                        onClick={() => setPaymentMethod(method.id)}
+                        className={`rounded-xl border p-3 text-left transition ${paymentMethod === method.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-primary/50'}`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span>{method.icon}</span>
-
-                          <span className="text-xs font-bold">{method.label}</span>
-                        </div>
+                        <span className="mr-2">{method.icon}</span>
+                        <span className="text-xs font-bold">{method.label}</span>
                       </button>
                     ))}
                   </div>
-
-                  <p className="text-[10px] text-muted-foreground mt-2">
-                    El método seleccionado queda registrado en el pedido. La integración de cobro
-                    automático con tarjeta se conectará posteriormente con la pasarela
-                    correspondiente.
-                  </p>
+                  {paymentMethod === 'card' && (
+                    <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-bold text-sm">Tus tarjetas</p>
+                          <p className="text-xs text-muted-foreground">
+                            No hay tarjetas tokenizadas.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled
+                          className="rounded-lg border bg-white px-3 py-2 text-xs font-bold opacity-60"
+                        >
+                          + Agregar tarjeta
+                        </button>
+                      </div>
+                      <div className="mt-3 rounded-xl bg-slate-900 p-4 text-white opacity-60">
+                        <p className="text-xs text-slate-300">Tarjeta segura</p>
+                        <p className="mt-4 font-mono tracking-widest">•••• •••• •••• ••••</p>
+                      </div>
+                      <p className="mt-3 text-[11px] text-slate-600">
+                        Falta conectar una pasarela de tokenización. Polaris nunca almacenará el
+                        número completo ni el CVV.
+                      </p>
+                    </div>
+                  )}
+                  {paymentMethod === 'mercado_pago' && (
+                    <p className="mt-3 rounded-xl bg-blue-50 p-3 text-xs text-blue-800">
+                      Mercado Pago requiere credenciales y validación segura del lado servidor. No
+                      se simulará una aprobación.
+                    </p>
+                  )}
+                  {['yape', 'plin', 'bank_transfer'].includes(paymentMethod) && (
+                    <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-800">
+                      Este método quedará pendiente hasta que el pago sea validado.
+                    </p>
+                  )}
                 </section>
 
                 {/* =================================================
@@ -1879,7 +1689,7 @@ Por favor, deseo confirmar mi pedido y coordinar la entrega. Gracias.`;
                   disabled={savingOrder || !selectedLocation || !shippingQuote}
                   className="w-full bg-primary hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-extrabold py-3.5 rounded-xl transition-all"
                 >
-                  {savingOrder ? '⏳ Guardando pedido...' : '✓ Confirmar y realizar pedido'}
+                  {savingOrder ? '⏳ Iniciando pago...' : 'Continuar al pago'}
                 </button>
 
                 <button

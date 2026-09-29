@@ -1,6 +1,14 @@
 ﻿'use client';
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 
@@ -54,6 +62,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const syncedCartId = useRef<string | null>(null);
 
   useEffect(() => {
     setItems(readGuestCart());
@@ -86,19 +95,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             .data?.id;
 
         if (!cartId || cancelled) return;
+        syncedCartId.current = cartId;
 
         for (const item of items) {
           const productId = String(item.id);
           if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(productId)) continue;
-          await supabase.from('cart_items').upsert(
-            {
-              cart_id: cartId,
-              product_id: productId,
-              variant_id: item.variantId ?? null,
-              quantity: item.quantity,
-            },
-            { onConflict: 'cart_id,product_id,variant_id' }
-          );
+          await supabase.rpc('sync_cart_item', {
+            p_product_id: productId,
+            p_variant_id: item.variantId ?? null,
+            p_quantity: item.quantity,
+          });
         }
       } catch {
         // El carrito local nunca se pierde si no hay red o tablas nuevas todavia.
@@ -140,7 +146,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  const clearCart = useCallback(() => setItems([]), []);
+  const clearCart = useCallback(() => {
+    setItems([]);
+    const cartId = syncedCartId.current;
+    if (cartId) void createClient().from('cart_items').delete().eq('cart_id', cartId);
+  }, []);
   const totalItems = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
   return (
