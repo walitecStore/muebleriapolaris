@@ -5,11 +5,6 @@ export type ShippingResult = {
   requiresWhatsApp: boolean;
 };
 
-const ORIGIN = {
-  latitude: -11.998,
-  longitude: -77.078,
-};
-
 /**
  * Distancia geográfica aproximada entre dos coordenadas.
  */
@@ -38,33 +33,16 @@ export async function calculateShipping(
   longitude: number,
   category: string
 ): Promise<ShippingResult> {
-  const distanceKm = calculateStraightDistanceKm(
-    ORIGIN.latitude,
-    ORIGIN.longitude,
-    latitude,
-    longitude
-  );
-
   const normalizedCategory = category.toUpperCase();
-
-  // Productos pequeños:
-  if (normalizedCategory === 'PUF' || normalizedCategory === 'DECORATIVO') {
-    return {
-      distanceKm,
-      shippingCost: 0,
-      category: normalizedCategory,
-      requiresWhatsApp: true,
-    };
-  }
-
-  const response = await fetch('/api/shipping/calculate', {
+  const response = await fetch('/api/shipping', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      category: normalizedCategory,
-      distanceKm,
+      latitude,
+      longitude,
+      categories: [normalizedCategory],
     }),
   });
 
@@ -73,11 +51,12 @@ export async function calculateShipping(
   }
 
   const data = await response.json();
+  const requiresWhatsApp = data.status === 'requires_quote';
 
   return {
-    distanceKm,
+    distanceKm: Number(data.destination?.distanceKm || 0),
     shippingCost: Number(data.shippingCost || 0),
     category: normalizedCategory,
-    requiresWhatsApp: false,
+    requiresWhatsApp,
   };
 }
