@@ -23,7 +23,18 @@ type SupabaseProduct = {
   created_at?: string | null;
   updated_at?: string | null;
   subcategory?: string | null;
+  subcategory_id?: string | null;
+  brand_id?: string | null;
+  brand?: string | null;
+  short_description?: string | null;
+  sale_price?: number | string | null;
+  sku?: string | null;
+  color?: string | null;
+  material?: string | null;
+  is_featured?: boolean | null;
 };
+
+type RelatedRow = Record<string, unknown> & { id: string; product_id?: string };
 
 function normalizeText(value: unknown): string {
   return String(value ?? '')
@@ -77,19 +88,64 @@ function getCategoryName(
   return category?.name?.trim() || 'Sin categoría';
 }
 
-function transformProduct(product: SupabaseProduct, categories: SupabaseCategory[]) {
+function transformProduct(
+  product: SupabaseProduct,
+  categories: SupabaseCategory[],
+  related: {
+    subcategories: RelatedRow[];
+    brands: RelatedRow[];
+    images: RelatedRow[];
+    variants: RelatedRow[];
+    attributes: RelatedRow[];
+    attributeValues: RelatedRow[];
+    reviews: RelatedRow[];
+  }
+) {
   const categoryName = getCategoryName(product.category_id, categories);
 
-  const image = getMainImage(product);
+  const normalizedImages = related.images
+    .filter((item) => item.product_id === String(product.id))
+    .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
+  const primaryImage = normalizedImages.find((item) => item.is_primary)?.url;
+  const image =
+    typeof primaryImage === 'string'
+      ? primaryImage
+      : typeof normalizedImages[0]?.url === 'string'
+        ? String(normalizedImages[0].url)
+        : getMainImage(product);
 
-  const images = Array.isArray(product.images)
-    ? product.images.filter((item) => typeof item === 'string' && item.trim().length > 0)
-    : image
-      ? [image]
-      : [];
+  const legacyImages = Array.isArray(product.images)
+    ? product.images.filter(
+        (item): item is string => typeof item === 'string' && item.trim().length > 0
+      )
+    : [];
+  const images = Array.from(
+    new Set(
+      [
+        ...normalizedImages
+          .map((item) => item.url)
+          .filter((url): url is string => typeof url === 'string'),
+        ...legacyImages,
+        image,
+      ].filter(Boolean)
+    )
+  );
 
   const stock = Number(product.stock ?? 0);
-  const priceValue = Number(product.price ?? 0);
+  const priceValue = Number(product.sale_price ?? product.price ?? 0);
+  const subcategory = related.subcategories.find((item) => item.id === product.subcategory_id);
+  const brand = related.brands.find((item) => item.id === product.brand_id);
+  const variants = related.variants.filter((item) => item.product_id === String(product.id));
+  const attributes = related.attributes
+    .filter((item) => item.product_id === String(product.id))
+    .map((attribute) => ({
+      ...attribute,
+      values: related.attributeValues.filter((value) => value.attribute_id === attribute.id),
+    }));
+  const reviews = related.reviews.filter((item) => item.product_id === String(product.id));
+  const rating = reviews.length
+    ? reviews.reduce((total, review) => total + Number(review.rating ?? 0), 0) / reviews.length
+    : 0;
 
   return {
     id: String(product.id),
@@ -105,13 +161,22 @@ function transformProduct(product: SupabaseProduct, categories: SupabaseCategory
         ? String(product.category_id)
         : null,
 
-    subcategory: typeof product.subcategory === 'string' ? product.subcategory.trim() : '',
+    subcategory:
+      typeof subcategory?.name === 'string'
+        ? subcategory.name
+        : typeof product.subcategory === 'string'
+          ? product.subcategory.trim()
+          : '',
 
-    description: product.description?.trim() || '',
+    brand: typeof brand?.name === 'string' ? brand.name : (product.brand ?? ''),
+
+    description: product.description?.trim() || product.short_description?.trim() || '',
 
     price: formatPrice(priceValue),
 
     priceValue,
+    regularPriceValue: Number(product.price ?? 0),
+    salePriceValue: product.sale_price == null ? null : Number(product.sale_price),
 
     image,
 
@@ -120,6 +185,15 @@ function transformProduct(product: SupabaseProduct, categories: SupabaseCategory
     stock,
 
     availability: stock > 0 ? 'Disponible' : 'Agotado',
+    sku: product.sku ?? variants.find((variant) => variant.sku)?.sku ?? null,
+    color: product.color ?? '',
+    material: product.material ?? '',
+    variants,
+    attributes,
+    reviews,
+    rating,
+    reviewCount: reviews.length,
+    isFeatured: product.is_featured === true,
 
     isActive: product.is_active !== false,
 
@@ -201,6 +275,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
 
     const search = searchParams.get('search');
+    const id = searchParams.get('id');
 
     console.log('Parámetros:', {
       active,
@@ -218,7 +293,29 @@ export async function GET(request: NextRequest) {
      * createServerClient() dentro de esta ruta.
      */
 
-    const categories = await supabaseFetch<SupabaseCategory[]>('categories?select=id,name');
+    const [
+      categories,
+      subcategories,
+      brands,
+      images,
+      variants,
+      attributes,
+      attributeValues,
+      reviews,
+    ] = await Promise.all([
+      supabaseFetch<SupabaseCategory[]>('categories?select=id,name,slug,description,image_url'),
+      supabaseFetch<RelatedRow[]>('subcategories?select=*&is_active=eq.true&order=sort_order.asc'),
+      supabaseFetch<RelatedRow[]>('brands?select=*&is_active=eq.true&order=name.asc'),
+      supabaseFetch<RelatedRow[]>('product_images?select=*&order=sort_order.asc'),
+      supabaseFetch<RelatedRow[]>(
+        'product_variants?select=*&is_active=eq.true&order=sort_order.asc'
+      ),
+      supabaseFetch<RelatedRow[]>('product_attributes?select=*&order=sort_order.asc'),
+      supabaseFetch<RelatedRow[]>('product_attribute_values?select=*&order=sort_order.asc'),
+      supabaseFetch<RelatedRow[]>(
+        'product_reviews?select=*&status=eq.published&order=created_at.desc'
+      ),
+    ]);
 
     console.log(`📁 Categorías encontradas: ${categories.length}`);
 
@@ -245,6 +342,10 @@ export async function GET(request: NextRequest) {
       productsEndpoint += `&name=ilike.*${encodeURIComponent(search.trim())}*`;
     }
 
+    if (id?.trim()) {
+      productsEndpoint += `&or=(id.eq.${encodeURIComponent(id.trim())},slug.eq.${encodeURIComponent(id.trim())})`;
+    }
+
     productsEndpoint += '&order=id.asc';
 
     console.log('Consultando productos:', productsEndpoint);
@@ -259,7 +360,16 @@ export async function GET(request: NextRequest) {
      * =====================================================
      */
 
-    let products = rawProducts.map((product) => transformProduct(product, categories));
+    const related = {
+      subcategories,
+      brands,
+      images,
+      variants,
+      attributes,
+      attributeValues,
+      reviews,
+    };
+    let products = rawProducts.map((product) => transformProduct(product, categories, related));
 
     /*
      * =====================================================
@@ -318,6 +428,8 @@ export async function GET(request: NextRequest) {
 
           slug: item.slug?.trim() || normalizeText(item.name).replace(/\s+/g, '-'),
         })),
+        subcategories,
+        brands,
       },
       {
         status: 200,
