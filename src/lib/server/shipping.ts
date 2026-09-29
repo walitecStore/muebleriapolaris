@@ -1,4 +1,5 @@
 import 'server-only';
+import { isValidPeruCoordinate, territoryKind } from '@/lib/shipping-pricing';
 
 export const STORE_LOCATION = {
   latitude: -11.993057,
@@ -20,23 +21,9 @@ export type VerifiedRoute = LocationDetails & {
   provider: 'google' | 'osrm';
 };
 
-function validCoordinate(latitude: number, longitude: number) {
-  return (
-    Number.isFinite(latitude) &&
-    Number.isFinite(longitude) &&
-    latitude >= -18.5 &&
-    latitude <= -3 &&
-    longitude >= -82 &&
-    longitude <= -68
-  );
+export function validCoordinate(latitude: number, longitude: number) {
+  return isValidPeruCoordinate(latitude, longitude);
 }
-
-const normalized = (value: unknown) =>
-  String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase();
 
 function locationFromAddress(
   address: Record<string, string | undefined>,
@@ -45,18 +32,15 @@ function locationFromAddress(
   const district = address.city_district || address.district || address.suburb || null;
   const province = address.province || address.city || address.county || null;
   const department = address.state || address.region || null;
-  const provinceName = normalized(province);
-  const departmentName = normalized(department);
-  const isLimaMetropolitana =
-    provinceName === 'lima' ||
-    provinceName.includes('provincia de lima') ||
-    provinceName === 'callao' ||
-    departmentName.includes('callao');
+  const isLimaMetropolitana = territoryKind(province, department) === 'lima_metropolitana';
 
   return { address: displayName, district, province, department, isLimaMetropolitana };
 }
 
-async function reverseGeocode(latitude: number, longitude: number): Promise<LocationDetails> {
+export async function reverseGeocode(
+  latitude: number,
+  longitude: number
+): Promise<LocationDetails> {
   const key = process.env.GOOGLE_MAPS_SERVER_API_KEY;
   if (key) {
     const response = await fetch(
@@ -74,9 +58,9 @@ async function reverseGeocode(latitude: number, longitude: number): Promise<Loca
       return locationFromAddress(
         {
           district:
-            components.locality ||
             components.sublocality_level_1 ||
-            components.administrative_area_level_3,
+            components.administrative_area_level_3 ||
+            components.locality,
           province: components.administrative_area_level_2,
           state: components.administrative_area_level_1,
         },
@@ -97,7 +81,7 @@ async function reverseGeocode(latitude: number, longitude: number): Promise<Loca
   return locationFromAddress(data.address, data.display_name || 'Ubicación seleccionada');
 }
 
-async function drivingRoute(latitude: number, longitude: number) {
+export async function drivingRoute(latitude: number, longitude: number) {
   const key = process.env.GOOGLE_MAPS_SERVER_API_KEY;
   if (key) {
     const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
@@ -144,6 +128,31 @@ async function drivingRoute(latitude: number, longitude: number) {
     durationMinutes: route.duration ? Math.ceil(Number(route.duration) / 60) : null,
     provider: 'osrm' as const,
   };
+}
+
+export async function geocodePublicReference(query: string) {
+  const key = process.env.GOOGLE_MAPS_SERVER_API_KEY;
+  if (key) {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&region=pe&language=es&key=${encodeURIComponent(key)}`,
+      { cache: 'no-store' }
+    );
+    const result = response.ok ? (await response.json())?.results?.[0] : null;
+    const point = result?.geometry?.location;
+    if (point && validCoordinate(Number(point.lat), Number(point.lng)))
+      return { latitude: Number(point.lat), longitude: Number(point.lng) };
+  }
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=pe&q=${encodeURIComponent(query)}`,
+    {
+      headers: { 'User-Agent': 'MuebleriaPolaris/1.0 (shipping-checkout)' },
+      cache: 'no-store',
+    }
+  );
+  const point = response.ok ? (await response.json())?.[0] : null;
+  if (!point || !validCoordinate(Number(point.lat), Number(point.lon)))
+    throw new Error('No se pudo verificar el centro operativo del distrito.');
+  return { latitude: Number(point.lat), longitude: Number(point.lon) };
 }
 
 export async function verifyShippingDestination(

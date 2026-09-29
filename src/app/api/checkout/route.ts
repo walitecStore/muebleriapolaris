@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { PAYMENT_METHODS, type PaymentMethodId } from '@/lib/payments';
-import { verifyShippingDestination } from '@/lib/server/shipping';
+import { buildShippingQuote } from '@/lib/server/shipping-quote';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 type CheckoutBody = {
   items?: { productId?: string; variantId?: string | null; quantity?: number }[];
@@ -33,23 +34,50 @@ export async function POST(request: Request) {
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return NextResponse.json({ error: 'La ubicación de entrega no es válida.' }, { status: 400 });
   }
-  let destination;
+  const productRows = await supabase
+    .from('products')
+    .select('id,shipping_factor')
+    .in('id', body.items.map((item) => item.productId).filter(Boolean));
+  if (
+    productRows.error ||
+    productRows.data?.length !== new Set(body.items.map((item) => item.productId)).size
+  )
+    return NextResponse.json({ error: 'No se pudieron validar los productos.' }, { status: 400 });
+  const productFactor = Math.max(
+    1,
+    ...(productRows.data ?? []).map((item) => Number(item.shipping_factor) || 1)
+  );
+  let quote;
   try {
-    destination = await verifyShippingDestination(latitude, longitude);
+    quote = await buildShippingQuote(supabase, latitude, longitude, productFactor);
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'No se pudo verificar el destino.' },
       { status: 400 }
     );
   }
-  if (!destination.isLimaMetropolitana) {
+  if (quote.status !== 'calculated') {
     return NextResponse.json(
-      { error: 'Envío a provincia: requiere cotización. No se creó ningún pedido.' },
+      {
+        error:
+          'No pudimos calcular automáticamente el envío para esta ubicación. No se creó ningún pedido.',
+      },
       { status: 409 }
     );
   }
+  const destination = quote.destination;
 
-  const { data, error } = await supabase.rpc('create_validated_order', {
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Checkout no configurado.' },
+      { status: 503 }
+    );
+  }
+  const { data, error } = await admin.rpc('create_server_validated_order', {
+    p_user_id: auth.user.id,
     p_items: body.items,
     p_payment_method: method.id,
     p_shipping: {
@@ -65,6 +93,12 @@ export async function POST(request: Request) {
       shippingType: 'lima_delivery',
       quoteStatus: 'calculated',
       routeProvider: destination.provider,
+      centerDistanceKm: quote.audit.centerDistanceKm,
+      centerDeltaKm: quote.audit.deltaKm,
+      basePrice: quote.audit.basePrice,
+      adjustment: quote.audit.adjustment,
+      shippingAmount: quote.shippingCost,
+      pricingVersion: quote.audit.pricingVersion,
     },
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

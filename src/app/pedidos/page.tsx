@@ -584,12 +584,55 @@ function OrderCard({
   order: Order;
   onViewDetail: (order: Order) => void;
 }) {
+  const [returnItem, setReturnItem] = useState<OrderItem | null>(null);
+  const [returnType, setReturnType] = useState<'refund_only' | 'return_and_refund'>(
+    'return_and_refund'
+  );
+  const [returnQuantity, setReturnQuantity] = useState(1);
+  const [returnReason, setReturnReason] = useState('');
+  const [returnDescription, setReturnDescription] = useState('');
+  const [returnBusy, setReturnBusy] = useState(false);
   const stepIdx = getStepIndex(order.status);
 
   const color = STATUS_COLORS[order.status] || STATUS_COLORS.confirmado;
 
   const productsCount =
     order.order_items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) || 0;
+
+  async function requestReturn() {
+    if (!returnItem) return;
+    if (returnReason.trim().length < 3 || returnReason.trim().length > 120) {
+      window.alert('El motivo debe tener entre 3 y 120 caracteres.');
+      return;
+    }
+    if (returnDescription.length > 1000) {
+      window.alert('La descripción no puede superar 1000 caracteres.');
+      return;
+    }
+    if (
+      !Number.isInteger(returnQuantity) ||
+      returnQuantity < 1 ||
+      returnQuantity > returnItem.quantity
+    ) {
+      window.alert('La cantidad no es válida.');
+      return;
+    }
+    setReturnBusy(true);
+    const { error } = await createClient().rpc('request_return', {
+      p_order_item_id: returnItem.id,
+      p_quantity: returnQuantity,
+      p_request_type: returnType,
+      p_reason: returnReason.trim(),
+      p_description: returnDescription.trim() || null,
+    });
+    setReturnBusy(false);
+    window.alert(
+      error
+        ? error.message
+        : 'Solicitud registrada para revisión. Esto no significa que haya sido aprobada ni reembolsada.'
+    );
+    if (!error) setReturnItem(null);
+  }
 
   return (
     <article className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
@@ -692,6 +735,20 @@ function OrderCard({
                     x{item.quantity} · {formatCurrency(item.unit_price)} c/u
                   </p>
                 </div>
+                {isPaymentApproved(order.payment_status) && order.status !== 'cancelado' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReturnItem(item);
+                      setReturnQuantity(1);
+                      setReturnReason('');
+                      setReturnDescription('');
+                    }}
+                    className="rounded-lg border px-2 py-1 text-[10px] font-bold text-primary"
+                  >
+                    Solicitar devolución o reembolso
+                  </button>
+                )}
               </div>
             ))}
 
@@ -701,6 +758,90 @@ function OrderCard({
               </p>
             )}
           </div>
+        </div>
+      )}
+
+      {returnItem && (
+        <div className="fixed inset-0 z-[100] grid place-items-center bg-black/60 p-4">
+          <form
+            className="w-full max-w-lg space-y-4 rounded-3xl bg-white p-6 shadow-2xl"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void requestReturn();
+            }}
+          >
+            <div>
+              <h3 className="text-xl font-black">Solicitar devolución o reembolso</h3>
+              <p className="text-sm text-muted-foreground">{itemName(returnItem)}</p>
+            </div>
+            <label className="block text-sm font-bold">
+              Tipo
+              <select
+                className="mt-1 w-full rounded-xl border p-3"
+                value={returnType}
+                onChange={(event) => setReturnType(event.target.value as typeof returnType)}
+              >
+                <option value="return_and_refund">Devolución y reembolso</option>
+                <option value="refund_only">Solo reembolso</option>
+              </select>
+            </label>
+            <label className="block text-sm font-bold">
+              Cantidad
+              <input
+                className="mt-1 w-full rounded-xl border p-3"
+                type="number"
+                min={1}
+                max={returnItem.quantity}
+                value={returnQuantity}
+                onChange={(event) => setReturnQuantity(Number(event.target.value))}
+                required
+              />
+            </label>
+            <label className="block text-sm font-bold">
+              Motivo
+              <input
+                className="mt-1 w-full rounded-xl border p-3"
+                minLength={3}
+                maxLength={120}
+                value={returnReason}
+                onChange={(event) => setReturnReason(event.target.value)}
+                required
+              />
+            </label>
+            <label className="block text-sm font-bold">
+              Descripción adicional (opcional)
+              <textarea
+                className="mt-1 min-h-28 w-full rounded-xl border p-3"
+                maxLength={1000}
+                value={returnDescription}
+                onChange={(event) => setReturnDescription(event.target.value)}
+              />
+              <span className="text-xs font-normal text-muted-foreground">
+                {returnDescription.length}/1000
+              </span>
+            </label>
+            <p className="text-xs text-muted-foreground">
+              No incluyas datos bancarios ni información sensible. La solicitud queda pendiente de
+              revisión.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                className="rounded-xl border p-3 font-bold"
+                onClick={() => setReturnItem(null)}
+                disabled={returnBusy}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="rounded-xl bg-primary p-3 font-bold text-white disabled:opacity-50"
+                disabled={returnBusy}
+              >
+                {returnBusy ? 'Enviando…' : 'Enviar solicitud'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

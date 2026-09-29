@@ -850,16 +850,17 @@ export default function CartDrawer() {
        */
       const products = await getProductsShippingData();
 
-      const uniqueCategories = Array.from(
-        new Set(products.map((product) => product.shipping_category))
-      );
       const response = await fetch('/api/shipping', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           latitude: selectedLocation.lat,
           longitude: selectedLocation.lng,
-          categories: uniqueCategories,
+          items: products.map((product) => ({
+            productId: product.id,
+            quantity: items.find((item) => normalizeText(item.name) === normalizeText(product.name))
+              ?.quantity,
+          })),
         }),
       });
       const data = await response.json();
@@ -871,7 +872,7 @@ export default function CartDrawer() {
           province: data.destination?.province ?? null,
           address: data.destination?.address || 'Ubicación seleccionada',
         });
-        setSuccessMessage('Envío a provincia: requiere cotización');
+        setSuccessMessage(data.message || 'Esta ubicación requiere cotización');
         return;
       }
       setProvinceQuote(null);
@@ -1523,7 +1524,7 @@ export default function CartDrawer() {
                   <section className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
                     <div>
                       <p className="font-extrabold text-amber-900">
-                        Envío a provincia: requiere cotización
+                        Esta ubicación requiere cotización
                       </p>
                       <p className="mt-1 text-xs text-amber-800">
                         {provinceQuote.district || provinceQuote.province || provinceQuote.address}.

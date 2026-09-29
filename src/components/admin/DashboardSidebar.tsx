@@ -7,6 +7,7 @@ import {
   Package,
   FolderTree,
   ShoppingCart,
+  Undo2,
   Users,
   TicketPercent,
   BarChart3,
@@ -35,6 +36,11 @@ const menu = [
     title: 'Pedidos',
     href: '/admin/pedidos',
     icon: ShoppingCart,
+  },
+  {
+    title: 'Devoluciones',
+    href: '/admin/devoluciones',
+    icon: Undo2,
   },
   {
     title: 'Clientes',

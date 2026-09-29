@@ -1,7 +1,7 @@
 export const PAYMENT_METHODS = [
+  { id: 'card', label: 'Tarjeta de crédito/débito', icon: '💳', provider: 'unconfigured' },
   { id: 'yape', label: 'Yape', icon: '📱', provider: 'manual' },
   { id: 'plin', label: 'Plin', icon: '📲', provider: 'manual' },
-  { id: 'card', label: 'Tarjeta de crédito/débito', icon: '💳', provider: 'unconfigured' },
   { id: 'mercado_pago', label: 'Mercado Pago', icon: '🛡️', provider: 'unconfigured' },
   { id: 'bank_transfer', label: 'Transferencia bancaria', icon: '🏦', provider: 'manual' },
 ] as const;
