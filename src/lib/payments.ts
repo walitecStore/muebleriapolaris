@@ -8,12 +8,16 @@ export const PAYMENT_METHODS = [
 
 export type PaymentMethodId = (typeof PAYMENT_METHODS)[number]['id'];
 
+export function isPaymentMethodId(value: string): value is PaymentMethodId {
+  return PAYMENT_METHODS.some((method) => method.id === value);
+}
+
 export const PAYMENT_STATUS_LABELS: Record<string, string> = {
   pending: 'Pago pendiente',
   approved: 'Pago aprobado',
   rejected: 'Pago rechazado',
   cancelled: 'Pago cancelado',
-  failed: 'Pago fallido',
+  failed: 'Error en el pago',
   pendiente: 'Pago pendiente',
   aprobado: 'Pago aprobado',
   rechazado: 'Pago rechazado',

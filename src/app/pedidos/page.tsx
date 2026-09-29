@@ -728,6 +728,19 @@ function OrderCard({
       </div>
 
       <div className="px-5 sm:px-6 py-4 border-t border-border flex flex-col sm:flex-row gap-3">
+        {!isPaymentApproved(order.payment_status) &&
+          !['cancelled', 'cancelado'].includes(order.payment_status?.toLowerCase() || '') && (
+            <Link
+              href={`/pago/${order.id}`}
+              className="flex-1 rounded-2xl bg-amber-500 py-3 text-center font-extrabold text-slate-950 hover:bg-amber-400 transition"
+            >
+              {['rejected', 'failed', 'rechazado', 'fallido'].includes(
+                order.payment_status?.toLowerCase() || ''
+              )
+                ? 'Reintentar pago'
+                : 'Continuar con el pago'}
+            </Link>
+          )}
         <button
           type="button"
           onClick={() => onViewDetail(order)}
