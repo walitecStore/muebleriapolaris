@@ -15,17 +15,8 @@ import Link from 'next/link';
 
 const WA_NUMBER = '51916832791';
 
-/*
- * Punto de partida de Mueblería Polaris
- *
- * Av. 12 de Octubre 1805
- * San Martín de Porres - Lima
- */
-const STORE_LOCATION = {
-  lat: -11.993057,
-  lng: -77.071283,
-  address: 'Av. 12 de Octubre 1805, San Martín de Porres, Lima',
-};
+// Vista neutral del mapa. El origen logístico existe únicamente en el servidor.
+const DEFAULT_MAP_VIEW = { lat: 0, lng: 0, zoom: 2 };
 
 /* =========================================================
    TIPOS
@@ -47,17 +38,21 @@ interface ProductShippingData {
 interface ShippingQuote {
   distanceKm: number;
   cost: number;
-  durationMinutes: number | null;
+  durationSeconds: number;
   shippingType: 'lima_delivery';
   district: string | null;
   province: string | null;
   address: string;
+  commercialRoutePrice: number;
+  productAdjustment: number;
 }
 
 interface ProvinceQuote {
   district: string | null;
   province: string | null;
   address: string;
+  distanceKm: number;
+  durationSeconds: number;
 }
 
 interface SavedAddress {
@@ -174,6 +169,14 @@ function formatDistance(value: number): string {
   if (!Number.isFinite(value)) return '—';
 
   return `${value.toFixed(2)} km`;
+}
+
+function formatRouteDuration(durationSeconds: number): string {
+  const minutes = Math.max(1, Math.round(durationSeconds / 60));
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remaining = minutes % 60;
+  return remaining === 0 ? `${hours} h` : `${hours} h ${remaining} min`;
 }
 
 /*
@@ -495,17 +498,14 @@ export default function CartDrawer() {
 
         map.setView(
           [
-            selectedLocation?.lat ?? STORE_LOCATION.lat,
+            selectedLocation?.lat ?? DEFAULT_MAP_VIEW.lat,
 
-            selectedLocation?.lng ?? STORE_LOCATION.lng,
+            selectedLocation?.lng ?? DEFAULT_MAP_VIEW.lng,
           ],
-          14
+          selectedLocation ? 14 : DEFAULT_MAP_VIEW.zoom
         );
 
-        const initialLocation = selectedLocation ?? {
-          lat: STORE_LOCATION.lat,
-          lng: STORE_LOCATION.lng,
-        };
+        const initialLocation = selectedLocation ?? DEFAULT_MAP_VIEW;
 
         const marker = L.marker([initialLocation.lat, initialLocation.lng], { draggable: true })
           .addTo(map)
@@ -865,29 +865,33 @@ export default function CartDrawer() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || 'No se pudo calcular el envío.');
-      if (data.status === 'requires_quote') {
+      if (data.requiresQuote) {
         setShippingQuote(null);
         setProvinceQuote({
-          district: data.destination?.district ?? null,
+          district: data.destination?.district ?? data.destination?.locality ?? null,
           province: data.destination?.province ?? null,
           address: data.destination?.address || 'Ubicación seleccionada',
+          distanceKm: Number(data.route.distanceKm),
+          durationSeconds: Number(data.route.durationSeconds),
         });
-        setSuccessMessage(data.message || 'Esta ubicación requiere cotización');
+        setSuccessMessage(
+          data.message || 'Ruta calculada correctamente. La tarifa requiere cotización.'
+        );
         return;
       }
       setProvinceQuote(null);
       setShippingQuote({
-        distanceKm: Number(data.destination.distanceKm),
-        durationMinutes: data.destination.durationMinutes ?? null,
-        cost: Number(data.shippingCost),
+        distanceKm: Number(data.route.distanceKm),
+        durationSeconds: Number(data.route.durationSeconds),
+        cost: Number(data.pricing.finalPrice),
         shippingType: 'lima_delivery',
-        district: data.destination.district ?? null,
+        district: data.destination.district ?? data.destination.locality ?? null,
         province: data.destination.province ?? null,
         address: data.destination.address,
+        commercialRoutePrice: Number(data.pricing.commercialRoutePrice),
+        productAdjustment: Number(data.pricing.productAdjustment),
       });
-      setSuccessMessage(
-        `Envío calculado para ${formatDistance(Number(data.destination.distanceKm))}.`
-      );
+      setSuccessMessage(`Envío calculado para ${formatDistance(Number(data.route.distanceKm))}.`);
     } catch (error: any) {
       console.error('Error calculando envío:', error);
 
@@ -1502,10 +1506,21 @@ export default function CartDrawer() {
                           {shippingQuote.district || shippingQuote.province || 'Lima Metropolitana'}
                         </strong>
                       </div>
-                      {shippingQuote.durationMinutes && (
+                      {shippingQuote.durationSeconds > 0 && (
                         <div className="flex justify-between text-sm">
                           <span>Tiempo estimado de ruta</span>
-                          <strong>{shippingQuote.durationMinutes} min</strong>
+                          <strong>{formatRouteDuration(shippingQuote.durationSeconds)}</strong>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between text-sm">
+                        <span>Tarifa de ruta</span>
+                        <strong>{formatMoney(shippingQuote.commercialRoutePrice)}</strong>
+                      </div>
+                      {shippingQuote.productAdjustment !== 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span>Ajuste logístico del producto</span>
+                          <strong>{formatMoney(shippingQuote.productAdjustment)}</strong>
                         </div>
                       )}
 
@@ -1527,8 +1542,13 @@ export default function CartDrawer() {
                         Esta ubicación requiere cotización
                       </p>
                       <p className="mt-1 text-xs text-amber-800">
+                        Ruta calculada correctamente hacia{' '}
                         {provinceQuote.district || provinceQuote.province || provinceQuote.address}.
-                        No se creará un pedido ni se marcará un pago desde WhatsApp.
+                        La tarifa para este destino requiere cotización.
+                      </p>
+                      <p className="mt-2 text-xs text-amber-900">
+                        Distancia por carretera: {formatDistance(provinceQuote.distanceKm)} · Tiempo
+                        estimado de ruta: {formatRouteDuration(provinceQuote.durationSeconds)}
                       </p>
                     </div>
                     <a
