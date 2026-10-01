@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { PAYMENT_METHODS, type PaymentMethodId } from '@/lib/payments';
 import { buildShippingQuote } from '@/lib/server/shipping-quote';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { parseCoordinatePair, ShippingError } from '@/lib/server/shipping';
 
 type CheckoutBody = {
   items?: { productId?: string; variantId?: string | null; quantity?: number }[];
@@ -29,43 +30,66 @@ export async function POST(request: Request) {
   if (!body.items?.length || !body.shipping) {
     return NextResponse.json({ error: 'El checkout está incompleto.' }, { status: 400 });
   }
-  const latitude = Number(body.shipping.latitude);
-  const longitude = Number(body.shipping.longitude);
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+  const destinationCoordinate = parseCoordinatePair(
+    body.shipping.latitude,
+    body.shipping.longitude
+  );
+  if (!destinationCoordinate) {
     return NextResponse.json({ error: 'La ubicación de entrega no es válida.' }, { status: 400 });
   }
   const productRows = await supabase
     .from('products')
-    .select('id,shipping_factor')
+    .select('id,name,shipping_category,shipping_factor')
     .in('id', body.items.map((item) => item.productId).filter(Boolean));
   if (
     productRows.error ||
     productRows.data?.length !== new Set(body.items.map((item) => item.productId)).size
   )
     return NextResponse.json({ error: 'No se pudieron validar los productos.' }, { status: 400 });
-  const productFactor = Math.max(
-    1,
-    ...(productRows.data ?? []).map((item) => Number(item.shipping_factor) || 1)
+  const factorProduct = (productRows.data ?? []).reduce(
+    (current, product) =>
+      Number(product.shipping_factor) > Number(current?.shipping_factor ?? 1) ? product : current,
+    productRows.data?.[0]
   );
+  const productFactor = {
+    factor: Math.max(1, Number(factorProduct?.shipping_factor) || 1),
+    productId: factorProduct?.id ?? null,
+    productName: factorProduct?.name ?? null,
+    shippingCategory: factorProduct?.shipping_category ?? null,
+    source: 'products.shipping_factor' as const,
+  };
   let quote;
   try {
-    quote = await buildShippingQuote(supabase, latitude, longitude, productFactor);
+    const adminForQuote = createAdminClient();
+    quote = await buildShippingQuote(adminForQuote, destinationCoordinate, productFactor);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'No se pudo verificar el destino.' },
-      { status: 400 }
+      {
+        code: error instanceof ShippingError ? error.code : 'SHIPPING_CONFIG_ERROR',
+        error: error instanceof Error ? error.message : 'No se pudo verificar el destino.',
+      },
+      {
+        status:
+          error instanceof ShippingError && error.code === 'ORIGIN_NOT_CONFIGURED' ? 503 : 400,
+      }
     );
   }
-  if (quote.status !== 'calculated') {
+  if (quote.status === 'requires_quote')
     return NextResponse.json(
-      {
-        error:
-          'No pudimos calcular automáticamente el envío para esta ubicación. No se creó ningún pedido.',
-      },
+      { code: 'SHIPPING_CONFIG_ERROR', error: quote.message },
       { status: 409 }
     );
-  }
   const destination = quote.destination;
+  const reference = String(body.shipping.reference ?? body.shipping.address ?? '')
+    .split('')
+    .map((character) => {
+      const code = character.charCodeAt(0);
+      return code < 32 || code === 127 ? ' ' : character;
+    })
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 500);
 
   let admin;
   try {
@@ -81,23 +105,25 @@ export async function POST(request: Request) {
     p_items: body.items,
     p_payment_method: method.id,
     p_shipping: {
-      latitude,
-      longitude,
-      distanceKm: destination.distanceKm,
-      durationMinutes: destination.durationMinutes,
+      latitude: destinationCoordinate.lat,
+      longitude: destinationCoordinate.lng,
+      distanceKm: quote.route.distanceKm,
+      durationMinutes: Math.max(1, Math.round(quote.route.durationSeconds / 60)),
       address: destination.address,
-      reference: body.shipping.reference || body.shipping.address || '',
+      reference,
       district: destination.district,
       province: destination.province,
       department: destination.department,
       shippingType: 'lima_delivery',
       quoteStatus: 'calculated',
-      routeProvider: destination.provider,
-      centerDistanceKm: quote.audit.centerDistanceKm,
-      centerDeltaKm: quote.audit.deltaKm,
-      basePrice: quote.audit.basePrice,
-      adjustment: quote.audit.adjustment,
-      shippingAmount: quote.shippingCost,
+      routeProvider: quote.route.provider,
+      centerDistanceKm: quote.audit.centerRouteDistanceKm,
+      centerDeltaKm: quote.audit.centerDeltaKm,
+      commercialRoutePrice: quote.pricing.commercialRoutePrice,
+      adjustment: quote.pricing.centerAdjustment,
+      shippingAmount: quote.pricing.finalPrice,
+      pricingMode: quote.pricing.pricingMode,
+      calibrationName: quote.audit.calibrationName,
       pricingVersion: quote.audit.pricingVersion,
     },
   });
