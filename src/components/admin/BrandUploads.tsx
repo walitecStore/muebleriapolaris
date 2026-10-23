@@ -3,13 +3,17 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 export default function BrandUploads({
   onUploaded,
+  onBusyChange,
+  disabled = false,
 }: {
+  disabled?: boolean;
+  onBusyChange?: (busy: boolean) => void;
   onUploaded: (field: 'logo_url' | 'membership_qr_url', url: string) => void;
 }) {
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState('');
   async function upload(file: File | undefined, field: 'logo_url' | 'membership_qr_url') {
-    if (!file) return;
+    if (!file || busy || disabled) return;
     if (
       !['image/png', 'image/jpeg', 'image/webp', 'image/avif'].includes(file.type) ||
       file.size > 8 * 1024 * 1024
@@ -18,6 +22,7 @@ export default function BrandUploads({
       return;
     }
     setBusy(true);
+    onBusyChange?.(true);
     try {
       const db = createClient();
       const path = `branding/${field}-${crypto.randomUUID()}.${file.type.split('/')[1]}`;
@@ -31,6 +36,7 @@ export default function BrandUploads({
       setMessage('No se pudo subir la imagen. Comprueba el acceso del dueño.');
     } finally {
       setBusy(false);
+      onBusyChange?.(false);
     }
   }
   return (
@@ -49,7 +55,7 @@ export default function BrandUploads({
         <label key={field} className="block text-sm font-semibold">
           {label}
           <input
-            disabled={busy}
+            disabled={busy || disabled}
             type="file"
             accept="image/png,image/jpeg,image/webp,image/avif"
             onChange={(e) => void upload(e.target.files?.[0], field)}

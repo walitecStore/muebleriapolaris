@@ -80,3 +80,17 @@ el UPDATE generado en la pantalla autoriza el UUID concreto de quien inició ses
 
 La prueba SQL comprueba que postgres puede autorizar y que el trigger rechaza a un
 comprador incluso concediendo temporalmente UPDATE(role), con rollback completo.
+
+## Perfil de tienda: proteger el guardado ante errores
+
+La configuración ahora exige una lectura correcta antes de permitir modificaciones.
+Si falla la consulta, muestra el error con «Reintentar carga del perfil», sin un
+formulario con valores vacíos o predeterminados que pudiera sobrescribir datos.
+También se bloquea Guardar mientras se sube el logo o QR, y se bloquean nuevas
+subidas mientras se guarda. Cargar una imagen borra el aviso de guardado anterior:
+el archivo nuevo todavía requiere Guardar perfil para publicarse.
+
+La aceptación de navegador simula una lectura fallida, comprueba que no existe
+el botón Guardar, reintenta con éxito, modifica el nombre, guarda y recarga para
+comprobar su persistencia. El backend es sintético; los archivos originales del
+logo y QR deben subirlos los propietarios desde el panel.

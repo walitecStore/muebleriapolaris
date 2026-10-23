@@ -45,6 +45,7 @@ const category = { id: product.category_id, name: 'Salas', slug: 'salas' };
 let lastProductUpdate = null;
 let lastProfileUpdate = null;
 let profileFailure = false;
+let storeFailure = false;
 const profileData = new Map();
 let membershipPayments = [];
 let store = { id: 1, ...emptyStore, name: 'Tienda de prueba', whatsapp: '51999999999' };
@@ -135,6 +136,11 @@ const mock = createServer(async (req, res) => {
       };
     }
   } else if (url.pathname === '/rest/v1/store_settings') {
+    if (storeFailure) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: 'Temporary store read failure' }));
+      return;
+    }
     if (req.method === 'PATCH') {
       if (role !== 'admin') {
         status = 403;
@@ -516,7 +522,17 @@ try {
     'Mobile page overflows'
   );
   await page.setViewportSize({ width: 1440, height: 1100 });
+  storeFailure = true;
   await page.goto('http://127.0.0.1:4032/admin/configuracion');
+  await page.getByRole('alert').filter({ hasText: 'No se pudo cargar el perfil' }).waitFor();
+  assert.equal(
+    await page.getByRole('button', { name: 'Guardar perfil', exact: true }).count(),
+    0,
+    'Unloaded settings can overwrite store data'
+  );
+  storeFailure = false;
+  await page.getByRole('button', { name: 'Reintentar carga del perfil', exact: true }).click();
+  await page.getByLabel('Nombre de la tienda', { exact: true }).waitFor();
   await page.getByLabel('Nombre de la tienda', { exact: true }).fill('Nombre actualizado');
   assert.equal(
     await page.getByRole('alert').filter({ hasText: 'No se pudo cargar el perfil' }).count(),
@@ -526,6 +542,12 @@ try {
   await page.getByRole('button', { name: 'Guardar perfil', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Perfil guardado' }).waitFor();
   assert.equal(store.name, 'Nombre actualizado');
+  await page.reload();
+  await page.getByLabel('Nombre de la tienda', { exact: true }).waitFor();
+  assert.equal(
+    await page.getByLabel('Nombre de la tienda', { exact: true }).inputValue(),
+    'Nombre actualizado'
+  );
   await page.goto('http://127.0.0.1:4032/admin/productos/nuevo');
   await page.getByLabel('Nombre del producto', { exact: true }).waitFor();
   await page.goto('http://127.0.0.1:4032/admin/productos/' + product.id);
