@@ -8,7 +8,7 @@ export default function Favorites() {
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24">
+      <main className="min-h-screen pt-32">
         <h1 className="sr-only">Favoritos</h1>
         {error && (
           <p role="alert" className="p-5 text-rose-700">

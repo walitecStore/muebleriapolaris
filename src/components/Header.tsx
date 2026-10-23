@@ -13,6 +13,7 @@ const links = [
   ['Ofertas', '/ofertas'],
   ['Ruleta', '/#ruleta'],
   ['Vender en Polaris', '/vender'],
+  ['Instalar app', '/instalar'],
 ];
 export default function Header() {
   const [open, setOpen] = useState(false),
@@ -28,7 +29,7 @@ export default function Header() {
             <AppLogo size={44} />
             <span className="text-2xl font-black tracking-tight text-cyan-950">Polaris</span>
           </Link>
-          <nav aria-label="Principal" className="hidden items-center gap-5 xl:flex">
+          <nav aria-label="Principal" className="hidden items-center gap-4 2xl:flex">
             {links.map(([name, url]) => (
               <Link key={url} href={url} className="text-sm font-semibold hover:text-cyan-600">
                 {name}
@@ -78,16 +79,33 @@ export default function Header() {
               aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
               aria-expanded={open}
               onClick={() => setOpen(!open)}
-              className="rounded-full p-2 xl:hidden"
+              className="rounded-full p-2 2xl:hidden"
             >
               {open ? <X /> : <Menu />}
             </button>
           </div>
         </div>
+        <nav
+          aria-label="Paneles Polaris"
+          className="flex items-center justify-center gap-4 overflow-x-auto border-t border-teal-100 bg-teal-50 px-3 py-2 text-xs font-bold sm:gap-7"
+        >
+          <Link href="/perfil" className="shrink-0 text-cyan-900">
+            Mi Perfil
+          </Link>
+          <Link href="/admin" className="shrink-0 text-cyan-900">
+            Panel del dueño
+          </Link>
+          <Link href="/vender" className="shrink-0 text-cyan-900">
+            Vender
+          </Link>
+          <Link href="/instalar" className="shrink-0 text-cyan-900">
+            Instalar app
+          </Link>
+        </nav>
         {open && (
           <nav
             aria-label="Menú móvil"
-            className="grid max-h-[75vh] gap-1 overflow-y-auto border-t p-4 xl:hidden"
+            className="grid max-h-[75vh] gap-1 overflow-y-auto border-t p-4 2xl:hidden"
           >
             {[
               ...links,

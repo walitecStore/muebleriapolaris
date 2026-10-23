@@ -1,277 +1,277 @@
 'use client';
-
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface Profile {
-  nombre_completo: string;
-  telefono: string | null;
-  avatar_url: string | null;
-}
-export default function PerfilPage() {
+type Profile = { full_name: string; phone: string; role: string };
+export default function ProfilePage() {
   const { user, loading: authLoading } = useAuth();
-  const [profile, setProfile] = useState<Profile>({
-    nombre_completo: '',
-    telefono: null,
-    avatar_url: null,
-  });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [error, setError] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [changingPw, setChangingPw] = useState(false);
-  const [pwMsg, setPwMsg] = useState('');
-
-  const fetchProfile = useCallback(async () => {
+  const [profile, setProfile] = useState<Profile>({ full_name: '', phone: '', role: 'user' }),
+    [loading, setLoading] = useState(true),
+    [saving, setSaving] = useState(false),
+    [error, setError] = useState(''),
+    [message, setMessage] = useState(''),
+    [password, setPassword] = useState(''),
+    [confirm, setConfirm] = useState(''),
+    [passwordMessage, setPasswordMessage] = useState(''),
+    [changing, setChanging] = useState(false);
+  useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       setLoading(false);
       return;
     }
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('profiles')
-      .select('full_name, telefono, avatar_url')
-      .eq('id', user.id)
-      .maybeSingle();
-    if (data) {
-      setProfile({
-        nombre_completo: data.full_name || '',
-        telefono: data.telefono || '',
-        avatar_url: data.avatar_url || null,
-      });
-    }
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
-
-  async function saveProfile(e: React.FormEvent) {
-    e.preventDefault();
-    if (!user) return;
-    setSaving(true);
-    setError('');
-    const supabase = createClient();
-    const { error: err } = await supabase.from('profiles').upsert(
-      {
-        id: user.id,
-        email: user.email,
-        full_name: profile.nombre_completo,
-        telefono: profile.telefono,
-      },
-      {
-        onConflict: 'id',
+    let live = true;
+    setLoading(true);
+    const db = createClient();
+    async function load() {
+      try {
+        const { data, error } = await db
+          .from('profiles')
+          .select('full_name,phone,role')
+          .eq('id', user!.id)
+          .single();
+        if (error || !data) throw error;
+        let phone = data.phone || '';
+        if (!phone) {
+          const legacy = await db
+            .from('profiles')
+            .select('telefono')
+            .eq('id', user!.id)
+            .maybeSingle();
+          phone = legacy.data?.telefono || '';
+        }
+        if (live) {
+          setProfile({ full_name: data.full_name || '', phone, role: data.role || 'user' });
+          setError('');
+        }
+      } catch {
+        if (live) setError('No pudimos cargar tu perfil. Recarga la página antes de guardar.');
+      } finally {
+        if (live) setLoading(false);
       }
-    );
-    setSaving(false);
-    if (err) {
-      setError(err.message);
-    } else {
-      setMsg('¡Perfil guardado!');
-      setTimeout(() => setMsg(''), 2500);
     }
-  }
-
-  async function changePassword(e: React.FormEvent) {
+    void load();
+    return () => {
+      live = false;
+    };
+  }, [authLoading, user]);
+  async function save(e: FormEvent) {
     e.preventDefault();
-    if (!newPassword || newPassword.length < 6) {
-      setPwMsg('La contraseña debe tener al menos 6 caracteres.');
+    if (!user || saving) return;
+    setError('');
+    setMessage('');
+    if (!profile.full_name.trim() || profile.full_name.trim().length > 100) {
+      setError('Escribe un nombre de entre 1 y 100 caracteres.');
       return;
     }
-    setChangingPw(true);
-    const supabase = createClient();
-    const { error: err } = await supabase.auth.updateUser({ password: newPassword });
-    setChangingPw(false);
-    if (err) {
-      setPwMsg(err.message);
-    } else {
-      setPwMsg('¡Contraseña actualizada!');
-      setNewPassword('');
+    if (profile.phone && !/^\+?[0-9 ()-]{7,25}$/.test(profile.phone)) {
+      setError('Revisa el número de teléfono.');
+      return;
     }
-    setTimeout(() => setPwMsg(''), 3000);
+    setSaving(true);
+    try {
+      const { data, error } = await createClient()
+        .from('profiles')
+        .update({ full_name: profile.full_name.trim(), phone: profile.phone.trim() || null })
+        .eq('id', user.id)
+        .select('id')
+        .single();
+      if (error || !data) throw error;
+      setMessage('Perfil guardado correctamente.');
+    } catch {
+      setError(
+        'No se pudo guardar tu perfil. Tu nombre y teléfono no cambiaron; vuelve a intentar.'
+      );
+    } finally {
+      setSaving(false);
+    }
   }
-
-  if (authLoading || loading) {
-    return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 pb-20 flex items-center justify-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        </main>
-        <Footer />
-      </>
-    );
+  async function changePassword(e: FormEvent) {
+    e.preventDefault();
+    if (!user || changing) return;
+    setPasswordMessage('');
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setPasswordMessage('Usa al menos 8 caracteres, una mayúscula y un número.');
+      return;
+    }
+    if (password !== confirm) {
+      setPasswordMessage('Las contraseñas no coinciden.');
+      return;
+    }
+    setChanging(true);
+    try {
+      const { error } = await createClient().auth.updateUser({ password });
+      if (error) throw error;
+      setPasswordMessage('Contraseña actualizada.');
+      setPassword('');
+      setConfirm('');
+    } catch {
+      setPasswordMessage(
+        'No se pudo cambiar la contraseña. Comprueba tu sesión o usa Recuperar contraseña.'
+      );
+    } finally {
+      setChanging(false);
+    }
   }
-
-  if (!user) {
-    return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 pb-20 flex items-center justify-center px-4">
-          <div className="max-w-md w-full bg-card border border-border rounded-3xl p-10 text-center shadow-xl">
-            <div className="text-6xl mb-4">👤</div>
-            <h1 className="text-2xl font-extrabold text-foreground mb-2">Mi Perfil</h1>
-            <p className="text-muted-foreground mb-6">Inicia sesión para ver y editar tu perfil.</p>
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-primary text-primary-foreground font-bold rounded-2xl hover:bg-primary/90 transition-all"
-            >
-              Iniciar sesión
-            </Link>
-          </div>
-        </main>
-        <Footer />
-      </>
-    );
-  }
-
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24 pb-20 bg-background">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6">
-          <div className="mb-8">
-            <h1 className="text-3xl font-extrabold text-foreground mb-1">👤 Mi Perfil</h1>
-            <p className="text-muted-foreground text-sm">Administra tu información personal</p>
-          </div>
-
-          {/* Profile form */}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm mb-6">
-            <h2 className="font-extrabold text-foreground text-lg mb-5">Información personal</h2>
-            <form onSubmit={saveProfile} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">
+      <main className="mx-auto min-h-[80vh] max-w-3xl space-y-6 px-5 pb-16 pt-36">
+        <div>
+          <h1 className="text-3xl font-black">Mi Perfil</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Administra tu información y entra a tus paneles.
+          </p>
+        </div>
+        {authLoading || loading ? (
+          <p role="status">Cargando perfil…</p>
+        ) : !user ? (
+          <section className="rounded-3xl border bg-white p-6">
+            <p>Inicia sesión para ver y editar tu perfil.</p>
+            <Link
+              href="/login?next=/perfil"
+              className="mt-4 inline-block rounded-full bg-cyan-600 px-6 py-3 font-bold text-white"
+            >
+              Iniciar sesión
+            </Link>
+          </section>
+        ) : (
+          <>
+            <section className="rounded-3xl border border-teal-200 bg-white p-6">
+              <h2 className="mb-5 text-xl font-bold">Información personal</h2>
+              <form onSubmit={save} className="space-y-4">
+                <label className="block text-sm font-semibold" htmlFor="profile-name">
                   Nombre completo
                 </label>
                 <input
-                  type="text"
-                  value={profile.nombre_completo}
-                  onChange={(e) => setProfile((p) => ({ ...p, nombre_completo: e.target.value }))}
-                  placeholder="Tu nombre completo"
-                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  id="profile-name"
+                  required
+                  maxLength={100}
+                  autoComplete="name"
+                  value={profile.full_name}
+                  onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                  className="w-full rounded-xl border border-teal-200 bg-teal-50 p-3"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">
+                <label className="block text-sm font-semibold" htmlFor="profile-email">
                   Correo electrónico
                 </label>
                 <input
+                  id="profile-email"
                   type="email"
+                  readOnly
                   value={user.email || ''}
-                  disabled
-                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted text-muted-foreground text-sm cursor-not-allowed"
+                  className="w-full rounded-xl border bg-slate-100 p-3"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">
+                <label className="block text-sm font-semibold" htmlFor="profile-phone">
                   Teléfono
                 </label>
                 <input
+                  id="profile-phone"
                   type="tel"
-                  value={profile.telefono || ''}
-                  onChange={(e) => setProfile((p) => ({ ...p, telefono: e.target.value }))}
-                  placeholder="+51 999 999 999"
-                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  autoComplete="tel"
+                  value={profile.phone}
+                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                  className="w-full rounded-xl border border-teal-200 bg-teal-50 p-3"
                 />
-              </div>
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              {msg && <p className="text-green-600 text-sm font-semibold">{msg}</p>}
-              <button
-                type="submit"
-                disabled={saving}
-                className="w-full px-6 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-60"
-              >
-                {saving ? 'Guardando...' : 'Guardar cambios'}
-              </button>
-            </form>
-          </div>
-
-          {/* Change password */}
-          <div
-            id="seguridad"
-            className="bg-card border border-border rounded-2xl p-6 shadow-sm mb-6"
-          >
-            <h2 className="font-extrabold text-foreground text-lg mb-5">🔒 Cambiar contraseña</h2>
-            <form onSubmit={changePassword} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">
-                  Nueva contraseña
-                </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                />
-              </div>
-              {pwMsg && (
-                <p
-                  className={`text-sm font-semibold ${pwMsg.includes('!') ? 'text-green-600' : 'text-red-500'}`}
+                {error && (
+                  <p role="alert" className="text-sm text-rose-700">
+                    {error}
+                  </p>
+                )}
+                {message && (
+                  <p role="status" className="text-sm text-emerald-700">
+                    {message}
+                  </p>
+                )}
+                <button
+                  disabled={saving}
+                  className="w-full rounded-full bg-cyan-600 py-3 font-bold text-white disabled:opacity-50"
                 >
-                  {pwMsg}
+                  {saving ? 'Guardando…' : 'Guardar cambios'}
+                </button>
+              </form>
+            </section>
+            <section className="grid gap-4 sm:grid-cols-2" aria-label="Mis espacios">
+              {[
+                [
+                  'Panel del dueño',
+                  '/admin',
+                  profile.role === 'admin'
+                    ? 'Administrar toda la plataforma'
+                    : 'Acceso exclusivo a la cuenta autorizada',
+                ],
+                ['Vender en Polaris', '/vender', 'Perfil, membresía y publicaciones'],
+                ['Mis Pedidos', '/pedidos', 'Compras y entregas'],
+                ['Mis Favoritos', '/favoritos', 'Productos guardados'],
+                ['Mis Direcciones', '/direcciones', 'Destinos de entrega'],
+                ['Instalar Polaris', '/instalar', 'Aplicación para móvil y PC'],
+              ].map(([label, href, text]) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="rounded-2xl border border-teal-200 bg-white p-5"
+                >
+                  <strong className="text-cyan-900">{label}</strong>
+                  <p className="mt-1 text-xs text-slate-500">{text}</p>
+                </Link>
+              ))}
+            </section>
+            <form
+              onSubmit={changePassword}
+              className="space-y-4 rounded-3xl border border-teal-200 bg-white p-6"
+            >
+              <h2 className="text-xl font-bold">Cambiar contraseña</h2>
+              <label htmlFor="new-profile-password" className="block text-sm">
+                Nueva contraseña
+              </label>
+              <input
+                id="new-profile-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border p-3"
+              />
+              <label htmlFor="confirm-profile-password" className="block text-sm">
+                Repetir contraseña
+              </label>
+              <input
+                id="confirm-profile-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                className="w-full rounded-xl border p-3"
+              />
+              <p className="text-xs text-slate-500">
+                Mínimo 8 caracteres, una mayúscula y un número.
+              </p>
+              <button
+                disabled={changing}
+                className="w-full rounded-full bg-teal-900 py-3 font-bold text-white disabled:opacity-50"
+              >
+                {changing ? 'Actualizando…' : 'Cambiar contraseña'}
+              </button>
+              {passwordMessage && (
+                <p role="status" className="text-sm">
+                  {passwordMessage}
                 </p>
               )}
-              <button
-                type="submit"
-                disabled={changingPw}
-                className="w-full px-6 py-3 bg-foreground text-background font-bold rounded-xl hover:bg-foreground/90 transition-all disabled:opacity-60"
+              <Link
+                href="/recuperar-contrasena"
+                className="inline-block text-sm text-cyan-700 underline"
               >
-                {changingPw ? 'Actualizando...' : 'Cambiar contraseña'}
-              </button>
+                Recuperar contraseña
+              </Link>
             </form>
-          </div>
-
-          {/* Quick links */}
-          <div className="grid grid-cols-2 gap-4">
-            <Link
-              href="/pedidos"
-              className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all"
-            >
-              <span className="text-2xl">📦</span>
-              <div>
-                <p className="font-bold text-foreground text-sm">Mis Pedidos</p>
-                <p className="text-xs text-muted-foreground">Ver historial</p>
-              </div>
-            </Link>
-            <Link
-              href="/favoritos"
-              className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all"
-            >
-              <span className="text-2xl">❤️</span>
-              <div>
-                <p className="font-bold text-foreground text-sm">Mis Favoritos</p>
-                <p className="text-xs text-muted-foreground">Ver guardados</p>
-              </div>
-            </Link>
-            <Link
-              href="/direcciones"
-              className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all"
-            >
-              <span className="text-2xl">Ubicacion</span>
-              <div>
-                <p className="font-bold text-foreground text-sm">Mis Direcciones</p>
-                <p className="text-xs text-muted-foreground">Gestionar entregas</p>
-              </div>
-            </Link>
-            <Link
-              href="/cotizaciones"
-              className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all"
-            >
-              <span className="text-2xl">Cotizacion</span>
-              <div>
-                <p className="font-bold text-foreground text-sm">Mis Cotizaciones</p>
-                <p className="text-xs text-muted-foreground">Ver solicitudes y estados</p>
-              </div>
-            </Link>
-          </div>
-        </div>
+          </>
+        )}
       </main>
       <Footer />
     </>

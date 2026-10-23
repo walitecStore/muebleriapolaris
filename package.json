@@ -48,7 +48,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
     "serve": "next start",
     "type-check": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/core.test.mjs && npm run test:shipping-pricing",
+    "test": "node --experimental-strip-types --test tests/core.test.mjs tests/shipping-server.test.mjs && npm run test:shipping-pricing",
     "test:database": "node tests/database.test.mjs",
     "test:browser": "node --experimental-strip-types tests/browser.test.mjs"
   },

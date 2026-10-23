@@ -1,4 +1,5 @@
 'use client';
+import ReleaseInfo from '@/components/ReleaseInfo';
 import Link from 'next/link';
 import { useStore } from '@/contexts/StoreContext';
 import { publicWebUrl, whatsappLink } from '@/lib/store-profile';
@@ -81,6 +82,7 @@ export default function Footer() {
         <Link href="/instalar">Instalar aplicación</Link>
         <Link href="/ofertas">Ofertas</Link>
       </nav>
+      <ReleaseInfo />
     </footer>
   );
 }

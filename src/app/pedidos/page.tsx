@@ -1082,7 +1082,7 @@ export default function PedidosPage() {
       <>
         <Header />
 
-        <main className="min-h-screen pt-24 pb-20 flex items-center justify-center">
+        <main className="min-h-screen pt-32 pb-20 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
 
@@ -1100,7 +1100,7 @@ export default function PedidosPage() {
       <>
         <Header />
 
-        <main className="min-h-screen pt-24 pb-20 flex items-center justify-center px-4">
+        <main className="min-h-screen pt-32 pb-20 flex items-center justify-center px-4">
           <div className="max-w-md w-full bg-card border border-border rounded-3xl p-10 text-center shadow-xl">
             <div className="text-6xl mb-4">📦</div>
 
@@ -1135,7 +1135,7 @@ export default function PedidosPage() {
     <>
       <Header />
 
-      <main className="min-h-screen pt-24 pb-20 bg-background">
+      <main className="min-h-screen pt-32 pb-20 bg-background">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           {/* CABECERA */}
           <div className="mb-7">

@@ -63,11 +63,19 @@ try {
   }
   assert.ok(ready, 'Postgres did not become ready');
   sql(readFileSync(new URL('./database/bootstrap.sql', import.meta.url), 'utf8'));
+  sql(readFileSync(new URL('./database/legacy-bootstrap.sql', import.meta.url), 'utf8'));
   const migrations = readdirSync(new URL('../supabase/migrations/', import.meta.url))
     .filter((n) => n.endsWith('.sql'))
     .sort();
   for (const f of migrations)
     sql(readFileSync(new URL('../supabase/migrations/' + f, import.meta.url), 'utf8'));
+  sql(`DO $$ BEGIN
+    ASSERT (SELECT full_name FROM public.profiles WHERE email='legacy@example.test')='Preserve existing name','Legacy profile was lost';
+    ASSERT (SELECT telefono FROM public.profiles WHERE email='legacy@example.test')='999999999','Legacy phone was lost';
+    ASSERT (SELECT role::text FROM public.profiles WHERE email='legacy@example.test')='user','Legacy role was lost';
+    ASSERT (SELECT status::text FROM public.legacy_enum_preservation WHERE id=1)='confirmado','Order enum column was removed';
+    ASSERT (SELECT kind::text FROM public.legacy_enum_preservation WHERE id=1)='general','Notification enum column was removed';
+  END $$;`);
   console.info(`Applied ${migrations.length} migrations to disposable Postgres 17`);
   sql(readFileSync(new URL('./database/acceptance.sql', import.meta.url), 'utf8'));
   sql(readFileSync(new URL('./database/marketplace.sql', import.meta.url), 'utf8'));

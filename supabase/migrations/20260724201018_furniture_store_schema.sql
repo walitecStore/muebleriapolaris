@@ -7,27 +7,17 @@
 -- 1. ENUM TYPES
 -- ============================================================
 
-DROP TYPE IF EXISTS public.user_role CASCADE;
-CREATE TYPE public.user_role AS ENUM ('admin', 'user');
-
-DROP TYPE IF EXISTS public.order_status_enum CASCADE;
-CREATE TYPE public.order_status_enum AS ENUM (
-  'confirmado',
-  'preparando',
-  'empaquetando',
-  'preparando_envio',
-  'camino',
-  'entregado',
-  'cancelado'
-);
-
-DROP TYPE IF EXISTS public.notification_type CASCADE;
-CREATE TYPE public.notification_type AS ENUM (
-  'promocion',
-  'nuevo_producto',
-  'estado_pedido',
-  'general'
-);
+-- Preserve existing columns and data when bootstrapping a project that already
+-- has these enum types. DROP TYPE ... CASCADE would remove dependent columns.
+DO $$ BEGIN
+ CREATE TYPE public.user_role AS ENUM ('admin','user');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+ CREATE TYPE public.order_status_enum AS ENUM ('confirmado','preparando','empaquetando','preparando_envio','camino','entregado','cancelado');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+ CREATE TYPE public.notification_type AS ENUM ('promocion','nuevo_producto','estado_pedido','general');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ============================================================
 -- 2. CORE TABLES (no foreign keys to other public tables)
@@ -44,6 +34,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- A pre-existing profile table is not upgraded by CREATE TABLE IF NOT EXISTS.
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role public.user_role NOT NULL DEFAULT 'user'::public.user_role;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone text;
 
 -- categories
 CREATE TABLE IF NOT EXISTS public.categories (
@@ -228,21 +222,10 @@ BEGIN
 END;
 $$;
 
--- Check if current user is admin (reads from auth metadata — safe for all tables)
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM auth.users
-    WHERE id = auth.uid()
-      AND (
-        raw_user_meta_data->>'role' = 'admin'
-        OR raw_app_meta_data->>'role' = 'admin'
-      )
-  );
+-- Database-owned roles only. User-editable signup metadata is never authority.
+CREATE OR REPLACE FUNCTION public.is_admin() RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
+ SELECT EXISTS(SELECT 1 FROM public.profiles WHERE id=auth.uid() AND role='admin'::public.user_role)
 $$;
 
 -- Auto-create profile when a new auth user is created
@@ -258,7 +241,7 @@ BEGIN
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
     COALESCE(NEW.raw_user_meta_data->>'avatar_url', ''),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'user')::public.user_role
+    'user'::public.user_role
   )
   ON CONFLICT (id) DO NOTHING;
 

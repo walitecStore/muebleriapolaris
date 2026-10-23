@@ -25,7 +25,7 @@ export default function PasswordRecoveryPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-muted/30 px-4 pb-16 pt-28">
+      <main className="min-h-screen bg-muted/30 px-4 pb-16 pt-36">
         <section className="mx-auto max-w-md rounded-3xl border border-border bg-white p-8 shadow-xl">
           <p className="text-sm font-bold uppercase tracking-widest text-primary">Cuenta Polaris</p>
           <h1 className="mt-2 text-3xl font-extrabold text-foreground">Recupera tu contrasena</h1>

@@ -17,7 +17,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://muebleriapolaris.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://muebleriapolaris.vercel.app'),
 
   title: 'Polaris | Compra, vende y encuentra ofertas',
 

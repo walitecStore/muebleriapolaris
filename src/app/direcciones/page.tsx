@@ -86,7 +86,7 @@ export default function AddressesPage() {
     return (
       <>
         <Header />
-        <main className="min-h-screen pt-28 text-center">Cargando direcciones...</main>
+        <main className="min-h-screen pt-36 text-center">Cargando direcciones...</main>
         <Footer />
       </>
     );
@@ -112,7 +112,7 @@ export default function AddressesPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-muted/30 px-4 pb-16 pt-28">
+      <main className="min-h-screen bg-muted/30 px-4 pb-16 pt-36">
         <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1.2fr_.8fr]">
           <section>
             <p className="text-sm font-bold uppercase tracking-widest text-primary">

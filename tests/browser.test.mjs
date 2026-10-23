@@ -43,6 +43,9 @@ const cheapProduct = {
 };
 const category = { id: product.category_id, name: 'Salas', slug: 'salas' };
 let lastProductUpdate = null;
+let lastProfileUpdate = null;
+const profileData = new Map();
+let membershipPayments = [];
 let store = { id: 1, ...emptyStore, name: 'Tienda de prueba', whatsapp: '51999999999' };
 function token(id) {
   const now = Math.floor(Date.now() / 1000);
@@ -107,9 +110,29 @@ const mock = createServer(async (req, res) => {
   } else if (url.pathname === '/auth/v1/logout') {
     status = 204;
     result = null;
-  } else if (url.pathname === '/rest/v1/profiles')
-    result = { id: user, role, full_name: 'Test User', email: 'user@example.test' };
-  else if (url.pathname === '/rest/v1/store_settings') {
+  } else if (url.pathname === '/rest/v1/profiles') {
+    if (
+      req.method === 'POST' ||
+      (req.method === 'PATCH' &&
+        Object.keys(body).some((k) => !['full_name', 'phone', 'avatar_url'].includes(k)))
+    ) {
+      status = 403;
+      result = { message: 'permission denied for table profiles' };
+    } else {
+      if (req.method === 'PATCH') {
+        lastProfileUpdate = { method: req.method, body };
+        profileData.set(user, { ...profileData.get(user), ...body });
+      }
+      result = {
+        id: user,
+        role,
+        full_name: 'Test User',
+        phone: '',
+        email: 'user@example.test',
+        ...profileData.get(user),
+      };
+    }
+  } else if (url.pathname === '/rest/v1/store_settings') {
     if (req.method === 'PATCH') {
       if (role !== 'admin') {
         status = 403;
@@ -161,6 +184,26 @@ const mock = createServer(async (req, res) => {
     res.setHeader('Content-Range', '0-1/2');
   } else if (url.pathname === '/rest/v1/payment_methods')
     result = [{ code: 'yape', label: 'Yape', metadata: {}, is_active: false }];
+  else if (url.pathname === '/rest/v1/seller_membership_payments') {
+    if (req.method === 'POST') {
+      const entry = {
+        id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+        user_id: user,
+        reference: body.reference,
+        amount: 50,
+        status: 'pending',
+        review_note: '',
+        created_at: '2026-10-23T10:00:00Z',
+      };
+      membershipPayments.push(entry);
+      result = entry;
+    } else result = membershipPayments;
+  } else if (url.pathname === '/rest/v1/rpc/admin_membership_report')
+    result = {
+      active: 1,
+      pending: membershipPayments.filter((p) => p.status === 'pending').length,
+      collected: 0,
+    };
   else if (url.pathname === '/rest/v1/seller_profiles')
     result = [
       {
@@ -266,6 +309,10 @@ try {
   );
   assert.equal(callback.status(), 307);
   assert.match(callback.headers().location, /\/login\?error=confirmation$/);
+  await publicPage.getByRole('link', { name: 'Panel del dueño', exact: true }).first().waitFor();
+  const release = await publicPage.request.get('http://127.0.0.1:4032/api/release');
+  assert.equal(release.status(), 200);
+  assert.equal((await release.json()).canonicalUrl, 'https://muebleriapolaris.vercel.app');
   await publicPage.goto('http://127.0.0.1:4032/catalogo');
   await publicPage.getByRole('link', { name: product.name, exact: true }).first().waitFor();
   await publicPage.getByRole('link', { name: 'Ver detalles', exact: true }).first().waitFor();
@@ -340,11 +387,65 @@ try {
   const customer = await signedContext(buyerId);
   const customerPage = await customer.newPage();
   await customerPage.goto('http://127.0.0.1:4032/admin');
-  assert.match(customerPage.url(), /access=denied/);
+  assert.match(customerPage.url(), /\/acceso\/dueno/);
+  await customerPage
+    .getByRole('heading', { name: 'Tu cuenta aún no está autorizada como dueña', exact: true })
+    .waitFor();
+  await customerPage.getByText('Soy el propietario: autorizar mi cuenta', { exact: true }).click();
+  assert.ok(
+    (await customerPage.locator('code').textContent()).includes(buyerId),
+    'Owner bootstrap targeted another account'
+  );
   const forbidden = await customerPage.request.get('http://127.0.0.1:4032/api/admin/report');
   assert.equal(forbidden.status(), 403);
+  await customerPage.goto('http://127.0.0.1:4032/perfil');
+  await customerPage.getByLabel('Nombre completo', { exact: true }).fill('Cliente actualizado');
+  await customerPage.getByLabel('Teléfono', { exact: true }).fill('916832791');
+  await customerPage.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
+  await customerPage
+    .getByRole('status')
+    .filter({ hasText: 'Perfil guardado correctamente.' })
+    .waitFor();
+  assert.equal(lastProfileUpdate.method, 'PATCH');
+  assert.deepEqual(lastProfileUpdate.body, {
+    full_name: 'Cliente actualizado',
+    phone: '916832791',
+  });
+  await customerPage.getByRole('link', { name: 'Panel del dueño', exact: true }).first().waitFor();
+  await customerPage.screenshot({ path: join(artifacts, 'profile-fixed.png'), fullPage: true });
   await customerPage.goto('http://127.0.0.1:4032/vender');
   await customerPage.getByRole('heading', { name: 'Tu negocio en Polaris', exact: true }).waitFor();
+  await customerPage.getByText('Membresía mensual · S/50', { exact: true }).waitFor();
+  await customerPage
+    .getByLabel('Número de operación de Yape', { exact: true })
+    .fill('TEST-REAL-REFERENCE-ONLY');
+  await customerPage.getByRole('button', { name: 'Enviar para verificar', exact: true }).click();
+  await customerPage
+    .getByRole('status')
+    .filter({ hasText: 'Pago enviado para revisión' })
+    .waitFor();
+  assert.equal(membershipPayments[0].amount, 50);
+  assert.equal(membershipPayments[0].status, 'pending');
+  await customerPage.goto('http://127.0.0.1:4032/vender/anuncios');
+  await customerPage.getByRole('heading', { name: 'Estudio de anuncios', exact: true }).waitFor();
+  const adDownload = customerPage.waitForEvent('download');
+  await customerPage.getByRole('button', { name: 'Descargar imagen', exact: true }).click();
+  const ad = await adDownload;
+  assert.equal(ad.suggestedFilename(), 'polaris-anuncio.png');
+  await ad.saveAs(join(artifacts, 'generated-ad.png'));
+  await customerPage.goto('http://127.0.0.1:4032/#ruleta');
+  const closePromotion = customerPage.getByRole('button', {
+    name: 'Cerrar promoción',
+    exact: true,
+  });
+  await closePromotion.waitFor();
+  await closePromotion.click();
+  await customerPage.getByRole('button', { name: 'Girar mi ruleta', exact: true }).click();
+  await customerPage.getByRole('status').filter({ hasText: 'Tu cupón de hoy: S/10' }).waitFor();
+  assert.equal(
+    await customerPage.evaluate(() => JSON.parse(localStorage.getItem('polaris_coupon')).amount),
+    10
+  );
   await customerPage.goto('http://127.0.0.1:4032/vender/estadisticas');
   await customerPage
     .getByRole('heading', { name: 'Estadísticas de mi tienda', exact: true })

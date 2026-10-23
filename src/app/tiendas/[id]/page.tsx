@@ -12,7 +12,7 @@ export default async function SellerStore({ params }: { params: Promise<{ id: st
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-28">
+      <main className="min-h-screen pt-36">
         <section className="mx-auto max-w-7xl px-5 py-5">
           <p className="text-sm font-bold text-cyan-700">Vendedor en Polaris</p>
           <h1 className="mt-2 text-3xl font-black">{data.name}</h1>

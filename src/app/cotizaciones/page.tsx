@@ -58,7 +58,7 @@ export default function QuotesPage() {
     return (
       <>
         <Header />
-        <main className="min-h-screen pt-28 text-center">Cargando cotizaciones...</main>
+        <main className="min-h-screen pt-36 text-center">Cargando cotizaciones...</main>
         <Footer />
       </>
     );
@@ -82,7 +82,7 @@ export default function QuotesPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-muted/30 px-4 pb-16 pt-28">
+      <main className="min-h-screen bg-muted/30 px-4 pb-16 pt-36">
         <div className="mx-auto max-w-4xl">
           <p className="text-sm font-bold uppercase tracking-widest text-primary">Cuenta Polaris</p>
           <h1 className="mt-2 text-3xl font-extrabold">Mis cotizaciones</h1>

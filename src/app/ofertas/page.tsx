@@ -5,7 +5,7 @@ export default function Offers() {
   return (
     <>
       <Header />
-      <main className="pt-24">
+      <main className="pt-32">
         <div className="mx-auto max-w-7xl px-5 pt-8">
           <h1 className="text-3xl font-black">Más productos, más ahorro</h1>
           <p className="mt-3 max-w-3xl text-slate-600">

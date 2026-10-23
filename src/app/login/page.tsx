@@ -55,7 +55,7 @@ export default function LoginPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center px-4 pt-24 pb-16">
+      <main className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center px-4 pt-32 pb-16">
         <div className="w-full max-w-md">
           {/* Card */}
           <div className="bg-white rounded-3xl shadow-2xl shadow-primary/10 border border-border p-8 sm:p-10">

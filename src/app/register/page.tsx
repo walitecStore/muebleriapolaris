@@ -78,7 +78,7 @@ export default function RegisterPage() {
     <>
       <Header />
 
-      <main className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center px-5 pt-24 pb-20">
+      <main className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center px-5 pt-32 pb-20">
         <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-primary/10 overflow-hidden">
           <div className="bg-gradient-to-r from-primary to-primary/80 text-white p-8 text-center">
             <div className="flex justify-center mb-4">

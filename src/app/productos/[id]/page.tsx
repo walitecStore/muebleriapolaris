@@ -6,7 +6,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24">
+      <main className="min-h-screen pt-32">
         <ProductDetail key={id} id={id} />
       </main>
       <Footer />

@@ -6,7 +6,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24">
+      <main className="min-h-screen pt-32">
         <h1 className="sr-only">Productos por categoría</h1>
         <RealCatalog key={categoria} category={categoria} />
       </main>
