@@ -1,4 +1,4 @@
-﻿-- Polaris commerce foundation: additive, idempotent migration
+-- Polaris commerce foundation: additive, idempotent migration
 -- This migration does not remove existing products, users or orders.
 
 ALTER TABLE public.products

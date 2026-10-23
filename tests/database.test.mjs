@@ -67,8 +67,14 @@ try {
   const migrations = readdirSync(new URL('../supabase/migrations/', import.meta.url))
     .filter((n) => n.endsWith('.sql'))
     .sort();
-  for (const f of migrations)
-    sql(readFileSync(new URL('../supabase/migrations/' + f, import.meta.url), 'utf8'));
+  for (const f of migrations) {
+    const source = readFileSync(new URL('../supabase/migrations/' + f, import.meta.url), 'utf8');
+    assert.ok(
+      !source.includes('\uFEFF'),
+      f + ' has a BOM unsupported by Supabase migration parsing'
+    );
+    sql(source);
+  }
   sql(`DO $$ BEGIN
     ASSERT (SELECT full_name FROM public.profiles WHERE email='legacy@example.test')='Preserve existing name','Legacy profile was lost';
     ASSERT (SELECT telefono FROM public.profiles WHERE email='legacy@example.test')='999999999','Legacy phone was lost';

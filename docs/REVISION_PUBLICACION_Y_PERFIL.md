@@ -31,3 +31,5 @@ La sesión actual dispone de GitHub, pero no tiene token de Vercel ni acceso adm
 No repetir migraciones ya ejecutadas. El logo y QR de cobro deben cargarse desde sus archivos originales en Perfil de la tienda. El QR de Yape no se puede derivar de forma verificada únicamente del número de teléfono.
 
 El acceso del dueño incluye «Soy el propietario: autorizar mi cuenta». Genera un comando SQL únicamente para el UUID de la cuenta autenticada; el propietario debe ejecutarlo en su propio SQL Editor y comprobar el correo devuelto. La aplicación no ejecuta el cambio de rol ni permite autoasignarse admin mediante una API. Así se evita pedir contraseñas y repetir manualmente el correo de la cuenta.
+
+La integración detectó además un BOM UTF-8 al principio de `20260830220000_commerce_foundation.sql`. Se retiró ese carácter invisible sin modificar su SQL y el verificador local ahora rechaza esa codificación antes de migrar.
