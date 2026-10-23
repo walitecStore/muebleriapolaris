@@ -143,3 +143,22 @@ America/Lima. Reactivar una suspensión no compra ni extiende una membresía.
 La prueba de navegador comprueba aprobación con casilla obligatoria, rechazo con
 motivo obligatorio, y suspensión/reactivación con backend sintético. Las reglas
 SQL de autorización y aprobación única siguen cubiertas en marketplace.sql.
+
+## Pedidos: revisión de pagos y entregas
+
+El servidor de revisión manual comprueba la cuenta y el rol de administrador antes
+de procesar el cuerpo. Valida UUID, estado, tipos, límites de referencia/nota y
+exige una referencia no vacía para aprobar; limita el JSON a 4 KB. Una revisión
+rechazada por el procedimiento protegido devuelve conflicto para actualizar el
+pedido, en lugar de informar siempre de un problema de permisos.
+
+El cambio de estado del panel condiciona el UPDATE al estado logístico y de pago
+que se cargaron, para no sobrescribir cambios de otra sesión. Retira listas tras
+un error de carga, bloquea acciones mientras guarda y muestra el resultado. Solo
+ofrece revisión manual para Yape, Plin y transferencia. La cancelación de pedidos
+entregados queda deshabilitada; devoluciones mantiene el flujo de reembolso.
+
+El navegador prueba solicitudes sin sesión, referencia vacía y JSON inválido,
+y un pedido sintético desde pago pendiente hasta aprobado, preparación, camino
+y entregado. Comprueba las condiciones del UPDATE y los bloqueos de logística sin
+pago y cancelación tras entrega. No se aprobaron pagos ni despacharon pedidos reales.

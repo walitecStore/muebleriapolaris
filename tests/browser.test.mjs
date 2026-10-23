@@ -42,6 +42,22 @@ const cheapProduct = {
   price: 50,
 };
 const category = { id: product.category_id, name: 'Salas', slug: 'salas' };
+const testOrder = {
+  id: '99999999-9999-4999-8999-999999999999',
+  order_number: 'POL-TEST-001',
+  status: 'confirmado',
+  payment_status: 'pending',
+  payment_method: 'yape',
+  total: 320,
+  created_at: '2026-10-23T10:00:00Z',
+  shipping_address: 'Dirección de prueba',
+  shipping_reference: 'Referencia de prueba',
+  shipping_district: 'Comas',
+  provider_reference: '',
+  profiles: { full_name: 'Comprador de prueba', email: 'buyer@example.test' },
+  order_items: [{ product_name: 'Sofá de prueba', quantity: 1, unit_price: 250 }],
+};
+let lastOrderUpdate = null;
 let lastProductUpdate = null;
 let lastProductCreate = null;
 let productLoadFailure = false;
@@ -220,6 +236,33 @@ const mock = createServer(async (req, res) => {
       membershipPayments.push(entry);
       result = entry;
     } else result = membershipPayments;
+  } else if (url.pathname === '/rest/v1/rpc/review_manual_payment') {
+    if (role !== 'admin' || body.p_order_id !== testOrder.id) {
+      status = 403;
+      result = { message: 'Denied' };
+    } else {
+      testOrder.payment_status = body.p_status;
+      testOrder.provider_reference = body.p_reference;
+      result = null;
+    }
+  } else if (url.pathname === '/rest/v1/orders') {
+    if (req.method === 'PATCH') {
+      lastOrderUpdate = {
+        body,
+        status: url.searchParams.get('status'),
+        payment_status: url.searchParams.get('payment_status'),
+      };
+      if (
+        lastOrderUpdate.status !== 'eq.' + testOrder.status ||
+        lastOrderUpdate.payment_status !== 'eq.' + testOrder.payment_status
+      ) {
+        status = 409;
+        result = { message: 'Stale order' };
+      } else {
+        Object.assign(testOrder, body);
+        result = { id: testOrder.id };
+      }
+    } else result = [testOrder];
   } else if (url.pathname === '/rest/v1/rpc/review_seller_membership') {
     const payment = membershipPayments.find((entry) => entry.id === body.p_id);
     if (role !== 'admin' || !payment || payment.status !== 'pending') {
@@ -603,6 +646,54 @@ try {
   await page.getByRole('status').filter({ hasText: 'Pago rechazado' }).waitFor();
   assert.equal(lastMembershipReview?.p_approve, false);
   assert.equal(membershipPayments[1].status, 'rejected');
+  const withoutSession = await browser.newContext();
+  const forbiddenReview = await withoutSession.request.post(
+    'http://127.0.0.1:4032/api/payments/manual-review',
+    { data: { orderId: testOrder.id, status: 'approved', reference: 'INVALID' } }
+  );
+  assert.equal(forbiddenReview.status(), 401);
+  await withoutSession.close();
+  const invalidReview = await page.request.post(
+    'http://127.0.0.1:4032/api/payments/manual-review',
+    { data: { orderId: testOrder.id, status: 'approved', reference: '' } }
+  );
+  assert.equal(invalidReview.status(), 400);
+  const malformedReview = await page.request.post(
+    'http://127.0.0.1:4032/api/payments/manual-review',
+    { data: '{', headers: { 'Content-Type': 'application/json' } }
+  );
+  assert.equal(malformedReview.status(), 400);
+  await page.goto('http://127.0.0.1:4032/admin/pedidos');
+  await page.getByRole('heading', { name: testOrder.order_number, exact: true }).waitFor();
+  assert.equal(
+    await page
+      .getByLabel('Estado logístico', { exact: true })
+      .locator('option[value="preparando"]')
+      .evaluate((option) => option.disabled),
+    true
+  );
+  await page.getByLabel('Referencia real del pago', { exact: true }).fill('TEST-VERIFIED-ORDER');
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Aprobar pago verificado', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Pago aprobado. Puedes preparar' }).waitFor();
+  assert.equal(testOrder.payment_status, 'approved');
+  assert.equal(testOrder.provider_reference, 'TEST-VERIFIED-ORDER');
+  for (const state of ['preparando', 'camino', 'entregado']) {
+    await page.getByLabel('Estado logístico', { exact: true }).waitFor();
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByLabel('Estado logístico', { exact: true }).selectOption(state);
+    await page.getByRole('status').filter({ hasText: 'Pedido actualizado:' }).waitFor();
+    assert.equal(testOrder.status, state);
+    assert.equal(lastOrderUpdate.payment_status, 'eq.approved');
+  }
+  await page.getByLabel('Estado logístico', { exact: true }).waitFor();
+  assert.equal(
+    await page
+      .getByLabel('Estado logístico', { exact: true })
+      .locator('option[value="cancelado"]')
+      .evaluate((option) => option.disabled),
+    true
+  );
   await page.goto('http://127.0.0.1:4032/admin/guia');
   await page.getByRole('heading', { name: 'Cómo administrar Polaris', exact: true }).waitFor();
   await page.getByRole('link', { name: /^3\. Publica tus productos/ }).click();

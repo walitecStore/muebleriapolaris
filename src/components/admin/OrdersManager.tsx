@@ -34,6 +34,7 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
     [refresh, setRefresh] = useState(0),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(''),
+    [success, setSuccess] = useState(''),
     [reference, setReference] = useState<Record<string, string>>({});
   useEffect(() => {
     let live = true;
@@ -51,9 +52,10 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
     if (filter === 'paid') q = q.in('payment_status', ['approved', 'aprobado']);
     q.then(({ data, error }) => {
       if (!live) return;
-      if (error)
-        setError('No se pudieron cargar los pedidos. Comprueba las migraciones y permisos.');
-      else setRows((data || []) as unknown as Order[]);
+      if (error) {
+        setRows([]);
+        setError('No se pudieron cargar los pedidos. Pulsa Actualizar para reintentar.');
+      } else setRows((data || []) as unknown as Order[]);
       setLoading(false);
     });
     return () => {
@@ -61,6 +63,8 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
     };
   }, [page, filter, refresh, customerId]);
   async function review(o: Order, status: string) {
+    if (busy || loading) return;
+    setSuccess('');
     if (status === 'approved' && !reference[o.id]?.trim()) {
       setError('Ingresa la referencia bancaria o del pago verificado antes de aprobar.');
       return;
@@ -83,6 +87,11 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'No se pudo revisar el pago.');
+      setSuccess(
+        status === 'approved'
+          ? 'Pago aprobado. Puedes preparar el pedido.'
+          : 'Pago rechazado. La reserva se conserva hasta cancelar el pedido.'
+      );
       setRefresh((x) => x + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo revisar el pago.');
@@ -91,6 +100,8 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
     }
   }
   async function update(o: Order, status: string) {
+    if (busy || loading || status === o.status) return;
+    setSuccess('');
     if (
       !confirm(
         `¿Cambiar el pedido a ${states.find((s) => s[0] === status)?.[1]}?${status === 'cancelado' ? ' Se liberará el inventario reservado.' : ''}`
@@ -104,13 +115,18 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
         .from('orders')
         .update({ status })
         .eq('id', o.id)
+        .eq('status', o.status)
+        .eq('payment_status', o.payment_status)
         .select('id')
         .single();
       if (error) throw error;
+      setSuccess(
+        `Pedido actualizado: ${states.find((state) => state[0] === status)?.[1] || status}.`
+      );
       setRefresh((x) => x + 1);
     } catch {
       setError(
-        'No se pudo cambiar el estado. Un pedido sin pago aprobado no puede entrar en preparación o reparto.'
+        'No se pudo cambiar el estado. Actualiza el pedido: puede haber cambiado en otra sesión. Solo los pedidos pagados pueden entrar en preparación o reparto.'
       );
     } finally {
       setBusy('');
@@ -140,12 +156,18 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
           </select>
         </label>
         <button
+          disabled={loading || !!busy}
           onClick={() => setRefresh((x) => x + 1)}
           className="rounded-lg border bg-white px-4"
         >
           Actualizar
         </button>
       </div>
+      {success && (
+        <p role="status" className="rounded-xl bg-emerald-50 p-4 text-emerald-900">
+          {success}
+        </p>
+      )}
       {error && (
         <p role="alert" className="rounded-xl bg-rose-50 p-4 text-rose-800">
           {error}
@@ -192,8 +214,9 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
               <label className="block text-sm font-semibold">
                 Estado logístico
                 <select
+                  aria-label="Estado logístico"
                   value={o.status}
-                  disabled={busy === o.id || o.status === 'cancelado'}
+                  disabled={!!busy || o.status === 'cancelado'}
                   onChange={(e) => void update(o, e.target.value)}
                   className="ml-3 rounded-lg border p-2"
                 >
@@ -202,8 +225,9 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
                       key={value}
                       value={value}
                       disabled={
-                        !isPaymentApproved(o.payment_status) &&
-                        !['confirmado', 'cancelado'].includes(value)
+                        (o.status === 'entregado' && value === 'cancelado') ||
+                        (!isPaymentApproved(o.payment_status) &&
+                          !['confirmado', 'cancelado'].includes(value))
                       }
                     >
                       {label}
@@ -211,33 +235,35 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
                   ))}
                 </select>
               </label>
-              {!isPaymentApproved(o.payment_status) && o.status !== 'cancelado' && (
-                <div className="flex flex-wrap items-end gap-3 border-t pt-4">
-                  <label className="min-w-48 flex-1 text-sm">
-                    Referencia real del pago
-                    <input
-                      value={reference[o.id] || ''}
-                      maxLength={200}
-                      onChange={(e) => setReference({ ...reference, [o.id]: e.target.value })}
-                      className="mt-1 w-full rounded-lg border p-3"
-                    />
-                  </label>
-                  <button
-                    disabled={busy === o.id}
-                    onClick={() => void review(o, 'approved')}
-                    className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
-                  >
-                    Aprobar pago verificado
-                  </button>
-                  <button
-                    disabled={busy === o.id}
-                    onClick={() => void review(o, 'rejected')}
-                    className="rounded-lg border px-4 py-3 text-sm"
-                  >
-                    Rechazar pago
-                  </button>
-                </div>
-              )}
+              {!isPaymentApproved(o.payment_status) &&
+                o.status !== 'cancelado' &&
+                ['yape', 'plin', 'bank_transfer'].includes(o.payment_method) && (
+                  <div className="flex flex-wrap items-end gap-3 border-t pt-4">
+                    <label className="min-w-48 flex-1 text-sm">
+                      Referencia real del pago
+                      <input
+                        value={reference[o.id] || ''}
+                        maxLength={200}
+                        onChange={(e) => setReference({ ...reference, [o.id]: e.target.value })}
+                        className="mt-1 w-full rounded-lg border p-3"
+                      />
+                    </label>
+                    <button
+                      disabled={!!busy}
+                      onClick={() => void review(o, 'approved')}
+                      className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+                    >
+                      Aprobar pago verificado
+                    </button>
+                    <button
+                      disabled={!!busy}
+                      onClick={() => void review(o, 'rejected')}
+                      className="rounded-lg border px-4 py-3 text-sm"
+                    >
+                      Rechazar pago
+                    </button>
+                  </div>
+                )}
               {o.provider_reference && (
                 <p className="text-xs text-slate-500">Referencia: {o.provider_reference}</p>
               )}
@@ -252,7 +278,7 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
       )}
       <div className="flex justify-between">
         <button
-          disabled={page === 0 || loading}
+          disabled={page === 0 || loading || !!busy}
           onClick={() => setPage((x) => x - 1)}
           className="rounded-lg border px-4 py-2 disabled:opacity-40"
         >
@@ -260,7 +286,7 @@ export default function OrdersManager({ customerId }: { customerId?: string }) {
         </button>
         <span className="p-2 text-sm">Página {page + 1}</span>
         <button
-          disabled={rows.length < 20 || loading}
+          disabled={rows.length < 20 || loading || !!busy}
           onClick={() => setPage((x) => x + 1)}
           className="rounded-lg border px-4 py-2 disabled:opacity-40"
         >
