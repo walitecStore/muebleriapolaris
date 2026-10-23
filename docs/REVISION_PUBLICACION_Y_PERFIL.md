@@ -62,3 +62,21 @@ en el servidor. La ausencia del enlace no sustituye esa autorización. El dueño
 puede guardar esa dirección en sus favoritos. Los vendedores conservan su acceso
 a `/vender`, y los compradores acceden a «Mi cuenta». Esta decisión sustituye la
 recomendación anterior de mostrar el panel al público para facilitar encontrarlo.
+
+## Reparación de autorización inicial del dueño
+
+El error `Only administrators can change profile roles` identifica la versión
+antigua de `protect_profile_role` (etapa 2), que bloquea el primer administrador
+incluso en SQL Editor cuando no existe `auth.uid()` de la aplicación. La nueva
+migración `20261023200000_owner_role_bootstrap.sql` repone la protección de etapa 8,
+con `SECURITY INVOKER` explícito: solo `postgres` y `supabase_admin` pueden cambiar
+roles. No desactiva triggers ni RLS, ni concede UPDATE(role) a clientes.
+
+El comando mostrado en la pantalla de autorización ahora incluye esa reparación
+antes del UPDATE de la cuenta autenticada, dentro de una transacción. Ejecutarlo
+únicamente desde SQL Editor con el rol postgres. No volver a ejecutar migraciones
+antiguas para solucionar este error. La migración sola no autoriza ninguna cuenta;
+el UPDATE generado en la pantalla autoriza el UUID concreto de quien inició sesión.
+
+La prueba SQL comprueba que postgres puede autorizar y que el trigger rechaza a un
+comprador incluso concediendo temporalmente UPDATE(role), con rollback completo.

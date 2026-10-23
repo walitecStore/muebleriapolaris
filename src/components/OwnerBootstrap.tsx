@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { ownerRoleProtectionSQL } from '@/lib/owner-bootstrap';
 export default function OwnerBootstrap({ userId }: { userId: string }) {
   const [message, setMessage] = useState('');
   if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(userId)) return null;
-  const sql = `UPDATE public.profiles\nSET role = 'admin'\nWHERE id = '${userId}'\nRETURNING id, email, role;`;
+  const sql = `BEGIN;\n${ownerRoleProtectionSQL}\nUPDATE public.profiles\nSET role = 'admin'\nWHERE id = '${userId}'\nRETURNING id, email, role;\nCOMMIT;`;
   return (
     <details className="rounded-2xl border border-teal-200 bg-teal-50 p-5">
       <summary className="cursor-pointer font-bold text-cyan-900">
@@ -16,7 +17,9 @@ export default function OwnerBootstrap({ userId }: { userId: string }) {
           compartir tu contraseña ni claves privadas.
         </p>
         <ol className="list-inside list-decimal space-y-2">
-          <li>En tu proyecto de Supabase, abre SQL Editor → New query.</li>
+          <li>
+            En tu proyecto de Supabase, abre SQL Editor → New query y selecciona el rol postgres.
+          </li>
           <li>
             Copia y ejecuta el comando que aparece abajo. Autoriza únicamente la cuenta con la que
             estás conectado ahora.
