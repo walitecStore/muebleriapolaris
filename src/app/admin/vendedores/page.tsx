@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 type Seller = {
@@ -21,6 +21,10 @@ type Payment = {
   seller_profiles: { display_name: string; phone: string } | null;
 };
 export default function Sellers() {
+  const [reviewing, setReviewing] = useState<{ payment: Payment; approve: boolean } | null>(null);
+  const [note, setNote] = useState('');
+  const [verified, setVerified] = useState(false);
+  const [success, setSuccess] = useState('');
   const [summary, setSummary] = useState<{
     active: number;
     pending: number;
@@ -37,8 +41,10 @@ export default function Sellers() {
     let live = true;
     const db = createClient();
     setLoading(true);
-    void db.rpc('admin_membership_report').then(({ data }) => setSummary(data));
+    setError('');
+    setSummary(null);
     Promise.all([
+      db.rpc('admin_membership_report'),
       db
         .from('seller_membership_payments')
         .select('id,user_id,reference,created_at,status,amount,seller_profiles(display_name,phone)')
@@ -51,12 +57,15 @@ export default function Sellers() {
         )
         .order('created_at', { ascending: false })
         .range(page * 25, page * 25 + 24),
-    ]).then(([p, s]) => {
+    ]).then(([report, p, s]) => {
       if (!live) return;
-      if (p.error || s.error)
-        setError('No se pudieron cargar vendedores. Comprueba la nueva migración.');
-      else {
-        setPayments(p.data as unknown as Payment[]);
+      if (report.error || p.error || s.error) {
+        setError('No se pudieron cargar vendedores y pagos. Pulsa Actualizar para reintentar.');
+        setPayments([]);
+        setSellers([]);
+      } else {
+        setSummary(report.data);
+        setPayments((p.data || []) as unknown as Payment[]);
         setSellers(s.data || []);
         setError('');
       }
@@ -66,28 +75,45 @@ export default function Sellers() {
       live = false;
     };
   }, [page, refresh]);
-  async function review(p: Payment, approve: boolean) {
-    if (busy) return;
-    const note = prompt(
-      approve
-        ? 'Confirma que verificaste en Yape el abono REAL de S/50. Añade una nota de revisión:'
-        : 'Motivo de rechazo:'
-    );
-    if (note === null) return;
+  function startReview(payment: Payment, approve: boolean) {
+    setReviewing({ payment, approve });
+    setNote('');
+    setVerified(false);
+    setError('');
+    setSuccess('');
+  }
+  async function review(event: FormEvent) {
+    event.preventDefault();
     if (
-      approve &&
-      !confirm(`¿Aprobar S/50 con operación ${p.reference}? Esto activa un mes de venta.`)
+      busy ||
+      !reviewing ||
+      (reviewing.approve && !verified) ||
+      (!reviewing.approve && !note.trim())
     )
       return;
-    setBusy(p.id);
-    const { error } = await createClient().rpc('review_seller_membership', {
-      p_id: p.id,
-      p_approve: approve,
-      p_note: note,
-    });
-    if (error) setError('No se pudo revisar. Puede haber sido procesado por otra sesión.');
-    else setRefresh((x) => x + 1);
-    setBusy('');
+    setBusy(reviewing.payment.id);
+    setError('');
+    try {
+      const { error } = await createClient().rpc('review_seller_membership', {
+        p_id: reviewing.payment.id,
+        p_approve: reviewing.approve,
+        p_note: note.trim(),
+      });
+      if (error) throw error;
+      setSuccess(
+        reviewing.approve
+          ? 'Pago aprobado. La membresía fue actualizada.'
+          : 'Pago rechazado. El vendedor podrá consultar el motivo.'
+      );
+      setReviewing(null);
+      setRefresh((value) => value + 1);
+    } catch {
+      setError(
+        'No se pudo revisar el pago. Actualiza la lista para comprobar si otra sesión ya lo procesó antes de reintentar.'
+      );
+    } finally {
+      setBusy('');
+    }
   }
   async function suspend(s: Seller) {
     if (
@@ -98,13 +124,25 @@ export default function Sellers() {
     )
       return;
     setBusy(s.user_id);
-    const { error } = await createClient().rpc('set_seller_suspension', {
-      p_user: s.user_id,
-      p_suspend: !s.suspended,
-    });
-    if (error) setError('No se pudo cambiar la suspensión.');
-    else setRefresh((x) => x + 1);
-    setBusy('');
+    setError('');
+    setSuccess('');
+    try {
+      const { error } = await createClient().rpc('set_seller_suspension', {
+        p_user: s.user_id,
+        p_suspend: !s.suspended,
+      });
+      if (error) throw error;
+      setSuccess(
+        s.suspended
+          ? 'Vendedor reactivado. Necesita membresía vigente para publicar.'
+          : 'Vendedor suspendido. Sus publicaciones dejan de mostrarse.'
+      );
+      setRefresh((value) => value + 1);
+    } catch {
+      setError('No se pudo cambiar la suspensión. Actualiza la lista y vuelve a intentar.');
+    } finally {
+      setBusy('');
+    }
   }
   return (
     <main className="mx-auto max-w-7xl space-y-6 p-5 sm:p-8">
@@ -112,6 +150,83 @@ export default function Sellers() {
       <p className="text-slate-600">
         Solo el dueño puede aprobar pagos, suspender vendedores y administrar toda la plataforma.
       </p>
+      <button
+        type="button"
+        disabled={loading || !!busy}
+        onClick={() => {
+          setReviewing(null);
+          setRefresh((value) => value + 1);
+        }}
+        className="rounded-xl border bg-white px-5 py-3 font-bold disabled:opacity-40"
+      >
+        Actualizar vendedores y pagos
+      </button>
+      {success && (
+        <p role="status" className="rounded-xl bg-emerald-50 p-4 text-emerald-900">
+          {success}
+        </p>
+      )}
+      {reviewing && (
+        <form
+          onSubmit={review}
+          aria-label="Revisión de membresía"
+          className="space-y-4 rounded-2xl border border-cyan-300 bg-white p-5"
+        >
+          <h2 className="text-xl font-bold">
+            {reviewing.approve ? 'Aprobar membresía' : 'Rechazar pago'}
+          </h2>
+          <p>
+            Operación: <strong>{reviewing.payment.reference}</strong> · S/{reviewing.payment.amount}{' '}
+            · {reviewing.payment.seller_profiles?.display_name || reviewing.payment.user_id}
+          </p>
+          {reviewing.approve && (
+            <label className="flex gap-3 text-sm">
+              <input
+                type="checkbox"
+                required
+                checked={verified}
+                onChange={(event) => setVerified(event.target.checked)}
+              />
+              Comprobé en Yape el abono real de S/50 y la referencia de esta operación.
+            </label>
+          )}
+          <label className="block text-sm font-semibold">
+            {reviewing.approve ? 'Nota de revisión (opcional)' : 'Motivo del rechazo'}
+            <textarea
+              required={!reviewing.approve}
+              maxLength={1000}
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              className="mt-2 w-full rounded-xl border p-3"
+            />
+          </label>
+          <p className="text-sm text-slate-600">
+            Aprobar añade un mes de membresía. Rechazar no activa ni extiende la vigencia.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              disabled={
+                !!busy || (reviewing.approve && !verified) || (!reviewing.approve && !note.trim())
+              }
+              className="rounded-xl bg-slate-950 px-5 py-3 font-bold text-white disabled:opacity-40"
+            >
+              {busy
+                ? 'Guardando revisión…'
+                : reviewing.approve
+                  ? 'Confirmar aprobación'
+                  : 'Confirmar rechazo'}
+            </button>
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={() => setReviewing(null)}
+              className="rounded-xl border px-5 py-3"
+            >
+              Cancelar revisión
+            </button>
+          </div>
+        </form>
+      )}
       {summary && (
         <div className="grid gap-4 sm:grid-cols-3">
           {[
@@ -163,21 +278,22 @@ export default function Sellers() {
                     }
                   </p>
                   <p className="text-xs text-slate-500">
-                    {p.seller_profiles?.phone} · {new Date(p.created_at).toLocaleString('es-PE')}
+                    {p.seller_profiles?.phone} ·{' '}
+                    {new Date(p.created_at).toLocaleString('es-PE', { timeZone: 'America/Lima' })}
                   </p>
                 </div>
                 {p.status === 'pending' && (
                   <div className="flex gap-3">
                     <button
-                      disabled={!!busy}
-                      onClick={() => review(p, true)}
+                      disabled={!!busy || !!reviewing}
+                      onClick={() => startReview(p, true)}
                       className="rounded-full bg-emerald-700 px-4 py-2 font-bold text-white"
                     >
                       Verifiqué el abono: aprobar
                     </button>
                     <button
-                      disabled={!!busy}
-                      onClick={() => review(p, false)}
+                      disabled={!!busy || !!reviewing}
+                      onClick={() => startReview(p, false)}
                       className="rounded-full border px-4 py-2"
                     >
                       Rechazar
@@ -207,11 +323,11 @@ export default function Sellers() {
                         ? 'Activo'
                         : 'Sin membresía activa'}
                     {s.approved_until &&
-                      ` · Vence: ${new Date(s.approved_until).toLocaleDateString('es-PE')}`}
+                      ` · Vence: ${new Date(s.approved_until).toLocaleDateString('es-PE', { timeZone: 'America/Lima' })}`}
                   </p>
                 </div>
                 <button
-                  disabled={!!busy}
+                  disabled={!!busy || !!reviewing}
                   onClick={() => suspend(s)}
                   className="rounded-full border px-4 py-2"
                 >

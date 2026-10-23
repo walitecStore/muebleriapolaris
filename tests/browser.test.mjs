@@ -52,6 +52,8 @@ let sellerFailure = false;
 let sellerApprovedUntil = '2099-01-01T00:00:00Z';
 const profileData = new Map();
 let membershipPayments = [];
+let sellerSuspended = false;
+let lastMembershipReview = null;
 let store = { id: 1, ...emptyStore, name: 'Tienda de prueba', whatsapp: '51999999999' };
 function token(id) {
   const now = Math.floor(Date.now() / 1000);
@@ -218,6 +220,25 @@ const mock = createServer(async (req, res) => {
       membershipPayments.push(entry);
       result = entry;
     } else result = membershipPayments;
+  } else if (url.pathname === '/rest/v1/rpc/review_seller_membership') {
+    const payment = membershipPayments.find((entry) => entry.id === body.p_id);
+    if (role !== 'admin' || !payment || payment.status !== 'pending') {
+      status = 403;
+      result = { message: 'Review not authorized or already processed' };
+    } else {
+      lastMembershipReview = body;
+      payment.status = body.p_approve ? 'approved' : 'rejected';
+      payment.review_note = body.p_note;
+      result = null;
+    }
+  } else if (url.pathname === '/rest/v1/rpc/set_seller_suspension') {
+    if (role !== 'admin') {
+      status = 403;
+      result = { message: 'Denied' };
+    } else {
+      sellerSuspended = body.p_suspend;
+      result = null;
+    }
   } else if (url.pathname === '/rest/v1/rpc/admin_membership_report')
     result = {
       active: 1,
@@ -236,7 +257,7 @@ const mock = createServer(async (req, res) => {
         display_name: 'Vendedor de prueba',
         phone: '999999999',
         approved_until: sellerApprovedUntil,
-        suspended: false,
+        suspended: sellerSuspended,
         delivery_vehicle: 'motorcycle',
         delivery_partner: 'polaris',
       },
@@ -539,6 +560,49 @@ try {
   const page = await admin.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('http://127.0.0.1:4032/admin/vendedores');
+  await page.getByRole('button', { name: 'Verifiqué el abono: aprobar', exact: true }).click();
+  assert.equal(
+    await page.getByRole('button', { name: 'Confirmar aprobación', exact: true }).isDisabled(),
+    true
+  );
+  await page.getByRole('checkbox', { name: /Comprobé en Yape/ }).check();
+  await page
+    .getByLabel('Nota de revisión (opcional)', { exact: true })
+    .fill('Abono verificado de prueba');
+  await page.getByRole('button', { name: 'Confirmar aprobación', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Pago aprobado' }).waitFor();
+  assert.equal(lastMembershipReview?.p_approve, true);
+  assert.equal(lastMembershipReview?.p_note, 'Abono verificado de prueba');
+  await page.getByRole('button', { name: 'Suspender', exact: true }).waitFor();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Suspender', exact: true }).click();
+  await page.getByRole('button', { name: 'Reactivar', exact: true }).waitFor();
+  assert.equal(sellerSuspended, true);
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Reactivar', exact: true }).click();
+  await page.getByRole('button', { name: 'Suspender', exact: true }).waitFor();
+  assert.equal(sellerSuspended, false);
+  membershipPayments.push({
+    ...membershipPayments[0],
+    id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+    reference: 'TEST-REJECTED-PAYMENT',
+    status: 'pending',
+    review_note: '',
+  });
+  await page.getByRole('button', { name: 'Actualizar vendedores y pagos', exact: true }).click();
+  await page.getByRole('button', { name: 'Rechazar', exact: true }).click();
+  assert.equal(
+    await page.getByRole('button', { name: 'Confirmar rechazo', exact: true }).isDisabled(),
+    true
+  );
+  await page
+    .getByLabel('Motivo del rechazo', { exact: true })
+    .fill('Operación no encontrada en la prueba');
+  await page.getByRole('button', { name: 'Confirmar rechazo', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Pago rechazado' }).waitFor();
+  assert.equal(lastMembershipReview?.p_approve, false);
+  assert.equal(membershipPayments[1].status, 'rejected');
   await page.goto('http://127.0.0.1:4032/admin/guia');
   await page.getByRole('heading', { name: 'Cómo administrar Polaris', exact: true }).waitFor();
   await page.getByRole('link', { name: /^3\. Publica tus productos/ }).click();

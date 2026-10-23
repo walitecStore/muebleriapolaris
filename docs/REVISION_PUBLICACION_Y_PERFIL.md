@@ -126,3 +126,20 @@ verifica en Yape y aprueba manualmente en Vendedores y membresías.
 La aceptación de navegador simula error de lectura, reintento, membresía vencida
 y posterior aprobación desde el backend. Comprueba que al recuperar el foco se
 actualiza la vigencia sin perder el nombre que todavía se estaba editando.
+
+## Dueño: revisión de membresías y suspensión
+
+La revisión se realiza dentro del panel, mostrando operación, importe y vendedor.
+Aprobar requiere marcar que se comprobó el abono real en Yape; rechazar requiere
+un motivo. El panel envía la decisión a las RPC protegidas existentes, sin cambios
+a permisos o migraciones. La comprobación de Yape continúa siendo manual.
+
+Las acciones manejan fallos y liberan el estado ocupado; al completar muestran
+el resultado y actualizan pagos, vendedores y resumen. Si falla la lectura de
+cualquiera de esas fuentes, se retiran las listas anteriores para evitar revisar
+con datos incompletos. Un botón permite actualizar/reintentar. Las fechas usan
+America/Lima. Reactivar una suspensión no compra ni extiende una membresía.
+
+La prueba de navegador comprueba aprobación con casilla obligatoria, rechazo con
+motivo obligatorio, y suspensión/reactivación con backend sintético. Las reglas
+SQL de autorización y aprobación única siguen cubiertas en marketplace.sql.
