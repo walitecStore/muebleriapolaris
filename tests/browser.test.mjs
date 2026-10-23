@@ -318,6 +318,22 @@ try {
   await publicPage.goto('http://127.0.0.1:4032/catalogo');
   await publicPage.getByRole('link', { name: product.name, exact: true }).first().waitFor();
   await publicPage.getByRole('link', { name: 'Ver detalles', exact: true }).first().waitFor();
+  const originalName = product.name;
+  product.name = 'Producto actualizado desde el panel';
+  const catalogRefresh = publicPage.waitForResponse(
+    (response) => response.url().includes('/api/products?') && response.status() === 200
+  );
+  await publicPage.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await catalogRefresh;
+  await publicPage.getByRole('link', { name: product.name, exact: true }).first().waitFor();
+  product.name = originalName;
+  const restoredCatalog = publicPage.waitForResponse(
+    (response) => response.url().includes('/api/products?') && response.status() === 200
+  );
+  await publicPage.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await restoredCatalog;
+  await publicPage.getByRole('link', { name: product.name, exact: true }).first().waitFor();
+
   await publicPage
     .getByRole('button', { name: 'Guardar en favoritos: ' + product.name, exact: true })
     .click();
@@ -472,6 +488,10 @@ try {
   const page = await admin.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('http://127.0.0.1:4032/admin/guia');
+  await page.getByRole('heading', { name: 'Cómo administrar Polaris', exact: true }).waitFor();
+  await page.getByRole('link', { name: /^3\. Publica tus productos/ }).click();
+  await page.waitForURL('**/admin/productos');
   await page.goto('http://127.0.0.1:4032/admin');
   await page.getByRole('heading', { name: 'Tu tienda, bajo control' }).waitFor();
   await page.getByRole('heading', { name: 'Cobros aprobados', exact: true }).waitFor();

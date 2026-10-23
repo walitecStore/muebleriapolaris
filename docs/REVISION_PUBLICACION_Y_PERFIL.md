@@ -33,3 +33,22 @@ No repetir migraciones ya ejecutadas. El logo y QR de cobro deben cargarse desde
 El acceso del dueño incluye «Soy el propietario: autorizar mi cuenta». Genera un comando SQL únicamente para el UUID de la cuenta autenticada; el propietario debe ejecutarlo en su propio SQL Editor y comprobar el correo devuelto. La aplicación no ejecuta el cambio de rol ni permite autoasignarse admin mediante una API. Así se evita pedir contraseñas y repetir manualmente el correo de la cuenta.
 
 La integración detectó además un BOM UTF-8 al principio de `20260830220000_commerce_foundation.sql`. Se retiró ese carácter invisible sin modificar su SQL y el verificador local ahora rechaza esa codificación antes de migrar.
+
+## Administración cotidiana sin despliegues
+
+El panel incorpora `/admin/guia`, accesible desde «Cómo administrar» y el resumen.
+Vincula las tareas existentes de configuración, categorías, productos, cobros,
+vendedores, pedidos y reportes. Conserva el acceso exclusivo del administrador;
+los vendedores siguen entrando a `/vender` y administran sus propios datos.
+
+Las tarjetas recuperan el contenedor, foto, colores y botones del catálogo anterior,
+conservando descripción, favoritos y «Ver detalles». El catálogo y el perfil público
+de tienda consultan los datos sin caché al recuperar el foco, reconectar o volver
+visible la pestaña, y cada 60 segundos mientras está visible. Al refrescar el
+catálogo se vuelve a la primera página para evitar duplicar resultados paginados.
+No requiere activar Supabase Realtime ni aplicar una migración nueva.
+
+La prueba de navegador usa un backend sintético: cambia el nombre de un producto
+en ese backend y comprueba que aparece al recuperar el foco sin recargar la página.
+También comprueba la guía y su enlace al administrador de productos. Esto no
+certifica credenciales, permisos ni datos de la base alojada del propietario.

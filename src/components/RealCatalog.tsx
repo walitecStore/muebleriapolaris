@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useStoreUpdates } from '@/hooks/useStoreUpdates';
 import ProductCard, { type CatalogProduct as Product } from '@/components/ProductCard';
 import { saveSearch } from '@/lib/discovery';
 type Category = { id: string; name: string; slug: string };
@@ -28,6 +29,11 @@ export default function RealCatalog({
     [page, setPage] = useState(0),
     [more, setMore] = useState(false),
     [reload, setReload] = useState(0);
+  const refreshCatalog = useCallback(() => {
+    setPage(0);
+    setReload((value) => value + 1);
+  }, []);
+  useStoreUpdates(refreshCatalog);
   useEffect(() => {
     const t = setTimeout(() => {
       setTerm(search.trim());

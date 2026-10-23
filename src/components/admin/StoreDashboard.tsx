@@ -119,6 +119,14 @@ export default function StoreDashboard({ reports = false }: { reports?: boolean 
           ＋ Agregar producto
         </Link>
       </header>
+      {!reports && (
+        <Link
+          href="/admin/guia"
+          className="block rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-sm font-semibold text-cyan-900"
+        >
+          ¿Por dónde empezar? Administrar productos, vendedores y pedidos →
+        </Link>
+      )}
       <section
         className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-white p-4"
         aria-label="Filtro del reporte"

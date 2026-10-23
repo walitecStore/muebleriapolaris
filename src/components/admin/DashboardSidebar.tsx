@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 const menu = [
+  ['Cómo administrar', '/admin/guia', Store],
   ['Resumen', '/admin', LayoutDashboard],
   ['Productos', '/admin/productos', Package],
   ['Categorías', '/admin/categorias', FolderTree],
