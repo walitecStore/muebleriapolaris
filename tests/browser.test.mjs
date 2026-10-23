@@ -44,6 +44,7 @@ const cheapProduct = {
 const category = { id: product.category_id, name: 'Salas', slug: 'salas' };
 let lastProductUpdate = null;
 let lastProfileUpdate = null;
+let profileFailure = false;
 const profileData = new Map();
 let membershipPayments = [];
 let store = { id: 1, ...emptyStore, name: 'Tienda de prueba', whatsapp: '51999999999' };
@@ -112,6 +113,7 @@ const mock = createServer(async (req, res) => {
     result = null;
   } else if (url.pathname === '/rest/v1/profiles') {
     if (
+      profileFailure ||
       req.method === 'POST' ||
       (req.method === 'PATCH' &&
         Object.keys(body).some((k) => !['full_name', 'phone', 'avatar_url'].includes(k)))
@@ -413,6 +415,18 @@ try {
   });
   await customerPage.getByRole('link', { name: 'Panel del dueño', exact: true }).first().waitFor();
   await customerPage.screenshot({ path: join(artifacts, 'profile-fixed.png'), fullPage: true });
+  profileFailure = true;
+  await customerPage.reload();
+  await customerPage
+    .getByRole('alert')
+    .filter({ hasText: 'No pudimos cargar tu perfil' })
+    .waitFor();
+  assert.equal(
+    await customerPage.getByRole('button', { name: 'Guardar cambios', exact: true }).isDisabled(),
+    true,
+    'Profile save remained enabled after failed load'
+  );
+  profileFailure = false;
   await customerPage.goto('http://127.0.0.1:4032/vender');
   await customerPage.getByRole('heading', { name: 'Tu negocio en Polaris', exact: true }).waitFor();
   await customerPage.getByText('Membresía mensual · S/50', { exact: true }).waitFor();

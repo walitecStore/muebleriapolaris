@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 type Profile = { full_name: string; phone: string; role: string };
 export default function ProfilePage() {
   const { user, loading: authLoading } = useAuth();
+  const [loaded, setLoaded] = useState(false);
   const [profile, setProfile] = useState<Profile>({ full_name: '', phone: '', role: 'user' }),
     [loading, setLoading] = useState(true),
     [saving, setSaving] = useState(false),
@@ -25,27 +26,17 @@ export default function ProfilePage() {
     }
     let live = true;
     setLoading(true);
+    setLoaded(false);
     const db = createClient();
     async function load() {
       try {
-        const { data, error } = await db
-          .from('profiles')
-          .select('full_name,phone,role')
-          .eq('id', user!.id)
-          .single();
+        const { data, error } = await db.from('profiles').select('*').eq('id', user!.id).single();
         if (error || !data) throw error;
-        let phone = data.phone || '';
-        if (!phone) {
-          const legacy = await db
-            .from('profiles')
-            .select('telefono')
-            .eq('id', user!.id)
-            .maybeSingle();
-          phone = legacy.data?.telefono || '';
-        }
+        const phone = data.phone || data.telefono || '';
         if (live) {
           setProfile({ full_name: data.full_name || '', phone, role: data.role || 'user' });
           setError('');
+          setLoaded(true);
         }
       } catch {
         if (live) setError('No pudimos cargar tu perfil. Recarga la página antes de guardar.');
@@ -60,7 +51,7 @@ export default function ProfilePage() {
   }, [authLoading, user]);
   async function save(e: FormEvent) {
     e.preventDefault();
-    if (!user || saving) return;
+    if (!user || saving || !loaded) return;
     setError('');
     setMessage('');
     if (!profile.full_name.trim() || profile.full_name.trim().length > 100) {
@@ -187,7 +178,7 @@ export default function ProfilePage() {
                   </p>
                 )}
                 <button
-                  disabled={saving}
+                  disabled={saving || !loaded}
                   className="w-full rounded-full bg-cyan-600 py-3 font-bold text-white disabled:opacity-50"
                 >
                   {saving ? 'Guardando…' : 'Guardar cambios'}
