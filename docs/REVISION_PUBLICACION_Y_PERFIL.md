@@ -52,3 +52,13 @@ La prueba de navegador usa un backend sintético: cambia el nombre de un product
 en ese backend y comprueba que aparece al recuperar el foco sin recargar la página.
 También comprueba la guía y su enlace al administrador de productos. Esto no
 certifica credenciales, permisos ni datos de la base alojada del propietario.
+
+## Acceso administrativo separado de la tienda pública
+
+Por decisión del propietario, se retiraron los enlaces «Panel del dueño» del
+encabezado, menú móvil, pie, página de acceso y perfil del comprador. El acceso
+administrativo se conserva en `/admin`, con autenticación y comprobación del rol
+en el servidor. La ausencia del enlace no sustituye esa autorización. El dueño
+puede guardar esa dirección en sus favoritos. Los vendedores conservan su acceso
+a `/vender`, y los compradores acceden a «Mi cuenta». Esta decisión sustituye la
+recomendación anterior de mostrar el panel al público para facilitar encontrarlo.

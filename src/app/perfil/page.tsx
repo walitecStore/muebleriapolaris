@@ -187,13 +187,6 @@ export default function ProfilePage() {
             </section>
             <section className="grid gap-4 sm:grid-cols-2" aria-label="Mis espacios">
               {[
-                [
-                  'Panel del dueño',
-                  '/admin',
-                  profile.role === 'admin'
-                    ? 'Administrar toda la plataforma'
-                    : 'Acceso exclusivo a la cuenta autorizada',
-                ],
                 ['Vender en Polaris', '/vender', 'Perfil, membresía y publicaciones'],
                 ['Mis Pedidos', '/pedidos', 'Compras y entregas'],
                 ['Mis Favoritos', '/favoritos', 'Productos guardados'],

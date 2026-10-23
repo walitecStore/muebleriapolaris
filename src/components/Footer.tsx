@@ -77,7 +77,7 @@ export default function Footer() {
         aria-label="Plataforma"
         className="mx-auto flex max-w-7xl flex-wrap gap-5 px-5 pb-8 text-sm"
       >
-        <Link href="/acceso">Ingresar / Panel del dueño</Link>
+        <Link href="/acceso">Mi cuenta</Link>
         <Link href="/vender">Vender en Polaris</Link>
         <Link href="/instalar">Instalar aplicación</Link>
         <Link href="/ofertas">Ofertas</Link>

@@ -92,9 +92,6 @@ export default function Header() {
           <Link href="/perfil" className="shrink-0 text-cyan-900">
             Mi Perfil
           </Link>
-          <Link href="/admin" className="shrink-0 text-cyan-900">
-            Panel del dueño
-          </Link>
           <Link href="/vender" className="shrink-0 text-cyan-900">
             Vender
           </Link>
@@ -111,7 +108,6 @@ export default function Header() {
               ...links,
               ['Mis pedidos', '/pedidos'],
               ['Mi cuenta / Ingresar', '/acceso'],
-              ['Panel del dueño', '/admin'],
               ['Instalar aplicación', '/instalar'],
             ].map(([name, url]) => (
               <Link

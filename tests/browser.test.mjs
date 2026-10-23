@@ -311,7 +311,8 @@ try {
   );
   assert.equal(callback.status(), 307);
   assert.match(callback.headers().location, /\/login\?error=confirmation$/);
-  await publicPage.getByRole('link', { name: 'Panel del dueño', exact: true }).first().waitFor();
+  assert.equal(await publicPage.locator('a[href="/admin"]').count(), 0);
+  await publicPage.getByRole('link', { name: 'Mi cuenta', exact: true }).first().waitFor();
   const release = await publicPage.request.get('http://127.0.0.1:4032/api/release');
   assert.equal(release.status(), 200);
   assert.equal((await release.json()).canonicalUrl, 'https://muebleriapolaris.vercel.app');
@@ -429,7 +430,7 @@ try {
     full_name: 'Cliente actualizado',
     phone: '916832791',
   });
-  await customerPage.getByRole('link', { name: 'Panel del dueño', exact: true }).first().waitFor();
+  assert.equal(await customerPage.locator('a[href="/admin"]').count(), 0);
   await customerPage.screenshot({ path: join(artifacts, 'profile-fixed.png'), fullPage: true });
   profileFailure = true;
   await customerPage.reload();

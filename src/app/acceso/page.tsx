@@ -10,7 +10,7 @@ export default function Access() {
         <p className="mt-3 text-slate-600">
           Ingresa con tu correo y contraseña. Cada cuenta ve únicamente las funciones autorizadas.
         </p>
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
           {[
             [
               'Comprar',
@@ -23,12 +23,6 @@ export default function Access() {
               'Crea tu perfil y activa tu membresía de S/50 al mes.',
               '/vender',
               'Panel del vendedor',
-            ],
-            [
-              'Administrar Polaris',
-              'Acceso exclusivo a la cuenta autorizada del dueño. No requiere membresía.',
-              '/admin',
-              'Panel del dueño',
             ],
           ].map(([title, text, url, cta]) => (
             <section key={title} className="space-y-4 rounded-3xl border bg-white p-6">
