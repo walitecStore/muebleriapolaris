@@ -48,6 +48,8 @@ let productLoadFailure = false;
 let lastProfileUpdate = null;
 let profileFailure = false;
 let storeFailure = false;
+let sellerFailure = false;
+let sellerApprovedUntil = '2099-01-01T00:00:00Z';
 const profileData = new Map();
 let membershipPayments = [];
 let store = { id: 1, ...emptyStore, name: 'Tienda de prueba', whatsapp: '51999999999' };
@@ -222,19 +224,24 @@ const mock = createServer(async (req, res) => {
       pending: membershipPayments.filter((p) => p.status === 'pending').length,
       collected: 0,
     };
-  else if (url.pathname === '/rest/v1/seller_profiles')
+  else if (url.pathname === '/rest/v1/seller_profiles') {
+    if (sellerFailure) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: 'Temporary seller read failure' }));
+      return;
+    }
     result = [
       {
         user_id: buyerId,
         display_name: 'Vendedor de prueba',
         phone: '999999999',
-        approved_until: '2099-01-01T00:00:00Z',
+        approved_until: sellerApprovedUntil,
         suspended: false,
         delivery_vehicle: 'motorcycle',
         delivery_partner: 'polaris',
       },
     ];
-  else if (url.pathname === '/rest/v1/rpc/claim_daily_coupon')
+  } else if (url.pathname === '/rest/v1/rpc/claim_daily_coupon')
     result = {
       id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
       user_id: buyerId,
@@ -460,8 +467,35 @@ try {
     'Profile save remained enabled after failed load'
   );
   profileFailure = false;
+  sellerFailure = true;
+  sellerApprovedUntil = '2020-01-01T00:00:00Z';
   await customerPage.goto('http://127.0.0.1:4032/vender');
-  await customerPage.getByRole('heading', { name: 'Tu negocio en Polaris', exact: true }).waitFor();
+  await customerPage
+    .getByRole('alert')
+    .filter({ hasText: 'No se pudo cargar tu cuenta' })
+    .waitFor();
+  assert.equal(
+    await customerPage.getByRole('button', { name: 'Guardar perfil', exact: true }).count(),
+    0
+  );
+  sellerFailure = false;
+  await customerPage
+    .getByRole('button', { name: 'Reintentar carga de mi cuenta', exact: true })
+    .click();
+  await customerPage
+    .getByRole('heading', { name: 'Membresía pendiente de activación', exact: true })
+    .waitFor();
+  await customerPage
+    .getByLabel('Nombre de tu negocio', { exact: true })
+    .fill('Edición sin guardar');
+  sellerApprovedUntil = '2099-01-01T00:00:00Z';
+  await customerPage.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await customerPage.getByRole('heading', { name: 'Membresía activa', exact: true }).waitFor();
+  assert.equal(
+    await customerPage.getByLabel('Nombre de tu negocio', { exact: true }).inputValue(),
+    'Edición sin guardar'
+  );
+
   await customerPage.getByText('Membresía mensual · S/50', { exact: true }).waitFor();
   await customerPage
     .getByLabel('Número de operación de Yape', { exact: true })

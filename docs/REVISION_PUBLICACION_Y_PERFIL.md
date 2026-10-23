@@ -108,3 +108,21 @@ lectura y recuperación del editor, y cambios de precio y stock en un producto
 existente. Comprueba que el UPDATE mantiene la condición updated_at para rechazar
 ediciones que sobrescriban ventas concurrentes y conserva la imagen de portada.
 Estas pruebas usan datos sintéticos y no crean productos en la tienda alojada.
+
+## Vendedores: carga y vigencia de membresía
+
+La cuenta de vendedor bloquea formularios cuando falla la lectura del perfil o
+historial de pagos y ofrece reintentar. Guarda el perfil comprobando que Supabase
+devuelva la fila afectada, valida nombre/teléfono y conserva los datos introducidos
+al consultar de nuevo la membresía. La vigencia y el historial se actualizan al
+volver a la pestaña, recuperar la conexión y cada minuto visible, sin sobrescribir
+la edición del perfil. Las fechas de vigencia usan America/Lima.
+
+Si hay un pago pendiente, muestra el estado y bloquea otra solicitud tanto en el
+botón como en el manejador. Las restricciones SQL de pagos de S/50 y de solicitudes
+pendientes siguen siendo la autoridad. La referencia no prueba un abono: el dueño
+verifica en Yape y aprueba manualmente en Vendedores y membresías.
+
+La aceptación de navegador simula error de lectura, reintento, membresía vencida
+y posterior aprobación desde el backend. Comprueba que al recuperar el foco se
+actualiza la vigencia sin perder el nombre que todavía se estaba editando.

@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { useStoreUpdates } from '@/hooks/useStoreUpdates';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStore } from '@/contexts/StoreContext';
 import { createClient } from '@/lib/supabase/client';
@@ -24,6 +25,11 @@ type Payment = {
 export default function SellerAccount() {
   const { user } = useAuth(),
     store = useStore();
+  const profileOwner = useRef<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [reload, setReload] = useState(0);
+  const refreshAccount = useCallback(() => setReload((value) => value + 1), []);
+  useStoreUpdates(refreshAccount);
   const [form, setForm] = useState(blank),
     [until, setUntil] = useState(''),
     [suspended, setSuspended] = useState(false),
@@ -36,6 +42,8 @@ export default function SellerAccount() {
   useEffect(() => {
     if (!user) return;
     let live = true;
+    setLoading(true);
+    setLoaded(false);
     const db = createClient();
     Promise.all([
       db.from('seller_profiles').select('*').eq('user_id', user.id).maybeSingle(),
@@ -47,18 +55,24 @@ export default function SellerAccount() {
         .limit(12),
     ]).then(([p, m]) => {
       if (!live) return;
-      if (p.error || m.error)
-        setMessage(
-          'Las inscripciones de vendedores todavía no están habilitadas. Contacta a Polaris.'
-        );
+      if (p.error || m.error) {
+        setMessage('No se pudo cargar tu cuenta de vendedor. Reintenta antes de modificarla.');
+        setLoading(false);
+        return;
+      }
+      setLoaded(true);
+      setMessage('');
       if (p.data) {
         const row = p.data;
-        setForm({
-          ...blank,
-          ...Object.fromEntries(
-            Object.keys(blank).map((k) => [k, row[k] || blank[k as keyof typeof blank]])
-          ),
-        });
+        if (profileOwner.current !== user.id) {
+          setForm({
+            ...blank,
+            ...Object.fromEntries(
+              Object.keys(blank).map((k) => [k, row[k] || blank[k as keyof typeof blank]])
+            ),
+          });
+          profileOwner.current = user.id;
+        }
         setExists(true);
         setUntil(row.approved_until || '');
         setSuspended(row.suspended);
@@ -69,12 +83,17 @@ export default function SellerAccount() {
     return () => {
       live = false;
     };
-  }, [user]);
+  }, [user, reload]);
   async function save(e: FormEvent) {
     e.preventDefault();
-    if (!user || busy) return;
+    if (!user || busy || !loaded) return;
     setBusy(true);
     setMessage('');
+    if (!form.display_name.trim() || !/^\+?[\d\s()-]{7,25}$/.test(form.phone.trim())) {
+      setMessage('Escribe el nombre de tu negocio y un teléfono válido.');
+      setBusy(false);
+      return;
+    }
     if (form.avatar_url && !publicWebUrl(form.avatar_url)) {
       setMessage('Usa una URL de imagen válida.');
       setBusy(false);
@@ -83,10 +102,11 @@ export default function SellerAccount() {
     try {
       const db = createClient();
       const payload = { ...form, display_name: form.display_name.trim(), phone: form.phone.trim() };
-      const { error } = exists
-        ? await db.from('seller_profiles').update(payload).eq('user_id', user.id)
-        : await db.from('seller_profiles').insert({ ...payload, user_id: user.id });
-      if (error) throw error;
+      const query = exists
+        ? db.from('seller_profiles').update(payload).eq('user_id', user.id)
+        : db.from('seller_profiles').insert({ ...payload, user_id: user.id });
+      const { data, error } = await query.select('user_id').single();
+      if (error || !data) throw error;
       setExists(true);
       setMessage('Perfil guardado.');
     } catch {
@@ -97,7 +117,8 @@ export default function SellerAccount() {
   }
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!user || busy) return;
+    if (!user || busy || !loaded) return;
+    if (!exists || payments.some((payment) => payment.status === 'pending')) return;
     setBusy(true);
     setMessage('');
     try {
@@ -131,6 +152,17 @@ export default function SellerAccount() {
       </div>
       {loading ? (
         <p>Cargando…</p>
+      ) : !loaded ? (
+        <section className="rounded-xl border border-rose-200 bg-rose-50 p-5">
+          <p role="alert">{message}</p>
+          <button
+            type="button"
+            onClick={refreshAccount}
+            className="mt-4 rounded-xl border bg-white px-5 py-3 font-bold"
+          >
+            Reintentar carga de mi cuenta
+          </button>
+        </section>
       ) : (
         <>
           <section className={`rounded-2xl p-5 ${active ? 'bg-emerald-100' : 'bg-amber-50'}`}>
@@ -143,7 +175,8 @@ export default function SellerAccount() {
             </h2>
             {until && (
               <p className="mt-2 text-sm">
-                Vigencia hasta {new Date(until).toLocaleString('es-PE')}.
+                Vigencia hasta{' '}
+                {new Date(until).toLocaleString('es-PE', { timeZone: 'America/Lima' })}.
               </p>
             )}
             {active && (
@@ -244,6 +277,11 @@ export default function SellerAccount() {
               aprobación. La verificación es manual. No hay cobro automático ni renovación sin un
               nuevo pago.
             </p>
+            {payments.some((payment) => payment.status === 'pending') && (
+              <p role="status" className="rounded-xl bg-amber-50 p-4 text-sm">
+                Tu pago está pendiente de verificación. No envíes otro pago para esta solicitud.
+              </p>
+            )}
             {exists ? (
               <form onSubmit={submit} className="flex flex-wrap gap-3">
                 <label className="flex-1 text-sm">
@@ -278,7 +316,7 @@ export default function SellerAccount() {
           </section>
         </>
       )}
-      {message && (
+      {loaded && message && (
         <p role="status" className="rounded-xl border bg-white p-4">
           {message}
         </p>
