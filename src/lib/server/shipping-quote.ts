@@ -4,7 +4,12 @@ import {
   interpolateCenterPrice,
   nullableFiniteNumber,
 } from '@/lib/shipping-pricing';
-import { drivingRoute, geocodePublicReference, verifyShippingDestination } from './shipping';
+import {
+  drivingRoute,
+  geocodePublicReference,
+  verifyShippingDestination,
+  type StoreOrigin,
+} from './shipping';
 
 type QueryResult = { data: unknown; error: unknown };
 type SupabaseLike = { from: (table: string) => any };
@@ -39,7 +44,7 @@ function requiredNumber(value: unknown, label: string) {
   return number;
 }
 
-async function resolveCenterRoute(center: CenterRow) {
+async function resolveCenterRoute(center: CenterRow, origin: StoreOrigin) {
   const configuredDistance = nullableFiniteNumber(center.center_route_distance_km);
   if (configuredDistance !== null) return configuredDistance;
   let latitude = nullableFiniteNumber(center.center_lat);
@@ -51,7 +56,7 @@ async function resolveCenterRoute(center: CenterRow) {
     latitude = point.latitude;
     longitude = point.longitude;
   }
-  return (await drivingRoute(latitude, longitude)).distanceKm;
+  return (await drivingRoute(latitude, longitude, origin)).distanceKm;
 }
 
 export async function buildShippingQuote(
@@ -60,7 +65,19 @@ export async function buildShippingQuote(
   longitude: number,
   productFactor: number
 ) {
-  const destination = await verifyShippingDestination(latitude, longitude);
+  const { data: store, error: storeError } = await supabase
+    .from('store_settings')
+    .select('origin_lat,origin_lng,origin_address')
+    .eq('id', 1)
+    .single();
+  if (storeError || !store)
+    throw new Error('No se pudo consultar el origen de entrega configurado.');
+  const origin: StoreOrigin = {
+    latitude: Number(store.origin_lat),
+    longitude: Number(store.origin_lng),
+    address: store.origin_address,
+  };
+  const destination = await verifyShippingDestination(latitude, longitude, origin);
   const districtKey = normalize(destination.district);
   const result = (await supabase
     .from('shipping_district_centers')
@@ -79,7 +96,7 @@ export async function buildShippingQuote(
     };
   }
 
-  const centerDistanceKm = await resolveCenterRoute(center);
+  const centerDistanceKm = Number((await resolveCenterRoute(center, origin)).toFixed(2));
   let basePrice = nullableFiniteNumber(center.base_shipping_price);
   if (basePrice === null) {
     const pricedCenters = centers.filter(
@@ -87,12 +104,13 @@ export async function buildShippingQuote(
     );
     const calibration = await Promise.all(
       pricedCenters.map(async (row) => ({
-        distanceKm: await resolveCenterRoute(row),
+        distanceKm: await resolveCenterRoute(row, origin),
         price: requiredNumber(row.base_shipping_price, `tarifa de ${row.district}`),
       }))
     );
     basePrice = interpolateCenterPrice(centerDistanceKm, calibration);
   }
+  basePrice = Number(basePrice.toFixed(2));
   const pricing = calculateDistrictShipping({
     centerDistanceKm,
     basePrice,
@@ -106,7 +124,12 @@ export async function buildShippingQuote(
   });
   return {
     status: 'calculated' as const,
-    destination,
+    destination: {
+      ...destination,
+      district: center.district,
+      province: center.province,
+      department: center.department,
+    },
     shippingCost: pricing.shippingCost,
     audit: {
       ...pricing,

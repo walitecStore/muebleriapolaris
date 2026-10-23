@@ -1,3 +1,7 @@
+# Administración y puesta en marcha
+
+El panel de la tienda está en `/admin`. Consulta [la guía del panel y despliegue](docs/PANEL_Y_PUESTA_EN_MARCHA.md) para aplicar la migración nueva, asignar el administrador, configurar la tienda y ejecutar las pruebas.
+
 # Envíos por ubicación (Etapa 5)
 
 El checkout envía únicamente las coordenadas y categorías a `/api/shipping`. El servidor

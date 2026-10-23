@@ -3,8 +3,12 @@ import { createClient } from '@/lib/supabase/server';
 import { PAYMENT_METHODS, type PaymentMethodId } from '@/lib/payments';
 import { buildShippingQuote } from '@/lib/server/shipping-quote';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { validCheckoutBody } from '@/lib/checkout-validation';
+import { manualPaymentReady } from '@/lib/payments';
+import { readRequestJson, RequestJsonError } from '@/lib/request-json';
 
 type CheckoutBody = {
+  checkoutKey: string;
   items?: { productId?: string; variantId?: string | null; quantity?: number }[];
   paymentMethod?: PaymentMethodId;
   shipping?: { latitude?: number; longitude?: number; address?: string; reference?: string };
@@ -15,15 +19,33 @@ export async function POST(request: Request) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: 'Debes iniciar sesión.' }, { status: 401 });
 
-  const body = (await request.json()) as CheckoutBody;
+  let body: CheckoutBody;
+  try {
+    body = (await readRequestJson(request)) as CheckoutBody;
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof RequestJsonError ? error.message : 'JSON no válido.' },
+      { status: error instanceof RequestJsonError ? error.status : 400 }
+    );
+  }
+  if (!validCheckoutBody(body))
+    return NextResponse.json(
+      { error: 'El carrito, la ubicación o la clave del pedido no son válidos.' },
+      { status: 400 }
+    );
   const method = PAYMENT_METHODS.find((entry) => entry.id === body.paymentMethod);
   if (!method) return NextResponse.json({ error: 'Método de pago no válido.' }, { status: 400 });
   const { data: configuredMethod, error: methodError } = await supabase
     .from('payment_methods')
-    .select('code,is_active')
+    .select('code,is_active,metadata')
     .eq('code', method.id)
     .maybeSingle();
-  if (!methodError && (!configuredMethod || !configuredMethod.is_active)) {
+  if (
+    methodError ||
+    !configuredMethod ||
+    !configuredMethod.is_active ||
+    !manualPaymentReady(configuredMethod)
+  ) {
     return NextResponse.json({ error: 'Este método de pago no está disponible.' }, { status: 400 });
   }
   if (!body.items?.length || !body.shipping) {
@@ -78,6 +100,7 @@ export async function POST(request: Request) {
   }
   const { data, error } = await admin.rpc('create_server_validated_order', {
     p_user_id: auth.user.id,
+    p_checkout_key: body.checkoutKey,
     p_items: body.items,
     p_payment_method: method.id,
     p_shipping: {
@@ -109,7 +132,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     order,
     payment: {
-      status: 'pending',
+      status: order.payment_status,
       provider: method.provider,
       message:
         method.provider === 'manual'

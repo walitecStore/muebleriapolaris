@@ -264,211 +264,104 @@ async function supabaseFetch<T>(endpoint: string): Promise<T> {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('========================================');
-
-    console.log('🛋️ API /api/products');
-
-    const { searchParams } = new URL(request.url);
-
-    const active = searchParams.get('active');
-
-    const category = searchParams.get('category');
-
-    const search = searchParams.get('search');
-    const id = searchParams.get('id');
-
-    console.log('Parámetros:', {
-      active,
-      category,
-      search,
-    });
-
-    /*
-     * =====================================================
-     * 1. CATEGORÍAS
-     * =====================================================
-     *
-     * Usamos directamente el REST API de Supabase.
-     * Esto evita el problema que teníamos con
-     * createServerClient() dentro de esta ruta.
-     */
-
-    const [
-      categories,
-      subcategories,
-      brands,
-      images,
-      variants,
-      attributes,
-      attributeValues,
-      reviews,
-    ] = await Promise.all([
-      supabaseFetch<SupabaseCategory[]>('categories?select=id,name,slug,description,image_url'),
+    const page = Number(request.nextUrl.searchParams.get('page') || 0);
+    const id = request.nextUrl.searchParams.get('id');
+    const category = request.nextUrl.searchParams.get('category');
+    const search = request.nextUrl.searchParams.get('search');
+    if (
+      !Number.isInteger(page) ||
+      page < 0 ||
+      page > 10000 ||
+      (id && !/^[a-zA-Z0-9-]{1,150}$/.test(id))
+    )
+      return NextResponse.json({ error: 'Consulta no válida.' }, { status: 400 });
+    const categories = await supabaseFetch<SupabaseCategory[]>(
+      'categories?select=id,name,slug&order=name.asc'
+    );
+    const listedCategories = categories.map((c) => ({
+      id: String(c.id),
+      name: c.name || 'Sin categoría',
+      slug: c.slug || normalizeText(c.name).replace(/\s+/g, '-'),
+    }));
+    let endpoint =
+      'products?select=id,name,slug,category_id,description,price,sale_price,image_url,images,stock,is_active,is_featured,sku,color,material,subcategory,subcategory_id,brand_id,brand,short_description,created_at,updated_at&is_active=eq.true&order=created_at.desc,id.asc';
+    if (id)
+      endpoint += /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id)
+        ? `&id=eq.${id}`
+        : `&slug=eq.${encodeURIComponent(id)}`;
+    if (request.nextUrl.searchParams.get('featured') === 'true') endpoint += '&is_featured=eq.true';
+    if (category) {
+      const ids = categories
+        .filter((c) => normalizeText(c.name) === normalizeText(category) || c.slug === category)
+        .map((c) => c.id);
+      if (!ids.length)
+        return NextResponse.json({
+          success: true,
+          products: [],
+          categories: listedCategories,
+          total: 0,
+          hasMore: false,
+        });
+      endpoint += `&category_id=in.(${ids.join(',')})`;
+    }
+    if (search?.trim())
+      endpoint += `&name=ilike.*${encodeURIComponent(search.trim().replace(/[%*]/g, ''))}*`;
+    endpoint += `&limit=48&offset=${page * 48}`;
+    const rawProducts = await supabaseFetch<SupabaseProduct[]>(endpoint);
+    const productIds = rawProducts.map((p) => p.id);
+    if (!productIds.length)
+      return NextResponse.json({
+        success: true,
+        products: [],
+        categories: listedCategories,
+        total: 0,
+        hasMore: false,
+      });
+    const filter = `&product_id=in.(${productIds.join(',')})`;
+    const [subcategories, brands, images, variants, attributes, reviews] = await Promise.all([
       supabaseFetch<RelatedRow[]>('subcategories?select=*&is_active=eq.true&order=sort_order.asc'),
       supabaseFetch<RelatedRow[]>('brands?select=*&is_active=eq.true&order=name.asc'),
-      supabaseFetch<RelatedRow[]>('product_images?select=*&order=sort_order.asc'),
+      supabaseFetch<RelatedRow[]>('product_images?select=*&order=sort_order.asc' + filter),
       supabaseFetch<RelatedRow[]>(
-        'product_variants?select=*&is_active=eq.true&order=sort_order.asc'
+        'product_variants?select=*&is_active=eq.true&order=sort_order.asc' + filter
       ),
-      supabaseFetch<RelatedRow[]>('product_attributes?select=*&order=sort_order.asc'),
-      supabaseFetch<RelatedRow[]>('product_attribute_values?select=*&order=sort_order.asc'),
+      supabaseFetch<RelatedRow[]>('product_attributes?select=*&order=sort_order.asc' + filter),
       supabaseFetch<RelatedRow[]>(
-        'product_reviews?select=*&status=eq.published&order=created_at.desc'
+        'product_reviews?select=*&status=eq.published&order=created_at.desc' + filter
       ),
     ]);
-
-    console.log(`📁 Categorías encontradas: ${categories.length}`);
-
-    /*
-     * =====================================================
-     * 2. PRODUCTOS
-     * =====================================================
-     *
-     * select=* evita depender de que existan exactamente
-     * las columnas opcionales slug o subcategory.
-     */
-
-    let productsEndpoint = 'products?select=*';
-
-    if (active === 'true') {
-      productsEndpoint += '&is_active=eq.true';
-    }
-
-    if (active === 'false') {
-      productsEndpoint += '&is_active=eq.false';
-    }
-
-    if (search?.trim()) {
-      productsEndpoint += `&name=ilike.*${encodeURIComponent(search.trim())}*`;
-    }
-
-    if (id?.trim()) {
-      productsEndpoint += `&or=(id.eq.${encodeURIComponent(id.trim())},slug.eq.${encodeURIComponent(id.trim())})`;
-    }
-
-    productsEndpoint += '&order=id.asc';
-
-    console.log('Consultando productos:', productsEndpoint);
-
-    const rawProducts = await supabaseFetch<SupabaseProduct[]>(productsEndpoint);
-
-    console.log(`📦 Productos encontrados: ${rawProducts.length}`);
-
-    /*
-     * =====================================================
-     * 3. TRANSFORMAR PRODUCTOS
-     * =====================================================
-     */
-
-    const related = {
-      subcategories,
-      brands,
-      images,
-      variants,
-      attributes,
-      attributeValues,
-      reviews,
-    };
-    let products = rawProducts.map((product) => transformProduct(product, categories, related));
-
-    /*
-     * =====================================================
-     * 4. FILTRO DE CATEGORÍA
-     * =====================================================
-     *
-     * Aceptamos:
-     *
-     * Europeo
-     * Sofás Europeo
-     * Sofas Europeo
-     *
-     * Modulares
-     * Sofás Modulares
-     *
-     * Seccionales
-     * Sofás Seccionales
-     *
-     * etc.
-     */
-
-    if (category?.trim()) {
-      const wanted = normalizeText(category);
-
-      products = products.filter((product) => {
-        const current = normalizeText(product.category);
-
-        return current === wanted || current.includes(wanted) || wanted.includes(current);
-      });
-
-      console.log(`🔎 Filtro categoría "${category}": ${products.length} productos`);
-    }
-
-    /*
-     * =====================================================
-     * 5. RESPUESTA
-     * =====================================================
-     */
-
-    console.log(`✅ API FINAL: ${products.length} productos`);
-
-    console.log('========================================');
-
+    const attributeValues = attributes.length
+      ? await supabaseFetch<RelatedRow[]>(
+          `product_attribute_values?select=*&attribute_id=in.(${attributes.map((a) => a.id).join(',')})&order=sort_order.asc`
+        )
+      : [];
+    const products = rawProducts.map((p) => ({
+      ...transformProduct(p, categories, {
+        subcategories,
+        brands,
+        images,
+        variants,
+        attributes,
+        attributeValues,
+        reviews,
+      }),
+      categorySlug: categories.find((c) => String(c.id) === String(p.category_id))?.slug || '',
+    }));
     return NextResponse.json(
       {
         success: true,
-
         products,
-
+        categories: listedCategories,
         total: products.length,
-
-        categories: categories.map((item) => ({
-          id: String(item.id),
-
-          name: item.name?.trim() || 'Sin categoría',
-
-          slug: item.slug?.trim() || normalizeText(item.name).replace(/\s+/g, '-'),
-        })),
-        subcategories,
-        brands,
+        hasMore: rawProducts.length === 48,
       },
-      {
-        status: 200,
-
-        headers: {
-          'Cache-Control': 'no-store, max-age=0',
-        },
-      }
+      { headers: { 'Cache-Control': 'no-store' } }
     );
   } catch (error) {
-    console.error('========================================');
-
-    console.error('❌ ERROR GENERAL /api/products');
-
-    console.error(error);
-
-    console.error('========================================');
-
-    const message = error instanceof Error ? error.message : 'Error desconocido';
-
+    console.error('Catalog lookup failed', error instanceof Error ? error.name : 'Unknown');
     return NextResponse.json(
-      {
-        success: false,
-
-        products: [],
-
-        total: 0,
-
-        error: 'Error interno al cargar el catálogo.',
-
-        details: message,
-      },
-      {
-        status: 500,
-
-        headers: {
-          'Cache-Control': 'no-store',
-        },
-      }
+      { error: 'No se pudo cargar el catálogo. Reintenta en unos momentos.' },
+      { status: 503 }
     );
   }
 }

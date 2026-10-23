@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import DashboardSidebar from '@/components/admin/DashboardSidebar';
 import { createClient } from '@/lib/supabase/client';
 
 type RequestRow = {
@@ -51,7 +50,6 @@ export default function ReturnsAdminPage() {
 
   return (
     <div className="flex min-h-screen bg-slate-100">
-      <DashboardSidebar />
       <main className="flex-1 p-8">
         <h1 className="text-3xl font-black">Devoluciones y reembolsos</h1>
         <p className="mt-2 text-slate-600">
@@ -77,12 +75,33 @@ export default function ReturnsAdminPage() {
               <div className="mt-4 flex flex-wrap gap-2">
                 {['under_review', 'approved', 'rejected', 'refunded', 'cancelled'].map((status) => (
                   <button
-                    key={status}
-                    disabled={row.status === status}
+                    key={
+                      {
+                        under_review: 'En revisión',
+                        approved: 'Aprobar',
+                        rejected: 'Rechazar',
+                        refunded: 'Confirmar reembolso',
+                        cancelled: 'Cancelar',
+                      }[status]
+                    }
+                    disabled={
+                      row.status === status ||
+                      ['refunded', 'rejected', 'cancelled'].includes(row.status) ||
+                      (row.status === 'approved' && !['refunded', 'cancelled'].includes(status)) ||
+                      (row.status !== 'approved' && status === 'refunded')
+                    }
                     onClick={() => void review(row.id, status)}
                     className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-40"
                   >
-                    {status}
+                    {
+                      {
+                        under_review: 'En revisión',
+                        approved: 'Aprobar',
+                        rejected: 'Rechazar',
+                        refunded: 'Confirmar reembolso',
+                        cancelled: 'Cancelar',
+                      }[status]
+                    }
                   </button>
                 ))}
               </div>

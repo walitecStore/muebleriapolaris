@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import AppLogo from '@/components/ui/AppLogo';
+import { safeAuthDestination } from '@/lib/auth-redirect';
 
 export default function LoginPage() {
   const { signIn, user } = useAuth();
@@ -15,10 +16,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('error') === 'confirmation')
+      setError('El enlace de confirmación no es válido o ha vencido. Solicita un nuevo enlace.');
+  }, []);
 
   // If already logged in, redirect home
   React.useEffect(() => {
-    if (user) router.replace('/');
+    if (user) {
+      router.replace(safeAuthDestination(new URLSearchParams(window.location.search).get('next')));
+      router.refresh();
+    }
   }, [user, router]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -31,7 +39,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signIn(email.trim(), password);
-      router.replace('/');
+      router.replace(safeAuthDestination(new URLSearchParams(window.location.search).get('next')));
+      router.refresh();
     } catch (err: any) {
       setError(
         err?.message === 'Invalid login credentials'

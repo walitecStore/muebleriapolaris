@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { WhatsAppIcon } from '@/components/Header';
+import { useStore } from '@/contexts/StoreContext';
+import { whatsappLink } from '@/lib/store-profile';
 
 const SOFA_SLIDES = [
   {
@@ -32,6 +34,7 @@ const SOFA_SLIDES = [
 ];
 
 export default function HeroSection() {
+  const store = useStore();
   const heroRef = useRef<HTMLDivElement>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [nextSlide, setNextSlide] = useState(1);
@@ -186,7 +189,7 @@ export default function HeroSection() {
             Ver Catálogo
           </a>
           <a
-            href="https://wa.me/51916832791?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20informaci%C3%B3n%20sobre%20sus%20sof%C3%A1s"
+            href={whatsappLink(store.whatsapp) || '/#contacto'}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-[#25D366] text-white font-bold text-base rounded-full hover:bg-[#25D366]/90 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#25D366]/30"
@@ -194,20 +197,6 @@ export default function HeroSection() {
             <WhatsAppIcon className="w-5 h-5" />
             Comprar por WhatsApp
           </a>
-        </div>
-
-        {/* Stats row */}
-        <div className="animate-in-up-delay-4 flex flex-wrap justify-center gap-8 sm:gap-12">
-          {[
-            { value: '500+', label: 'Clientes felices' },
-            { value: '50+', label: 'Modelos' },
-            { value: '10+', label: 'Años de experiencia' },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-2xl sm:text-3xl font-extrabold text-white">{stat.value}</div>
-              <div className="text-white/60 text-xs sm:text-sm font-medium mt-1">{stat.label}</div>
-            </div>
-          ))}
         </div>
       </div>
 

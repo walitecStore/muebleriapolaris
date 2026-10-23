@@ -8,6 +8,24 @@ export const PAYMENT_METHODS = [
 
 export type PaymentMethodId = (typeof PAYMENT_METHODS)[number]['id'];
 
+export function manualPaymentReady(method: {
+  code: string;
+  metadata?: Record<string, unknown> | null;
+}) {
+  const m = method.metadata || {};
+  const present = (value: unknown) => typeof value === 'string' && value.trim().length > 0;
+  if (method.code === 'bank_transfer')
+    return present(m.bank) && present(m.account_holder) && present(m.account_number);
+  if (method.code === 'yape' || method.code === 'plin')
+    return (
+      typeof m.qr_url === 'string' &&
+      /^https:\/\//i.test(m.qr_url) &&
+      present(m.account_holder) &&
+      present(m.phone)
+    );
+  return false;
+}
+
 export function isPaymentMethodId(value: string): value is PaymentMethodId {
   return PAYMENT_METHODS.some((method) => method.id === value);
 }

@@ -1,7 +1,7 @@
 'use client';
-
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import {
   LayoutDashboard,
   Package,
@@ -9,130 +9,84 @@ import {
   ShoppingCart,
   Undo2,
   Users,
-  TicketPercent,
   BarChart3,
   Settings,
   LogOut,
-  Sofa,
+  CreditCard,
+  MapPin,
+  Store,
 } from 'lucide-react';
-
+import { useAuth } from '@/contexts/AuthContext';
 const menu = [
-  {
-    title: 'Dashboard',
-    href: '/admin',
-    icon: LayoutDashboard,
-  },
-  {
-    title: 'Productos',
-    href: '/admin/productos',
-    icon: Sofa,
-  },
-  {
-    title: 'Categorías',
-    href: '/admin/categorias',
-    icon: FolderTree,
-  },
-  {
-    title: 'Pedidos',
-    href: '/admin/pedidos',
-    icon: ShoppingCart,
-  },
-  {
-    title: 'Devoluciones',
-    href: '/admin/devoluciones',
-    icon: Undo2,
-  },
-  {
-    title: 'Clientes',
-    href: '/admin/clientes',
-    icon: Users,
-  },
-  {
-    title: 'Promociones',
-    href: '/admin/promociones',
-    icon: TicketPercent,
-  },
-  {
-    title: 'Estadísticas',
-    href: '/admin/estadisticas',
-    icon: BarChart3,
-  },
-  {
-    title: 'Configuración',
-    href: '/admin/configuracion',
-    icon: Settings,
-  },
-];
-
+  ['Resumen', '/admin', LayoutDashboard],
+  ['Productos', '/admin/productos', Package],
+  ['Categorías', '/admin/categorias', FolderTree],
+  ['Reseñas', '/admin/resenas', Users],
+  ['Pedidos', '/admin/pedidos', ShoppingCart],
+  ['Devoluciones', '/admin/devoluciones', Undo2],
+  ['Clientes', '/admin/clientes', Users],
+  ['Ventas y reportes', '/admin/estadisticas', BarChart3],
+  ['Medios de pago', '/admin/pagos', CreditCard],
+  ['Tarifas de envío', '/admin/envios', MapPin],
+  ['Perfil de la tienda', '/admin/configuracion', Settings],
+] as const;
 export default function DashboardSidebar() {
-  const pathname = usePathname();
-
+  const path = usePathname(),
+    router = useRouter();
+  const { signOut } = useAuth();
+  const [error, setError] = useState(''),
+    [leaving, setLeaving] = useState(false);
+  async function logout() {
+    setLeaving(true);
+    try {
+      await signOut();
+      router.replace('/login');
+      router.refresh();
+    } catch {
+      setError('No se pudo cerrar la sesión. Reintenta.');
+      setLeaving(false);
+    }
+  }
   return (
-    <aside className="w-[270px] min-h-screen bg-slate-950 border-r border-slate-800 flex flex-col">
-      <div className="h-20 flex items-center px-8 border-b border-slate-800">
-        <div>
-          <h1 className="text-white text-xl font-black tracking-wide">Polaris</h1>
-
-          <p className="text-cyan-400 text-xs">Panel Administrativo</p>
-        </div>
-      </div>
-
-      <nav className="flex-1 px-4 py-6">
-        <div className="space-y-2">
-          {menu.map((item) => {
-            const Icon = item.icon;
-
-            const active = pathname === item.href;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`
-                                flex
-                                items-center
-                                gap-3
-                                rounded-xl
-                                px-4
-                                py-3
-                                transition-all
-                                duration-300
-
-                                ${
-                                  active
-                                    ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30'
-                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                                }
-                            `}
-              >
-                <Icon size={20} />
-
-                <span className="font-semibold">{item.title}</span>
-              </Link>
-            );
-          })}
-        </div>
+    <aside className="bg-slate-950 text-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0 lg:overflow-y-auto">
+      <Link href="/admin" className="flex items-center gap-3 border-b border-white/10 p-5">
+        <span className="rounded-xl bg-cyan-400 p-2 text-slate-950">
+          <Store size={24} />
+        </span>
+        <span className="font-black">
+          Polaris
+          <span className="block text-xs font-normal text-slate-400">Control de tu tienda</span>
+        </span>
+      </Link>
+      <nav aria-label="Administración" className="flex gap-1 overflow-x-auto p-3 lg:flex-col">
+        {menu.map(([label, href, Icon]) => (
+          <Link
+            key={href}
+            href={href}
+            className={`flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold ${path === href || (href !== '/admin' && path.startsWith(href + '/')) ? 'bg-cyan-400 text-slate-950' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
+          >
+            <Icon size={18} />
+            {label}
+          </Link>
+        ))}
       </nav>
-
-      <div className="border-t border-slate-800 p-4">
+      <div className="flex gap-4 border-t border-white/10 p-4 lg:flex-col">
+        <Link className="text-sm text-slate-300" href="/">
+          Ver mi tienda ↗
+        </Link>
         <button
-          className="
-                    w-full
-                    flex
-                    items-center
-                    gap-3
-                    rounded-xl
-                    px-4
-                    py-3
-                    text-red-400
-                    hover:bg-red-500/10
-                    transition-all
-                "
+          onClick={logout}
+          disabled={leaving}
+          className="flex items-center gap-2 text-sm text-rose-300 disabled:opacity-50"
         >
-          <LogOut size={20} />
-
-          <span>Cerrar sesión</span>
+          <LogOut size={16} />
+          {leaving ? 'Cerrando…' : 'Cerrar sesión'}
         </button>
+        {error && (
+          <p role="alert" className="text-xs text-rose-300">
+            {error}
+          </p>
+        )}
       </div>
     </aside>
   );

@@ -19,9 +19,9 @@ const actions = [
     color: 'orange',
   },
   {
-    title: 'Nueva promoción',
-    description: 'Crear una oferta especial',
-    href: '/admin/promociones/nueva',
+    title: 'Precios y ofertas',
+    description: 'Editar los precios de tus productos',
+    href: '/admin/productos',
     icon: Gift,
     color: 'pink',
   },

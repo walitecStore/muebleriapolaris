@@ -6,14 +6,18 @@ import AppImage from '@/components/ui/AppImage';
 import { useCart } from './CartContext';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { PAYMENT_METHODS, type PaymentMethodId, isPaymentApproved } from '@/lib/payments';
+import {
+  PAYMENT_METHODS,
+  type PaymentMethodId,
+  isPaymentApproved,
+  manualPaymentReady,
+} from '@/lib/payments';
 import Link from 'next/link';
+import { useStore } from '@/contexts/StoreContext';
 
 /* =========================================================
    CONFIGURACIÓN GENERAL
 ========================================================= */
-
-const WA_NUMBER = '51916832791';
 
 /*
  * Punto de partida de Mueblería Polaris
@@ -21,11 +25,6 @@ const WA_NUMBER = '51916832791';
  * Av. 12 de Octubre 1805
  * San Martín de Porres - Lima
  */
-const STORE_LOCATION = {
-  lat: -11.993057,
-  lng: -77.071283,
-  address: 'Av. 12 de Octubre 1805, San Martín de Porres, Lima',
-};
 
 /* =========================================================
    TIPOS
@@ -236,7 +235,8 @@ function buildWhatsAppCartUrl(
     quantity: number;
   }[],
   shippingCost = 0,
-  distanceKm: number | null = null
+  distanceKm: number | null = null,
+  WA_NUMBER = ''
 ): string {
   const lines = items.map((item) => `• ${item.quantity}x ${item.name} — ${item.price}`).join('\n');
 
@@ -334,6 +334,16 @@ async function loadLeaflet(): Promise<any> {
 ========================================================= */
 
 export default function CartDrawer() {
+  const store = useStore();
+  const STORE_LOCATION = useMemo(
+    () => ({
+      lat: Number(store.origin_lat),
+      lng: Number(store.origin_lng),
+      address: store.origin_address,
+    }),
+    [store.origin_lat, store.origin_lng, store.origin_address]
+  );
+  const WA_NUMBER = store.whatsapp.replace(/\D/g, '');
   const { items, removeItem, updateQuantity, clearCart, isOpen, closeCart } = useCart();
 
   const { user } = useAuth();
@@ -371,10 +381,7 @@ export default function CartDrawer() {
   const [savingQuote, setSavingQuote] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>('yape');
-  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<PaymentMethodId[]>([
-    'yape',
-    'plin',
-  ]);
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<PaymentMethodId[]>([]);
 
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -446,11 +453,7 @@ export default function CartDrawer() {
       .order('sort_order')
       .then(({ data }) => {
         const enabled = (data || [])
-          .filter((entry) => {
-            if (entry.code !== 'bank_transfer') return true;
-            const metadata = (entry.metadata || {}) as Record<string, unknown>;
-            return Boolean(metadata.bank && metadata.account_holder && metadata.account_number);
-          })
+          .filter(manualPaymentReady)
           .map((entry) => entry.code)
           .filter((code): code is PaymentMethodId =>
             PAYMENT_METHODS.some((method) => method.id === code)
@@ -572,7 +575,7 @@ export default function CartDrawer() {
     return () => {
       cancelled = true;
     };
-  }, [checkoutOpen]);
+  }, [checkoutOpen, STORE_LOCATION]);
 
   /* =======================================================
      ACTUALIZAR MARKER CUANDO CAMBIA UBICACIÓN
@@ -607,7 +610,7 @@ export default function CartDrawer() {
       mapRef.current = null;
       markerRef.current = null;
     }
-  }, [checkoutOpen]);
+  }, [checkoutOpen, STORE_LOCATION]);
 
   /* =======================================================
      OBTENER UBICACIÓN DEL CLIENTE
@@ -659,163 +662,23 @@ export default function CartDrawer() {
      CONSULTAR PRODUCTOS DE FORMA SEGURA
   ======================================================= */
 
+  const checkoutRequest = useRef<{ fingerprint: string; key: string } | null>(null);
   const getProductsShippingData = useCallback(async (): Promise<ProductShippingData[]> => {
-    if (items.length === 0) {
-      throw new Error('El carrito está vacío.');
-    }
-
-    const supabase = createClient();
-
-    const resolvedProducts: ProductShippingData[] = [];
-
-    for (const item of items) {
-      const itemId = String(item.id);
-
-      let product: any = null;
-
-      /*
-       * ===================================================
-       * CASO 1:
-       * El ID sí es UUID.
-       *
-       * Solo en este caso hacemos .eq('id', ...)
-       *
-       * Esto evita el error:
-       *
-       * invalid input syntax for type uuid: "8"
-       * ===================================================
-       */
-
-      if (isUuid(itemId)) {
-        const { data, error } = await supabase
-          .from('products')
-          .select(
-            `
-              id,
-              name,
-              price,
-              shipping_category,
-              shipping_weight_kg,
-              shipping_volume_m3,
-              shipping_pieces,
-              shipping_factor,
-              category_id,
-              categories (
-                name
-              )
-            `
-          )
-          .eq('id', itemId)
-          .maybeSingle();
-
-        if (error) {
-          throw new Error(`No se pudo consultar "${item.name}": ${error.message}`);
-        }
-
-        product = data;
-      }
-
-      /*
-       * ===================================================
-       * CASO 2:
-       * ID numérico/antiguo.
-       *
-       * Ejemplo:
-       *
-       * id = "8"
-       *
-       * NO se consulta por UUID.
-       *
-       * Buscamos por nombre.
-       * ===================================================
-       */
-
-      if (!product) {
-        const cleanName = String(item.name || '').trim();
-
-        if (!cleanName) {
-          throw new Error(`No se pudo identificar el producto con ID "${itemId}".`);
-        }
-
-        const { data, error } = await supabase
-          .from('products')
-          .select(
-            `
-              id,
-              name,
-              price,
-              shipping_category,
-              shipping_weight_kg,
-              shipping_volume_m3,
-              shipping_pieces,
-              shipping_factor,
-              category_id,
-              categories (
-                name
-              )
-            `
-          )
-          .ilike('name', cleanName)
-          .limit(1)
-          .maybeSingle();
-
-        if (error) {
-          throw new Error(`No se pudo consultar "${cleanName}": ${error.message}`);
-        }
-
-        product = data;
-      }
-
-      if (!product) {
-        throw new Error(`No se encontró el producto "${item.name}" en Supabase.`);
-      }
-
-      /*
-       * Categoría directa de envío.
-       */
-      let shippingCategory = product.shipping_category;
-
-      /*
-       * Si está vacía, intentamos obtener
-       * la categoría normal del producto.
-       */
-      if (!shippingCategory) {
-        const categoryName = product.categories?.name;
-
-        if (categoryName) {
-          shippingCategory = canonicalShippingCategory(categoryName);
-        }
-      }
-
-      /*
-       * Último respaldo.
-       */
-      if (!shippingCategory) {
-        shippingCategory = 'EUROPEO';
-      }
-
-      resolvedProducts.push({
-        id: String(product.id),
-
-        name: product.name || item.name,
-
-        price: Number(product.price) || parsePrice(item.price),
-
-        shipping_category: canonicalShippingCategory(shippingCategory),
-
-        shipping_weight_kg:
-          product.shipping_weight_kg != null ? Number(product.shipping_weight_kg) : null,
-
-        shipping_volume_m3:
-          product.shipping_volume_m3 != null ? Number(product.shipping_volume_m3) : null,
-
-        shipping_pieces: product.shipping_pieces != null ? Number(product.shipping_pieces) : 1,
-
-        shipping_factor: product.shipping_factor != null ? Number(product.shipping_factor) : 1,
-      });
-    }
-
-    return resolvedProducts;
+    const ids = Array.from(new Set(items.map((item) => String(item.id))));
+    if (ids.some((id) => !isUuid(id)))
+      throw new Error(
+        'Retira los productos antiguos del carrito y agrégalos nuevamente desde el catálogo.'
+      );
+    const { data, error } = await createClient()
+      .from('products')
+      .select(
+        'id,name,price,shipping_category,shipping_weight_kg,shipping_volume_m3,shipping_pieces,shipping_factor'
+      )
+      .in('id', ids)
+      .eq('is_active', true);
+    if (error || data?.length !== ids.length)
+      throw new Error('Hay productos no disponibles. Revisa tu carrito.');
+    return data as ProductShippingData[];
   }, [items]);
 
   /* =======================================================
@@ -858,8 +721,7 @@ export default function CartDrawer() {
           longitude: selectedLocation.lng,
           items: products.map((product) => ({
             productId: product.id,
-            quantity: items.find((item) => normalizeText(item.name) === normalizeText(product.name))
-              ?.quantity,
+            quantity: items.find((item) => String(item.id) === product.id)?.quantity,
           })),
         }),
       });
@@ -981,9 +843,7 @@ export default function CartDrawer() {
     try {
       const products = await getProductsShippingData();
       const checkoutItems = items.map((item) => {
-        const product = products.find(
-          (entry) => normalizeText(entry.name) === normalizeText(item.name)
-        );
+        const product = products.find((entry) => entry.id === String(item.id));
         if (!product) throw new Error(`No se encontró el producto "${item.name}".`);
         return {
           productId: product.id,
@@ -991,10 +851,39 @@ export default function CartDrawer() {
           quantity: Math.max(1, Number(item.quantity) || 1),
         };
       });
+      const fingerprint = JSON.stringify({
+        user: user.id,
+        items: checkoutItems,
+        paymentMethod,
+        selectedLocation,
+        reference: referenceAddress.trim(),
+      });
+      if (checkoutRequest.current?.fingerprint !== fingerprint) {
+        try {
+          const stored = JSON.parse(sessionStorage.getItem('polaris_checkout_request') || 'null');
+          checkoutRequest.current =
+            stored?.fingerprint === fingerprint
+              ? stored
+              : { fingerprint, key: crypto.randomUUID() };
+        } catch {
+          checkoutRequest.current = { fingerprint, key: crypto.randomUUID() };
+        }
+        try {
+          sessionStorage.setItem(
+            'polaris_checkout_request',
+            JSON.stringify(checkoutRequest.current)
+          );
+        } catch {
+          /* In-memory key still protects retries in this tab. */
+        }
+      }
+      const requestKey = checkoutRequest.current?.key;
+      if (!requestKey) throw new Error('No se pudo preparar el pedido. Reintenta.');
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          checkoutKey: requestKey,
           items: checkoutItems,
           paymentMethod,
           shipping: {
@@ -1016,11 +905,19 @@ export default function CartDrawer() {
         paymentStatus: result.payment?.status || order.payment_status || 'pending',
         paymentMessage: result.payment?.message || 'El pago está pendiente de validación.',
       });
+      clearCart();
+      try {
+        sessionStorage.removeItem('polaris_checkout_request');
+      } catch {
+        /* Storage may be disabled. */
+      }
       if (isPaymentApproved(result.payment?.status || order.payment_status)) {
         clearCart();
         setSuccessMessage('Pago aprobado. Pedido confirmado.');
       } else {
-        setSuccessMessage('Solicitud registrada. Conservamos tu carrito hasta aprobar el pago.');
+        setSuccessMessage(
+          'Pedido registrado. Puedes continuar o consultar el pago en Mis pedidos.'
+        );
       }
     } catch (error) {
       console.error('Error iniciando checkout:', error);
@@ -1059,8 +956,8 @@ export default function CartDrawer() {
   ======================================================= */
 
   const cartWhatsAppUrl = useMemo(() => {
-    return buildWhatsAppCartUrl(items);
-  }, [items]);
+    return WA_NUMBER ? buildWhatsAppCartUrl(items, 0, null, WA_NUMBER) : '/#contacto';
+  }, [items, WA_NUMBER]);
 
   const provinceWhatsAppUrl = useMemo(() => {
     const details = provinceQuote
@@ -1070,7 +967,7 @@ export default function CartDrawer() {
       .map((item) => `• ${item.quantity}x ${item.name}`)
       .join('\n')}`;
     return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`;
-  }, [items, provinceQuote, referenceAddress]);
+  }, [items, provinceQuote, referenceAddress, WA_NUMBER]);
 
   /* =======================================================
      RENDER

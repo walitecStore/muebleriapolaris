@@ -89,7 +89,7 @@ export function calculateDistrictShipping(input: DistrictPricing) {
       (!Number.isFinite(input.maximumPrice) || input.maximumPrice < input.minimumPrice))
   )
     throw new Error('Invalid shipping configuration');
-  const deltaKm = input.userDistanceKm - input.centerDistanceKm;
+  const deltaKm = Number((input.userDistanceKm - input.centerDistanceKm).toFixed(2));
   const position: CenterPosition =
     deltaKm < -input.toleranceKm
       ? 'before_center'
@@ -112,6 +112,11 @@ export function calculateDistrictShipping(input: DistrictPricing) {
     deltaKm: Number(deltaKm.toFixed(2)),
     adjustment,
     routePrice: Number(routePrice.toFixed(2)),
-    shippingCost: Number((Math.round(boundedPrice / 5) * 5).toFixed(2)),
+    shippingCost: Number(
+      Math.min(
+        input.maximumPrice ?? Infinity,
+        Math.max(input.minimumPrice, Math.round(boundedPrice / 5) * 5)
+      ).toFixed(2)
+    ),
   };
 }

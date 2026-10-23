@@ -8,7 +8,9 @@ export async function getProducts(): Promise<Product[]> {
 
     .from('products')
 
-    .select('*')
+    .select(
+      'id,category_id,name,slug,description,price,image_url,images,stock,is_active,created_at,updated_at'
+    )
 
     .eq('is_active', true)
 

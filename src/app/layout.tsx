@@ -1,4 +1,5 @@
 import React from 'react';
+import { StoreProvider } from '@/contexts/StoreContext';
 import type { Metadata, Viewport } from 'next';
 
 import '../styles/tailwind.css';
@@ -15,12 +16,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://muebleriapolaris.com'),
 
   title: 'Mueblería Polaris — Sofás de Calidad para tu Hogar',
 
   description:
-    'Descubre nuestra colección exclusiva de sofás modernos, clásicos y de diseño. Compra fácil por WhatsApp con envío gratis y garantía de 2 años.',
+    'Descubre nuestra colección exclusiva de sofás modernos, clásicos y de diseño. Consulta disponibilidad, entregas y condiciones de compra.',
 
   icons: {
     icon: '/favicon.ico',
@@ -31,22 +32,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es">
       <body>
-        <AuthProvider>
-          <FavoritesProvider>
-            <CartProvider>
-              {children}
-              <CartDrawer />
-            </CartProvider>
-          </FavoritesProvider>
-        </AuthProvider>
-
-        <script
-          type="module"
-          async
-          src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2Fmuebleriap8470back.builtwithrocket.new&_be=https%3A%2F%2Fappanalytics.rocket.new&_v=0.1.19"
-        />
-
-        <script type="module" defer src="https://static.rocket.new/rocket-shot.js?v=0.0.2" />
+        <StoreProvider>
+          <AuthProvider>
+            <FavoritesProvider>
+              <CartProvider>
+                {children}
+                <CartDrawer />
+              </CartProvider>
+            </FavoritesProvider>
+          </AuthProvider>
+        </StoreProvider>
       </body>
     </html>
   );

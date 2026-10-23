@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { isPaymentMethodId } from '@/lib/payments';
+import { isPaymentMethodId, manualPaymentReady } from '@/lib/payments';
 
 type Context = { params: Promise<{ orderId: string }> };
 
@@ -13,7 +13,7 @@ export async function GET(_request: Request, { params }: Context) {
   const { data: order, error } = await supabase
     .from('orders')
     .select(
-      'id,order_number,total,payment_method,payment_status,payment_provider,provider_reference,paid_at'
+      'id,status,order_number,total,payment_method,payment_status,payment_provider,provider_reference,paid_at'
     )
     .eq('id', orderId)
     .eq('user_id', auth.user.id)
@@ -33,11 +33,7 @@ export async function GET(_request: Request, { params }: Context) {
       .eq('is_active', true)
       .order('sort_order'),
   ]);
-  const configuredMethods = (methods ?? []).filter((method) => {
-    if (method.code !== 'bank_transfer') return true;
-    const metadata = (method.metadata ?? {}) as Record<string, unknown>;
-    return Boolean(metadata.bank && metadata.account_holder && metadata.account_number);
-  });
+  const configuredMethods = (methods ?? []).filter(manualPaymentReady);
   return NextResponse.json({ order, attempt: attempts?.[0] ?? null, methods: configuredMethods });
 }
 

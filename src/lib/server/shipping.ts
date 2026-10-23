@@ -7,6 +7,15 @@ export const STORE_LOCATION = {
   address: 'Av. 12 de Octubre 1805, San Martín de Porres, Lima',
 } as const;
 
+export type StoreOrigin = { latitude: number; longitude: number; address: string };
+async function fetchWithTimeout(url: string, options: RequestInit = {}) {
+  try {
+    return await fetch(url, { ...options, signal: AbortSignal.timeout(10000) });
+  } catch {
+    return new Response(null, { status: 503 });
+  }
+}
+
 type LocationDetails = {
   address: string;
   district: string | null;
@@ -43,7 +52,7 @@ export async function reverseGeocode(
 ): Promise<LocationDetails> {
   const key = process.env.GOOGLE_MAPS_SERVER_API_KEY;
   if (key) {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&language=es&key=${encodeURIComponent(key)}`,
       { cache: 'no-store' }
     );
@@ -69,7 +78,7 @@ export async function reverseGeocode(
     }
   }
 
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=es`,
     {
       headers: { 'User-Agent': 'MuebleriaPolaris/1.0 (shipping-checkout)' },
@@ -81,28 +90,35 @@ export async function reverseGeocode(
   return locationFromAddress(data.address, data.display_name || 'Ubicación seleccionada');
 }
 
-export async function drivingRoute(latitude: number, longitude: number) {
+export async function drivingRoute(
+  latitude: number,
+  longitude: number,
+  origin: StoreOrigin = STORE_LOCATION
+) {
   const key = process.env.GOOGLE_MAPS_SERVER_API_KEY;
   if (key) {
-    const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': key,
-        'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration',
-      },
-      body: JSON.stringify({
-        origin: {
-          location: {
-            latLng: { latitude: STORE_LOCATION.latitude, longitude: STORE_LOCATION.longitude },
-          },
+    const response = await fetchWithTimeout(
+      'https://routes.googleapis.com/directions/v2:computeRoutes',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': key,
+          'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration',
         },
-        destination: { location: { latLng: { latitude, longitude } } },
-        travelMode: 'DRIVE',
-        routingPreference: 'TRAFFIC_AWARE',
-      }),
-      cache: 'no-store',
-    });
+        body: JSON.stringify({
+          origin: {
+            location: {
+              latLng: { latitude: origin.latitude, longitude: origin.longitude },
+            },
+          },
+          destination: { location: { latLng: { latitude, longitude } } },
+          travelMode: 'DRIVE',
+          routingPreference: 'TRAFFIC_AWARE',
+        }),
+        cache: 'no-store',
+      }
+    );
     const data = response.ok ? await response.json() : null;
     const route = data?.routes?.[0];
     if (route?.distanceMeters) {
@@ -116,8 +132,8 @@ export async function drivingRoute(latitude: number, longitude: number) {
     }
   }
 
-  const response = await fetch(
-    `https://router.project-osrm.org/route/v1/driving/${STORE_LOCATION.longitude},${STORE_LOCATION.latitude};${longitude},${latitude}?overview=false&alternatives=false&steps=false`,
+  const response = await fetchWithTimeout(
+    `https://router.project-osrm.org/route/v1/driving/${origin.longitude},${origin.latitude};${longitude},${latitude}?overview=false&alternatives=false&steps=false`,
     { headers: { Accept: 'application/json' }, cache: 'no-store' }
   );
   const data = response.ok ? await response.json() : null;
@@ -133,7 +149,7 @@ export async function drivingRoute(latitude: number, longitude: number) {
 export async function geocodePublicReference(query: string) {
   const key = process.env.GOOGLE_MAPS_SERVER_API_KEY;
   if (key) {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&region=pe&language=es&key=${encodeURIComponent(key)}`,
       { cache: 'no-store' }
     );
@@ -142,7 +158,7 @@ export async function geocodePublicReference(query: string) {
     if (point && validCoordinate(Number(point.lat), Number(point.lng)))
       return { latitude: Number(point.lat), longitude: Number(point.lng) };
   }
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=pe&q=${encodeURIComponent(query)}`,
     {
       headers: { 'User-Agent': 'MuebleriaPolaris/1.0 (shipping-checkout)' },
@@ -157,12 +173,13 @@ export async function geocodePublicReference(query: string) {
 
 export async function verifyShippingDestination(
   latitude: number,
-  longitude: number
+  longitude: number,
+  origin: StoreOrigin = STORE_LOCATION
 ): Promise<VerifiedRoute> {
   if (!validCoordinate(latitude, longitude))
     throw new Error('Las coordenadas no corresponden a Perú.');
   const [route, location] = await Promise.all([
-    drivingRoute(latitude, longitude),
+    drivingRoute(latitude, longitude, origin),
     reverseGeocode(latitude, longitude),
   ]);
   return { ...route, ...location, distanceKm: Number(route.distanceKm.toFixed(2)) };

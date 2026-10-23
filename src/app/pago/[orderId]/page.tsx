@@ -13,6 +13,7 @@ type Method = {
 };
 type PaymentData = {
   order: {
+    status: string;
     id: string;
     order_number: string;
     total: number;
@@ -100,6 +101,19 @@ export default function PaymentPage() {
     return (
       <main className="min-h-screen bg-slate-50 p-6">
         <p className="mx-auto max-w-3xl rounded-2xl bg-white p-8">{error || 'Recuperando pago…'}</p>
+      </main>
+    );
+  if (data.order.status === 'cancelado')
+    return (
+      <main className="mx-auto max-w-3xl space-y-4 p-8">
+        <h1 className="text-2xl font-black">Pedido cancelado</h1>
+        <p>
+          Este pedido ya no admite pagos. Si realizaste un abono, contacta con la tienda para su
+          revisión.
+        </p>
+        <Link href="/pedidos" className="underline">
+          Volver a mis pedidos
+        </Link>
       </main>
     );
   const meta = selected?.metadata || {};

@@ -1,165 +1,41 @@
 'use client';
-
-import React, { useEffect, useRef } from 'react';
-import { WhatsAppIcon } from '@/components/Header';
-
+import { useStore } from '@/contexts/StoreContext';
+import { whatsappLink } from '@/lib/store-profile';
 export default function ContactCTA() {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.querySelectorAll('.reveal-on-scroll').forEach((el, i) => {
-              setTimeout(() => el.classList.add('revealed'), i * 100);
-            });
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.2 }
-    );
-    if (ref?.current) observer?.observe(ref?.current);
-    return () => observer?.disconnect();
-  }, []);
-
+  const store = useStore(),
+    wa = whatsappLink(store.whatsapp);
   return (
-    <section id="contacto" className="py-20 bg-white" ref={ref}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* CTA side */}
-          <div className="reveal-on-scroll">
-            <span className="inline-block text-secondary font-bold text-sm uppercase tracking-widest mb-4">
-              Contáctanos
-            </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-6 leading-tight">
-              ¿Listo para renovar <span className="text-gradient-teal">tu sala?</span>
-            </h2>
-            <p className="text-muted-foreground text-base sm:text-lg leading-relaxed mb-8">
-              Contáctanos por WhatsApp y recibe asesoría personalizada. Nuestro equipo te ayudará a
-              elegir el sofá perfecto para tu hogar y presupuesto.
-            </p>
-
+    <section id="contacto" className="bg-slate-50 px-6 py-16">
+      <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-2">
+        <div>
+          <p className="text-sm font-bold text-cyan-700">CONTÁCTANOS</p>
+          <h2 className="mt-3 text-4xl font-black">Te ayudamos a elegir</h2>
+          <p className="mt-4 text-slate-600">
+            Consulta disponibilidad, materiales y opciones de entrega con nuestro equipo.
+          </p>
+          {wa && (
             <a
-              href="https://wa.me/51916832791?text=Hola%20Muebler%C3%ADa%20Polaris!%20Quisiera%20asesor%C3%ADa%20para%20elegir%20un%20sof%C3%A1"
+              href={wa}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 px-8 py-4 bg-[#25D366] text-white font-extrabold text-lg rounded-full hover:bg-[#25D366]/90 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#25D366]/30 pulse-ring"
+              className="mt-6 inline-block rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white"
             >
-              <WhatsAppIcon className="w-6 h-6" />
               Escribir por WhatsApp
             </a>
-
-            <p className="mt-4 text-muted-foreground text-sm">
-              Tiempo de respuesta: menos de 30 minutos
+          )}
+        </div>
+        <div className="space-y-3 rounded-2xl border bg-white p-6">
+          <h3 className="text-xl font-bold">{store.name}</h3>
+          {store.address && (
+            <p>
+              {store.address} {store.city}
             </p>
-          </div>
-
-          {/* Info side */}
-          <div className="reveal-on-scroll stagger-2 space-y-5">
-            {/* Store info cards */}
-            <div className="bg-muted/50 rounded-2xl p-6 border border-border">
-              <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-                <svg
-                  className="w-5 h-5 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Horario de Atención
-              </h3>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <div className="flex justify-between">
-                  <span>Lunes – Viernes</span>
-                  <span className="font-semibold text-foreground">6:00am – 9:00am</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Sábado</span>
-                  <span className="font-semibold text-foreground">6:00am – 7:30pm</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Domingo</span>
-                  <span className="font-semibold text-foreground">7:00am – 6:00pm</span>
-                </div>
-                <div className="flex justify-between pt-2 border-t border-border">
-                  <span>WhatsApp</span>
-                  <span className="font-semibold text-[#25D366]">24/7 disponible</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-muted/50 rounded-2xl p-6 border border-border">
-              <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-                <svg
-                  className="w-5 h-5 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                Nuestra Tienda
-              </h3>
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <div className="flex items-start gap-2">
-                  <span className="shrink-0 mt-0.5">📍</span>
-                  <span>Av. Principal 123, Local 45, Ciudad</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>📞</span>
-                  <a href="tel:+51916832791" className="hover:text-primary transition-colors">
-                    +51 916 832 791
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <WhatsAppIcon className="w-4 h-4 text-[#25D366] shrink-0" />
-                  <a
-                    href="https://wa.me/51916832791"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#25D366] font-semibold hover:underline"
-                  >
-                    +51 916 832 791
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* Mini promo */}
-            <div className="bg-gradient-hero rounded-2xl p-5 text-white">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🎁</span>
-                <div>
-                  <div className="font-bold text-sm">Oferta especial</div>
-                  <div className="text-white/80 text-xs mt-0.5">
-                    Menciona este sitio web y obtén <strong>10% de descuento</strong> en tu primera
-                    compra.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
+          {store.phone && <p>{store.phone}</p>}
+          {store.email && <p>{store.email}</p>}
+          {store.hours && (
+            <p className="whitespace-pre-line text-sm text-slate-600">{store.hours}</p>
+          )}
         </div>
       </div>
     </section>

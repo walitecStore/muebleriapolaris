@@ -47,12 +47,15 @@
     "test:shipping-pricing": "node --experimental-strip-types tests/shipping-pricing.test.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
     "serve": "next start",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/core.test.mjs && npm run test:shipping-pricing",
+    "test:database": "node tests/database.test.mjs",
+    "test:browser": "node --experimental-strip-types tests/browser.test.mjs"
   },
   "dependencies": {
     "@dhiwise/component-tagger": "^1.0.15",
     "@heroicons/react": "^2.2.0",
-    "@supabase/ssr": "latest",
+    "@supabase/ssr": "0.12.3",
     "@supabase/supabase-js": "2.110.8",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
@@ -66,9 +69,10 @@
     "recharts": "^2.15.2"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
     "@eslint/eslintrc": "^3",
+    "@eslint/js": "^9.39.4",
     "@netlify/plugin-nextjs": "^5.11.1",
+    "@playwright/test": "1.62.1",
     "@types/leaflet": "^1.9.22",
     "@types/node": "^20",
     "@types/react": "19.0.3",
@@ -85,5 +89,8 @@
     "tailwindcss": "3.4.6",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=22 <25"
   }
 }
