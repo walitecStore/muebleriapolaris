@@ -43,6 +43,8 @@ const cheapProduct = {
 };
 const category = { id: product.category_id, name: 'Salas', slug: 'salas' };
 let lastProductUpdate = null;
+let lastProductCreate = null;
+let productLoadFailure = false;
 let lastProfileUpdate = null;
 let profileFailure = false;
 let storeFailure = false;
@@ -176,7 +178,15 @@ const mock = createServer(async (req, res) => {
     }
   } else if (url.pathname === '/rest/v1/categories') result = [category];
   else if (url.pathname === '/rest/v1/products') {
-    if (req.method === 'PATCH') {
+    if (productLoadFailure && req.method === 'GET') {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: 'Temporary product read failure' }));
+      return;
+    }
+    if (req.method === 'POST') {
+      lastProductCreate = body;
+      result = { id: cheapProduct.id };
+    } else if (req.method === 'PATCH') {
       lastProductUpdate = { body, version: url.searchParams.get('updated_at') };
       result = { id: product.id };
     } else {
@@ -550,10 +560,37 @@ try {
   );
   await page.goto('http://127.0.0.1:4032/admin/productos/nuevo');
   await page.getByLabel('Nombre del producto', { exact: true }).waitFor();
-  await page.goto('http://127.0.0.1:4032/admin/productos/' + product.id);
-  await page.getByLabel('Nombre del producto', { exact: true }).waitFor();
+  await page.getByLabel('Nombre del producto', { exact: true }).fill('Mesa nueva');
+  await page.getByLabel('Descripción', { exact: true }).fill('Mesa de prueba para el catálogo.');
+  await page.getByLabel('Precio S/', { exact: true }).fill('60');
+  await page.getByLabel('Unidades en stock', { exact: true }).fill('12');
+  await page.getByRole('checkbox', { name: 'Visible en la tienda', exact: true }).uncheck();
   await page.getByRole('button', { name: 'Guardar producto', exact: true }).click();
   await page.waitForURL('**/admin/productos');
+  assert.equal(lastProductCreate?.name, 'Mesa nueva');
+  assert.equal(lastProductCreate?.slug, 'mesa-nueva');
+  assert.equal(lastProductCreate?.price, 60);
+  assert.equal(lastProductCreate?.stock, 12);
+  assert.equal(lastProductCreate?.is_active, false);
+  productLoadFailure = true;
+  await page.goto('http://127.0.0.1:4032/admin/productos/' + product.id);
+  await page.getByRole('alert').filter({ hasText: 'No se pudo cargar el formulario' }).waitFor();
+  assert.equal(
+    await page.getByRole('button', { name: 'Guardar producto', exact: true }).count(),
+    0
+  );
+  productLoadFailure = false;
+  await page.getByRole('button', { name: 'Reintentar carga del producto', exact: true }).click();
+  await page.getByLabel('Nombre del producto', { exact: true }).waitFor();
+
+  await page.goto('http://127.0.0.1:4032/admin/productos/' + product.id);
+  await page.getByLabel('Nombre del producto', { exact: true }).waitFor();
+  await page.getByLabel('Precio S/', { exact: true }).fill('275');
+  await page.getByLabel('Unidades en stock', { exact: true }).fill('9');
+  await page.getByRole('button', { name: 'Guardar producto', exact: true }).click();
+  await page.waitForURL('**/admin/productos');
+  assert.equal(lastProductUpdate?.body.price, 275);
+  assert.equal(lastProductUpdate?.body.stock, 9);
   assert.equal(
     lastProductUpdate?.version,
     'eq.' + product.updated_at,

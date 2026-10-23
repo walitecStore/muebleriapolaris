@@ -94,3 +94,17 @@ La aceptación de navegador simula una lectura fallida, comprueba que no existe
 el botón Guardar, reintenta con éxito, modifica el nombre, guarda y recarga para
 comprobar su persistencia. El backend es sintético; los archivos originales del
 logo y QR deben subirlos los propietarios desde el panel.
+
+## Productos: carga segura y pruebas de administración
+
+El editor compartido de dueño y vendedor no permite guardar si falla la carga de
+categorías o del producto, y ofrece reintentar. Esto incluye el alta de productos:
+no se muestra un formulario incompleto como si hubiera cargado correctamente.
+Los vendedores ya no ven el enlace a gestionar categorías globales del dueño.
+
+La aceptación de navegador amplía la cobertura con la creación de un producto
+oculto (nombre, descripción, identificador automático, precio y stock), fallo de
+lectura y recuperación del editor, y cambios de precio y stock en un producto
+existente. Comprueba que el UPDATE mantiene la condición updated_at para rechazar
+ediciones que sobrescriban ventas concurrentes y conserva la imagen de portada.
+Estas pruebas usan datos sintéticos y no crean productos en la tienda alojada.

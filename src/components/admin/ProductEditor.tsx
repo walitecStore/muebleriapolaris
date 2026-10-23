@@ -28,6 +28,8 @@ const columns =
 export default function ProductEditor({ id, sellerId }: { id?: string; sellerId?: string }) {
   const base = sellerId ? '/vender/productos' : '/admin/productos';
   const router = useRouter();
+  const [ready, setReady] = useState(false);
+  const [reload, setReload] = useState(0);
   const [marketReady, setMarketReady] = useState(true);
   const [loadedVersion, setLoadedVersion] = useState<string | null>(null);
   const [form, setForm] = useState(blank),
@@ -38,6 +40,9 @@ export default function ProductEditor({ id, sellerId }: { id?: string; sellerId?
     [error, setError] = useState('');
   useEffect(() => {
     let live = true;
+    setLoading(true);
+    setReady(false);
+    setError('');
     async function load() {
       try {
         const { data, error } = await createClient()
@@ -88,6 +93,7 @@ export default function ProductEditor({ id, sellerId }: { id?: string; sellerId?
                 .join('\n'),
             });
         }
+        if (live) setReady(true);
       } catch {
         if (live)
           setError('No se pudo cargar el formulario. Comprueba la conexión y las migraciones.');
@@ -99,9 +105,10 @@ export default function ProductEditor({ id, sellerId }: { id?: string; sellerId?
     return () => {
       live = false;
     };
-  }, [id, sellerId]);
+  }, [id, sellerId, reload]);
   async function save(e: FormEvent) {
     e.preventDefault();
+    if (!ready || busy) return;
     setError('');
     if (id && !loadedVersion) {
       setError('No se cargó la versión del producto. Recarga la página antes de editar.');
@@ -241,6 +248,17 @@ export default function ProductEditor({ id, sellerId }: { id?: string; sellerId?
         <p role="status" className="py-8">
           Cargando…
         </p>
+      ) : !ready ? (
+        <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-5">
+          <p role="alert">{error}</p>
+          <button
+            type="button"
+            onClick={() => setReload((value) => value + 1)}
+            className="mt-4 rounded-xl border bg-white px-5 py-3 font-bold"
+          >
+            Reintentar carga del producto
+          </button>
+        </div>
       ) : (
         <form onSubmit={save} className="mt-6 space-y-6">
           <section className="grid gap-4 rounded-2xl border bg-white p-5 sm:grid-cols-2">
@@ -285,9 +303,11 @@ export default function ProductEditor({ id, sellerId }: { id?: string; sellerId?
                   </option>
                 ))}
               </select>
-              <Link href="/admin/categorias" className="mt-2 block text-xs text-cyan-700">
-                Gestionar categorías
-              </Link>
+              {!sellerId && (
+                <Link href="/admin/categorias" className="mt-2 block text-xs text-cyan-700">
+                  Gestionar categorías
+                </Link>
+              )}
             </label>
             <label className="text-sm font-semibold sm:col-span-2">
               Descripción
