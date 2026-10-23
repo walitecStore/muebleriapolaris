@@ -9,6 +9,7 @@ import { readRequestJson, RequestJsonError } from '@/lib/request-json';
 
 type CheckoutBody = {
   checkoutKey: string;
+  couponId?: string;
   items?: { productId?: string; variantId?: string | null; quantity?: number }[];
   paymentMethod?: PaymentMethodId;
   shipping?: { latitude?: number; longitude?: number; address?: string; reference?: string };
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
     p_items: body.items,
     p_payment_method: method.id,
     p_shipping: {
+      couponId: body.couponId || null,
       latitude,
       longitude,
       distanceKm: destination.distanceKm,

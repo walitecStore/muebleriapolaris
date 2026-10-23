@@ -417,9 +417,68 @@ export default function CartDrawer() {
     }, 0);
   }, [items]);
 
+  const [couponId, setCouponId] = useState('');
+  const [pricing, setPricing] = useState<{
+    subtotal: number;
+    discount: number;
+    eligibleSubtotal: number;
+    couponApplied: boolean;
+  } | null>(null);
+  const [pricingError, setPricingError] = useState('');
+  useEffect(() => {
+    const refresh = () => {
+      try {
+        const coupon = JSON.parse(localStorage.getItem('polaris_coupon') || 'null');
+        setCouponId(coupon?.id || '');
+      } catch {
+        setCouponId('');
+      }
+    };
+    refresh();
+    window.addEventListener('polaris:coupon', refresh);
+    return () => window.removeEventListener('polaris:coupon', refresh);
+  }, []);
+  useEffect(() => {
+    setPricing(null);
+    setPricingError('');
+    if (!items.length) return;
+    const c = new AbortController();
+    const timer = setTimeout(() => {
+      fetch('/api/cart-pricing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: c.signal,
+        body: JSON.stringify({
+          items: items.map((i) => ({
+            productId: String(i.id),
+            variantId: i.variantId || null,
+            quantity: i.quantity,
+          })),
+          ...(couponId ? { couponId } : {}),
+        }),
+      })
+        .then(async (r) => {
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.error);
+          return d;
+        })
+        .then(setPricing)
+        .catch(() => {
+          if (!c.signal.aborted)
+            setPricingError(
+              'No se pudieron comprobar las ofertas. El total definitivo se validará al crear el pedido.'
+            );
+        });
+    }, 250);
+    return () => {
+      c.abort();
+      clearTimeout(timer);
+    };
+  }, [items, couponId]);
   const shippingCost = shippingQuote?.cost ?? 0;
 
-  const grandTotal = productsTotal + shippingCost;
+  const discount = pricing?.discount || 0;
+  const grandTotal = (pricing?.subtotal ?? productsTotal) + shippingCost - discount;
 
   const totalItems = useMemo(() => {
     return items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
@@ -856,6 +915,7 @@ export default function CartDrawer() {
         items: checkoutItems,
         paymentMethod,
         selectedLocation,
+        couponId: pricing?.couponApplied ? couponId : null,
         reference: referenceAddress.trim(),
       });
       if (checkoutRequest.current?.fingerprint !== fingerprint) {
@@ -884,6 +944,7 @@ export default function CartDrawer() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           checkoutKey: requestKey,
+          ...(pricing?.couponApplied && couponId ? { couponId } : {}),
           items: checkoutItems,
           paymentMethod,
           shipping: {
@@ -1526,6 +1587,33 @@ export default function CartDrawer() {
                       <span>{shippingQuote ? formatMoney(shippingCost) : 'Pendiente'}</span>
                     </div>
 
+                    {discount > 0 && (
+                      <div className="flex justify-between text-emerald-700">
+                        <span>Descuento Polaris</span>
+                        <strong>−{formatMoney(discount)}</strong>
+                      </div>
+                    )}
+                    {pricingError && <p className="text-xs text-amber-800">{pricingError}</p>}
+                    {couponId && (
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span>
+                          {pricing?.couponApplied
+                            ? 'Cupón listo para aplicar'
+                            : pricing && pricing.eligibleSubtotal >= 150
+                              ? 'El descuento por monto es igual o mayor; conservas tu cupón'
+                              : 'Cupón guardado; requiere S/150 elegibles'}
+                        </span>
+                        <button
+                          onClick={() => {
+                            localStorage.removeItem('polaris_coupon');
+                            setCouponId('');
+                          }}
+                          className="underline"
+                        >
+                          Quitar cupón
+                        </button>
+                      </div>
+                    )}
                     <div className="border-t border-border pt-3 mt-3 flex justify-between items-center">
                       <strong>TOTAL</strong>
 

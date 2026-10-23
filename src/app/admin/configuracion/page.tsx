@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, type FormEvent } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import BrandUploads from '@/components/admin/BrandUploads';
 import { emptyStore, publicWebUrl, type StoreProfile } from '@/lib/store-profile';
 const groups: { title: string; fields: [keyof StoreProfile, string, string?][] }[] = [
   {
@@ -10,6 +11,14 @@ const groups: { title: string; fields: [keyof StoreProfile, string, string?][] }
       ['description', 'Descripción', 'textarea'],
       ['logo_url', 'URL del logo', 'url'],
       ['tax_id', 'RUC o identificación comercial'],
+    ],
+  },
+  {
+    title: 'Cobro de membresías de vendedores',
+    fields: [
+      ['membership_yape_phone', 'Número Yape'],
+      ['membership_payee', 'Nombre del titular de Yape'],
+      ['membership_qr_url', 'URL del QR real de Yape', 'url'],
     ],
   },
   {
@@ -46,6 +55,7 @@ const groups: { title: string; fields: [keyof StoreProfile, string, string?][] }
   },
 ];
 export default function StoreConfiguration() {
+  const [available, setAvailable] = useState<string[]>(Object.keys(emptyStore));
   const [form, setForm] = useState<StoreProfile>(emptyStore),
     [loading, setLoading] = useState(true),
     [saving, setSaving] = useState(false),
@@ -62,7 +72,10 @@ export default function StoreConfiguration() {
         if (!live) return;
         if (error)
           setError('No se pudo cargar el perfil. Aplica la migración del panel antes de guardar.');
-        else setForm({ ...emptyStore, ...data });
+        else {
+          setForm({ ...emptyStore, ...data });
+          setAvailable(Object.keys(data));
+        }
         setLoading(false);
       });
     return () => {
@@ -79,6 +92,7 @@ export default function StoreConfiguration() {
     }
     for (const key of [
       'logo_url',
+      'membership_qr_url',
       'site_url',
       'instagram_url',
       'facebook_url',
@@ -106,12 +120,14 @@ export default function StoreConfiguration() {
     setSaving(true);
     try {
       const payload = Object.fromEntries(
-        Object.keys(emptyStore).map((k) => [
-          k,
-          k === 'origin_lat' || k === 'origin_lng'
-            ? Number(form[k])
-            : String(form[k as keyof StoreProfile]).trim(),
-        ])
+        Object.keys(emptyStore)
+          .filter((k) => available.includes(k))
+          .map((k) => [
+            k,
+            k === 'origin_lat' || k === 'origin_lng'
+              ? Number(form[k])
+              : String(form[k as keyof StoreProfile]).trim(),
+          ])
       );
       const { data, error } = await createClient()
         .from('store_settings')
@@ -140,6 +156,7 @@ export default function StoreConfiguration() {
         </p>
       ) : (
         <form onSubmit={save} className="mt-7 space-y-6">
+          <BrandUploads onUploaded={(field, url) => setForm((f) => ({ ...f, [field]: url }))} />
           {groups.map((g) => (
             <section key={g.title} className="rounded-2xl border bg-white p-5">
               <h2 className="mb-5 font-bold">{g.title}</h2>

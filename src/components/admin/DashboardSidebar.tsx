@@ -24,6 +24,7 @@ const menu = [
   ['Reseñas', '/admin/resenas', Users],
   ['Pedidos', '/admin/pedidos', ShoppingCart],
   ['Devoluciones', '/admin/devoluciones', Undo2],
+  ['Vendedores y membresías', '/admin/vendedores', Users],
   ['Clientes', '/admin/clientes', Users],
   ['Ventas y reportes', '/admin/estadisticas', BarChart3],
   ['Medios de pago', '/admin/pagos', CreditCard],

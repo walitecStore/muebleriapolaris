@@ -4,6 +4,7 @@ import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import { useCart } from '@/app/components/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFavorites } from '@/contexts/FavoritesContext';
 import { createClient } from '@/lib/supabase/client';
 type Variant = {
   id: string;
@@ -25,9 +26,11 @@ type Product = {
   category: string;
   variants: Variant[];
   sku?: string;
+  seller_id?: string;
   reviews: { id: string; name: string; rating: number; title: string; text: string }[];
 };
 export default function ProductDetail({ id }: { id: string }) {
+  const { isFavorite, toggleFavorite, error: favoriteError } = useFavorites();
   const { addItem } = useCart(),
     { user } = useAuth();
   const [product, setProduct] = useState<Product | null>(null),
@@ -158,6 +161,26 @@ export default function ProductDetail({ id }: { id: string }) {
         <section className="space-y-5">
           <p className="text-sm text-cyan-700">{product.category}</p>
           <h1 className="text-4xl font-black">{product.name}</h1>
+          {product.seller_id && (
+            <Link
+              href={`/tiendas/${product.seller_id}`}
+              className="mt-2 inline-block text-sm text-cyan-700 underline"
+            >
+              Ver tienda del vendedor
+            </Link>
+          )}
+          <button
+            onClick={() => void toggleFavorite(product.id, product.name)}
+            aria-pressed={isFavorite(product.id)}
+            className="mt-3 rounded-full border border-rose-200 px-4 py-2 text-sm font-bold text-rose-600"
+          >
+            {isFavorite(product.id) ? '♥ Guardado en favoritos' : '♡ Guardar en favoritos'}
+          </button>
+          {favoriteError && (
+            <p role="status" className="text-xs text-rose-700">
+              {favoriteError}
+            </p>
+          )}
           <p className="text-3xl font-black">
             {new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(price)}
           </p>

@@ -1,42 +1,47 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import AppImage from '@/components/ui/AppImage';
-import { useCart } from '@/app/components/CartContext';
-type Product = {
-  id: string;
-  name: string;
-  price: string;
-  image: string;
-  stock: number;
-  category: string;
-  category_id: string;
-  isFeatured: boolean;
-  description: string;
-};
+import ProductCard, { type CatalogProduct as Product } from '@/components/ProductCard';
+import { saveSearch } from '@/lib/discovery';
 type Category = { id: string; name: string; slug: string };
 export default function RealCatalog({
   featured = false,
   category,
+  offers = false,
+  searchTerm = '',
+  favoriteIds,
+  sellerId,
 }: {
   featured?: boolean;
   category?: string;
+  offers?: boolean;
+  searchTerm?: string;
+  favoriteIds?: string[];
+  sellerId?: string;
 }) {
-  const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]),
     [categories, setCategories] = useState<Category[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(''),
-    [search, setSearch] = useState(''),
+    [search, setSearch] = useState(searchTerm),
+    [term, setTerm] = useState(searchTerm),
     [page, setPage] = useState(0),
     [more, setMore] = useState(false),
     [reload, setReload] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setTerm(search.trim());
+      setPage(0);
+      saveSearch(search);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
   useEffect(() => {
     const c = new AbortController();
     setLoading(true);
     setError('');
     fetch(
-      `/api/products?active=true&page=${page}${featured ? '&featured=true' : ''}${category ? '&category=' + encodeURIComponent(category) : ''}`,
+      `/api/products?active=true&page=${page}${featured ? '&featured=true' : ''}${category ? '&category=' + encodeURIComponent(category) : ''}${offers ? '&offers=true' : ''}${term ? '&search=' + encodeURIComponent(term) : ''}${favoriteIds ? '&ids=' + favoriteIds.join(',') : ''}${sellerId ? '&seller=' + sellerId : ''}`,
       { signal: c.signal, cache: 'no-store' }
     )
       .then(async (r) => {
@@ -56,10 +61,8 @@ export default function RealCatalog({
         if (!c.signal.aborted) setLoading(false);
       });
     return () => c.abort();
-  }, [page, category, featured, reload]);
-  const visible = products.filter((p) =>
-    p.name.toLocaleLowerCase('es').includes(search.toLocaleLowerCase('es'))
-  );
+  }, [page, category, featured, reload, term, offers, favoriteIds, sellerId]);
+  const visible = products;
   return (
     <section
       id={featured ? 'destacados' : 'catalogo'}
@@ -71,9 +74,13 @@ export default function RealCatalog({
             Colección Polaris
           </p>
           <h2 className="mt-2 text-3xl font-black">
-            {featured
-              ? 'Productos destacados'
-              : categories.find((c) => c.slug === category)?.name || 'Nuestro catálogo'}
+            {offers
+              ? 'Arma tu oferta: S/10 menos por cada S/150'
+              : favoriteIds
+                ? 'Tus favoritos'
+                : featured
+                  ? 'Productos destacados'
+                  : categories.find((c) => c.slug === category)?.name || 'Nuestro catálogo'}
           </h2>
         </div>
         {featured ? (
@@ -82,7 +89,7 @@ export default function RealCatalog({
           </Link>
         ) : (
           <input
-            aria-label="Buscar en los productos cargados"
+            aria-label="Buscar productos"
             placeholder="Buscar producto…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -120,49 +127,13 @@ export default function RealCatalog({
         <>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {visible.map((p) => (
-              <article key={p.id} className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-                <Link href={`/productos/${p.id}`} className="relative block h-56 bg-slate-100">
-                  <AppImage
-                    src={p.image}
-                    alt={p.name}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                    sizes="(max-width:640px) 100vw,(max-width:1024px) 50vw,25vw"
-                  />
-                </Link>
-                <div className="space-y-3 p-5">
-                  <p className="text-xs text-slate-500">{p.category}</p>
-                  <h3 className="font-bold">
-                    <Link href={`/productos/${p.id}`}>{p.name}</Link>
-                  </h3>
-                  <p className="text-xl font-black">{p.price}</p>
-                  <p className={`text-xs ${p.stock > 0 ? 'text-emerald-700' : 'text-slate-500'}`}>
-                    {p.stock > 0 ? 'Disponible' : 'Agotado'}
-                  </p>
-                  <button
-                    disabled={p.stock < 1}
-                    onClick={() =>
-                      addItem({
-                        id: p.id,
-                        name: p.name,
-                        price: p.price,
-                        image: p.image,
-                        alt: p.name,
-                      })
-                    }
-                    className="w-full rounded-xl bg-slate-950 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
-                  >
-                    {p.stock > 0 ? 'Agregar al carrito' : 'Sin existencias'}
-                  </button>
-                </div>
-              </article>
+              <ProductCard key={p.id} product={p} />
             ))}
           </div>
           {!loading && !visible.length && (
             <p className="rounded-xl bg-slate-50 p-8 text-center text-slate-500">
               {search
-                ? 'No hay coincidencias en los productos cargados.'
+                ? 'No encontramos productos para esa búsqueda.'
                 : 'No hay productos disponibles en esta selección.'}
             </p>
           )}

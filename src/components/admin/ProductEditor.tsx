@@ -19,11 +19,16 @@ const blank = {
   images: '',
   is_active: true,
   is_featured: false,
+  delivery_vehicle: 'truck',
+  delivery_partner: 'polaris',
+  promotion_eligible: true,
 };
 const columns =
-  'id,name,slug,description,price,sale_price,stock,category_id,sku,color,material,shipping_factor,images,image_url,is_active,is_featured,updated_at';
-export default function ProductEditor({ id }: { id?: string }) {
+  'id,name,slug,description,price,sale_price,stock,category_id,sku,color,material,shipping_factor,images,image_url,is_active,is_featured,updated_at,delivery_vehicle,delivery_partner,promotion_eligible';
+export default function ProductEditor({ id, sellerId }: { id?: string; sellerId?: string }) {
+  const base = sellerId ? '/vender/productos' : '/admin/productos';
   const router = useRouter();
+  const [marketReady, setMarketReady] = useState(true);
   const [loadedVersion, setLoadedVersion] = useState<string | null>(null);
   const [form, setForm] = useState(blank),
     [categories, setCategories] = useState<{ id: string; name: string }[]>([]),
@@ -41,12 +46,26 @@ export default function ProductEditor({ id }: { id?: string }) {
           .order('name');
         if (error) throw error;
         if (live) setCategories(data || []);
+        if (!id && !sellerId) {
+          const check = await createClient().from('products').select('promotion_eligible').limit(1);
+          if (check.error) setMarketReady(false);
+        }
         if (id) {
-          const { data: p, error } = await createClient()
+          let { data: p, error } = await createClient()
             .from('products')
             .select(columns)
             .eq('id', id)
             .single();
+          if (error && !sellerId) {
+            const legacy = await createClient()
+              .from('products')
+              .select(columns.replace(',delivery_vehicle,delivery_partner,promotion_eligible', ''))
+              .eq('id', id)
+              .single();
+            p = legacy.data as typeof p;
+            error = legacy.error;
+            setMarketReady(false);
+          }
           if (error || !p) throw error;
           if (live) setLoadedVersion(p.updated_at);
           if (live)
@@ -80,7 +99,7 @@ export default function ProductEditor({ id }: { id?: string }) {
     return () => {
       live = false;
     };
-  }, [id]);
+  }, [id, sellerId]);
   async function save(e: FormEvent) {
     e.preventDefault();
     setError('');
@@ -147,7 +166,7 @@ export default function ProductEditor({ id }: { id?: string }) {
     try {
       const db = createClient();
       for (const file of files) {
-        const path = `products/${crypto.randomUUID()}.${file.type === 'image/jpeg' ? 'jpg' : file.type.split('/')[1]}`;
+        const path = `${sellerId || 'products'}/${crypto.randomUUID()}.${file.type === 'image/jpeg' ? 'jpg' : file.type.split('/')[1]}`;
         const { error } = await db.storage
           .from('product-images')
           .upload(path, file, { upsert: false, contentType: file.type });
@@ -158,7 +177,7 @@ export default function ProductEditor({ id }: { id?: string }) {
         uploaded.push(path);
         urls.push(db.storage.from('product-images').getPublicUrl(path).data.publicUrl);
       }
-      const payload = {
+      const payload: Record<string, unknown> = {
         name: form.name.trim(),
         slug,
         description: form.description.trim(),
@@ -173,8 +192,16 @@ export default function ProductEditor({ id }: { id?: string }) {
         images: urls,
         image_url: urls[0] || null,
         is_active: form.is_active,
-        is_featured: form.is_featured,
+        ...(sellerId ? { seller_id: sellerId } : { is_featured: form.is_featured }),
+        delivery_vehicle: form.delivery_vehicle,
+        delivery_partner: form.delivery_partner,
+        promotion_eligible: form.promotion_eligible,
       };
+      if (!marketReady) {
+        delete payload.delivery_vehicle;
+        delete payload.delivery_partner;
+        delete payload.promotion_eligible;
+      }
       const q = id
         ? db
             .from('products')
@@ -191,7 +218,7 @@ export default function ProductEditor({ id }: { id?: string }) {
             : 'No se pudo guardar. Revisa el identificador y el SKU; deben ser únicos.'
         );
       }
-      router.push('/admin/productos');
+      router.push(base);
       router.refresh();
     } catch (e) {
       if (canRemoveUploads && uploaded.length)
@@ -203,7 +230,7 @@ export default function ProductEditor({ id }: { id?: string }) {
   }
   return (
     <main className="mx-auto max-w-4xl p-4 sm:p-8">
-      <Link href="/admin/productos" className="text-sm text-cyan-700">
+      <Link href={base} className="text-sm text-cyan-700">
         ← Productos
       </Link>
       <h1 className="mt-4 text-3xl font-black">{id ? 'Editar producto' : 'Agregar producto'}</h1>
@@ -274,6 +301,40 @@ export default function ProductEditor({ id }: { id?: string }) {
               />
             </label>
           </section>
+          <section className="grid gap-4 rounded-2xl border bg-white p-5 sm:grid-cols-2">
+            <h2 className="font-bold sm:col-span-2">Entrega y ofertas</h2>
+            <label className="text-sm">
+              Vehículo
+              <select
+                value={form.delivery_vehicle}
+                onChange={(e) => setForm({ ...form, delivery_vehicle: e.target.value })}
+                className="mt-2 w-full rounded-xl border p-3"
+              >
+                <option value="motorcycle">Motorizado (pequeño)</option>
+                <option value="truck">Camión (grande)</option>
+              </select>
+            </label>
+            <label className="text-sm">
+              Coordinar con
+              <select
+                value={form.delivery_partner}
+                onChange={(e) => setForm({ ...form, delivery_partner: e.target.value })}
+                className="mt-2 w-full rounded-xl border p-3"
+              >
+                <option value="polaris">Polaris</option>
+                <option value="independent">Transportista particular</option>
+              </select>
+            </label>
+            <label className="flex items-start gap-2 text-sm sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={form.promotion_eligible}
+                onChange={(e) => setForm({ ...form, promotion_eligible: e.target.checked })}
+              />
+              Participar en descuentos Polaris si el precio es de hasta S/60. El descuento reduce el
+              importe de esta venta; no lo financia un tercero.
+            </label>
+          </section>
           <section className="space-y-4 rounded-2xl border bg-white p-5">
             <h2 className="font-bold">Fotos del producto</h2>
             <label className="block text-sm">
@@ -310,14 +371,16 @@ export default function ProductEditor({ id }: { id?: string }) {
               />
               Visible en la tienda
             </label>
-            <label className="flex gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.is_featured}
-                onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
-              />
-              Mostrar en destacados
-            </label>
+            {!sellerId && (
+              <label className="flex gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.is_featured}
+                  onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
+                />
+                Mostrar en destacados
+              </label>
+            )}
           </section>
           {error && (
             <p role="alert" className="rounded-xl bg-rose-50 p-4 text-rose-800">

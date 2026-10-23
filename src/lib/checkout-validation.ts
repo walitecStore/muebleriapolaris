@@ -27,6 +27,12 @@ export function validCheckoutBody(value: unknown) {
     })
   )
     return false;
+  if (
+    b.couponId !== undefined &&
+    b.couponId !== null &&
+    (typeof b.couponId !== 'string' || !uuid.test(b.couponId))
+  )
+    return false;
   const s = b.shipping as Record<string, unknown> | undefined;
   return (
     !!s &&

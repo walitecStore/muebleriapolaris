@@ -22,6 +22,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/admin/:path*',
+    '/vender/:path*',
     '/perfil',
     '/pedidos',
     '/direcciones',
@@ -29,5 +30,7 @@ export const config = {
     '/api/checkout',
     '/api/payments/:path*',
     '/api/admin/:path*',
+    '/api/seller/:path*',
+    '/api/cart-pricing',
   ],
 };

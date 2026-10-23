@@ -16,3 +16,7 @@ usa los servicios públicos OSRM y Nominatim como fallback sin secretos, apropia
 desarrollo o contingencia pero sin SLA. Las tarifas se administran en
 `shipping_distance_bands` y `shipping_zone_adjustments` después de ejecutar manualmente la
 migración de Etapa 5.
+
+## Plataforma Polaris
+
+Registro de vendedores, membresía, ofertas y aplicación instalable: [activación y operación](docs/POLARIS_MARKETPLACE_Y_APP.md).

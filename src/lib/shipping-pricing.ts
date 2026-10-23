@@ -120,3 +120,36 @@ export function calculateDistrictShipping(input: DistrictPricing) {
     ),
   };
 }
+
+/** Nominatim reports Comas/Miraflores as city and Lima Metropolitana as state_district. */
+export function shippingLocationDetails(
+  address: Record<string, string | undefined>,
+  displayName: string
+) {
+  const district =
+    address.district ||
+    address.city_district ||
+    address.municipality ||
+    address.suburb ||
+    address.city ||
+    null;
+  const districtCandidates = [
+    address.district,
+    address.city_district,
+    address.municipality,
+    address.town,
+    address.city,
+    address.suburb,
+  ].filter((x): x is string => !!x);
+  const province =
+    address.province || address.county || address.state_district || address.city || null;
+  const department = address.state || address.region || null;
+  return {
+    address: displayName,
+    district,
+    districtCandidates,
+    province,
+    department,
+    isLimaMetropolitana: territoryKind(province, department) === 'lima_metropolitana',
+  };
+}

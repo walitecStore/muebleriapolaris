@@ -1,5 +1,5 @@
 import 'server-only';
-import { isValidPeruCoordinate, territoryKind } from '@/lib/shipping-pricing';
+import { isValidPeruCoordinate, shippingLocationDetails } from '@/lib/shipping-pricing';
 
 export const STORE_LOCATION = {
   latitude: -11.993057,
@@ -19,6 +19,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}) {
 type LocationDetails = {
   address: string;
   district: string | null;
+  districtCandidates?: string[];
   province: string | null;
   department: string | null;
   isLimaMetropolitana: boolean;
@@ -38,12 +39,7 @@ function locationFromAddress(
   address: Record<string, string | undefined>,
   displayName: string
 ): LocationDetails {
-  const district = address.city_district || address.district || address.suburb || null;
-  const province = address.province || address.city || address.county || null;
-  const department = address.state || address.region || null;
-  const isLimaMetropolitana = territoryKind(province, department) === 'lima_metropolitana';
-
-  return { address: displayName, district, province, department, isLimaMetropolitana };
+  return shippingLocationDetails(address, displayName);
 }
 
 export async function reverseGeocode(
@@ -81,7 +77,7 @@ export async function reverseGeocode(
   const response = await fetchWithTimeout(
     `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=es`,
     {
-      headers: { 'User-Agent': 'MuebleriaPolaris/1.0 (shipping-checkout)' },
+      headers: { 'User-Agent': 'Polaris/1.0 (+https://muebleriapolaris.com)' },
       cache: 'no-store',
     }
   );
@@ -161,7 +157,7 @@ export async function geocodePublicReference(query: string) {
   const response = await fetchWithTimeout(
     `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=pe&q=${encodeURIComponent(query)}`,
     {
-      headers: { 'User-Agent': 'MuebleriaPolaris/1.0 (shipping-checkout)' },
+      headers: { 'User-Agent': 'Polaris/1.0 (+https://muebleriapolaris.com)' },
       cache: 'no-store',
     }
   );
@@ -171,7 +167,7 @@ export async function geocodePublicReference(query: string) {
   return { latitude: Number(point.lat), longitude: Number(point.lon) };
 }
 
-export async function verifyShippingDestination(
+async function verifyDestinationUncached(
   latitude: number,
   longitude: number,
   origin: StoreOrigin = STORE_LOCATION
@@ -183,4 +179,31 @@ export async function verifyShippingDestination(
     reverseGeocode(latitude, longitude),
   ]);
   return { ...route, ...location, distanceKm: Number(route.distanceKm.toFixed(2)) };
+}
+
+const routeCache = new Map<string, { expires: number; value: VerifiedRoute }>();
+const pendingRoutes = new Map<string, Promise<VerifiedRoute>>();
+export async function verifyShippingDestination(
+  latitude: number,
+  longitude: number,
+  origin: StoreOrigin = STORE_LOCATION
+): Promise<VerifiedRoute> {
+  if (!validCoordinate(latitude, longitude))
+    throw new Error('Las coordenadas no corresponden a Perú.');
+  const key = [latitude.toFixed(5), longitude.toFixed(5), origin.latitude, origin.longitude].join(
+    ':'
+  );
+  const cached = routeCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.value;
+  const existing = pendingRoutes.get(key);
+  if (existing) return existing;
+  const work = verifyDestinationUncached(latitude, longitude, origin)
+    .then((value) => {
+      if (routeCache.size >= 128) routeCache.delete(routeCache.keys().next().value!);
+      routeCache.set(key, { expires: Date.now() + 300000, value });
+      return value;
+    })
+    .finally(() => pendingRoutes.delete(key));
+  pendingRoutes.set(key, work);
+  return work;
 }

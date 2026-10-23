@@ -1,7 +1,10 @@
 export const emptyStore = {
-  name: 'Mueblería Polaris',
+  name: 'Polaris',
   description: '',
   logo_url: '',
+  membership_yape_phone: '916832791',
+  membership_qr_url: '',
+  membership_payee: '',
   phone: '',
   whatsapp: '',
   email: '',

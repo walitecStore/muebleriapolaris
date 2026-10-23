@@ -70,6 +70,7 @@ try {
     sql(readFileSync(new URL('../supabase/migrations/' + f, import.meta.url), 'utf8'));
   console.info(`Applied ${migrations.length} migrations to disposable Postgres 17`);
   sql(readFileSync(new URL('./database/acceptance.sql', import.meta.url), 'utf8'));
+  sql(readFileSync(new URL('./database/marketplace.sql', import.meta.url), 'utf8'));
   const checkout = (key) =>
     `BEGIN;SET LOCAL ROLE service_role;SELECT set_config('request.jwt.claim.role','service_role',true);SELECT * FROM public.create_server_validated_order('22222222-2222-4222-8222-222222222222','[{"productId":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","quantity":1}]','yape','{"latitude":-12,"longitude":-77,"district":"Comas","shippingType":"lima_delivery","quoteStatus":"calculated","distanceKm":10,"centerDistanceKm":10,"centerDeltaKm":0,"basePrice":70,"shippingAmount":70}','${key}');SELECT pg_sleep(0.15);COMMIT;`;
   function concurrent(text) {

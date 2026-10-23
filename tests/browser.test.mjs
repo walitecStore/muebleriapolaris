@@ -21,6 +21,9 @@ const product = {
   images: [],
   is_active: true,
   is_featured: true,
+  promotion_eligible: true,
+  delivery_vehicle: 'truck',
+  delivery_partner: 'polaris',
   category_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
   created_at: '2026-01-01T00:00:00Z',
   variants: [],
@@ -30,6 +33,13 @@ const product = {
   material: '',
   shipping_factor: 1,
   updated_at: '2026-01-01T00:00:00.000Z',
+};
+const cheapProduct = {
+  ...product,
+  id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+  name: 'Accesorio de prueba',
+  slug: 'accesorio-prueba',
+  price: 50,
 };
 const category = { id: product.category_id, name: 'Salas', slug: 'salas' };
 let lastProductUpdate = null;
@@ -138,10 +148,42 @@ const mock = createServer(async (req, res) => {
     if (req.method === 'PATCH') {
       lastProductUpdate = { body, version: url.searchParams.get('updated_at') };
       result = { id: product.id };
-    } else result = [product];
-    res.setHeader('Content-Range', '0-0/1');
+    } else {
+      result = [product, cheapProduct];
+      const ids = url.searchParams.get('id');
+      if (ids?.startsWith('eq.')) result = result.filter((p) => p.id === ids.slice(3));
+      else if (ids?.startsWith('in.(')) result = result.filter((p) => ids.includes(p.id));
+      if (url.searchParams.has('or'))
+        result = result.filter((p) => (p.sale_price ?? p.price) <= 60 && p.promotion_eligible);
+      if (url.searchParams.get('sale_price') === 'not.is.null')
+        result = result.filter((p) => p.sale_price !== null);
+    }
+    res.setHeader('Content-Range', '0-1/2');
   } else if (url.pathname === '/rest/v1/payment_methods')
     result = [{ code: 'yape', label: 'Yape', metadata: {}, is_active: false }];
+  else if (url.pathname === '/rest/v1/seller_profiles')
+    result = [
+      {
+        user_id: buyerId,
+        display_name: 'Vendedor de prueba',
+        phone: '999999999',
+        approved_until: '2099-01-01T00:00:00Z',
+        suspended: false,
+        delivery_vehicle: 'motorcycle',
+        delivery_partner: 'polaris',
+      },
+    ];
+  else if (url.pathname === '/rest/v1/rpc/claim_daily_coupon')
+    result = {
+      id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      user_id: buyerId,
+      amount: 10,
+      minimum_subtotal: 150,
+      expires_at: '2099-01-01T00:00:00Z',
+      used_order_id: null,
+    };
+  else if (url.pathname === '/rest/v1/rpc/seller_sales_report')
+    result = { gross: 150, discount: 10, refunds: 0, net: 140, orders: 1, units: 3 };
   else if (url.pathname.startsWith('/rest/v1/')) result = [];
   else {
     status = 404;
@@ -226,8 +268,53 @@ try {
   assert.match(callback.headers().location, /\/login\?error=confirmation$/);
   await publicPage.goto('http://127.0.0.1:4032/catalogo');
   await publicPage.getByRole('link', { name: product.name, exact: true }).first().waitFor();
-  await publicPage.getByRole('button', { name: 'Agregar al carrito', exact: true }).click();
+  await publicPage.getByRole('link', { name: 'Ver detalles', exact: true }).first().waitFor();
+  await publicPage
+    .getByRole('button', { name: 'Guardar en favoritos: ' + product.name, exact: true })
+    .click();
+  await publicPage.reload();
+  await publicPage
+    .getByRole('button', { name: 'Quitar de favoritos: ' + product.name, exact: true })
+    .waitFor();
+  await publicPage.setViewportSize({ width: 1440, height: 1000 });
+  await publicPage.screenshot({
+    path: join(artifacts, 'polaris-catalog-desktop.png'),
+    fullPage: true,
+  });
+  await publicPage.setViewportSize({ width: 390, height: 844 });
+  assert.ok(
+    await publicPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+    'Catalog header overflows on mobile'
+  );
+  await publicPage.screenshot({
+    path: join(artifacts, 'polaris-catalog-mobile.png'),
+    fullPage: true,
+  });
+  await publicPage.goto('http://127.0.0.1:4032/favoritos');
+  await publicPage.getByRole('link', { name: 'Ver detalles', exact: true }).first().waitFor();
+  await publicPage.goto('http://127.0.0.1:4032/productos/' + product.id);
+  await publicPage.getByRole('heading', { name: product.name, exact: true }).waitFor();
+  await publicPage.goto('http://127.0.0.1:4032/instalar');
+  await publicPage.getByRole('heading', { name: 'Instala Polaris', exact: true }).waitFor();
+  assert.equal(
+    (await publicPage.request.get('http://127.0.0.1:4032/manifest.webmanifest')).status(),
+    200
+  );
+  await publicPage.goto('http://127.0.0.1:4032/catalogo');
+  await publicPage.getByRole('button', { name: 'Agregar al carrito', exact: true }).first().click();
   await publicPage.getByRole('dialog', { name: 'Carrito de compras' }).waitFor();
+  const pricingResponse = await publicPage.request.post('http://127.0.0.1:4032/api/cart-pricing', {
+    data: { items: [{ productId: cheapProduct.id, quantity: 3 }] },
+  });
+  assert.equal(pricingResponse.status(), 200);
+  assert.equal((await pricingResponse.json()).discount, 10);
+  await publicPage.goto('http://127.0.0.1:4032/ofertas');
+  await publicPage.getByRole('link', { name: cheapProduct.name, exact: true }).waitFor();
+  assert.equal(
+    await publicPage.getByRole('link', { name: product.name, exact: true }).count(),
+    0,
+    'S/250 product leaked into offer selection'
+  );
   await anonymous.close();
   async function signedContext(id) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
@@ -256,6 +343,15 @@ try {
   assert.match(customerPage.url(), /access=denied/);
   const forbidden = await customerPage.request.get('http://127.0.0.1:4032/api/admin/report');
   assert.equal(forbidden.status(), 403);
+  await customerPage.goto('http://127.0.0.1:4032/vender');
+  await customerPage.getByRole('heading', { name: 'Tu negocio en Polaris', exact: true }).waitFor();
+  await customerPage.goto('http://127.0.0.1:4032/vender/estadisticas');
+  await customerPage
+    .getByRole('heading', { name: 'Estadísticas de mi tienda', exact: true })
+    .waitFor();
+  const sellerReport = await customerPage.request.get('http://127.0.0.1:4032/api/seller/report');
+  assert.equal(sellerReport.status(), 200);
+  assert.equal((await sellerReport.json()).net, 140);
   await customer.close();
   const admin = await signedContext(adminId);
   const page = await admin.newPage();

@@ -1,405 +1,121 @@
 'use client';
-
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { Heart, ShoppingCart, Menu, X, Search, UserRound } from 'lucide-react';
 import AppLogo from '@/components/ui/AppLogo';
 import { useCart } from '@/app/components/CartContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import { useAuth } from '@/contexts/AuthContext';
-import SettingsPanel from '@/components/SettingsPanel';
-import { useStore } from '@/contexts/StoreContext';
-import { whatsappLink } from '@/lib/store-profile';
 import GlobalSearch from '@/components/GlobalSearch';
-
-const navLinks = [
-  { label: 'Inicio', href: '#inicio' },
-  { label: 'Catálogo', href: '#catalogo' },
-  { label: 'Nosotros', href: '#nosotros' },
-  { label: 'Testimonios', href: '#testimonios' },
-  { label: 'Contacto', href: '#contacto' },
+import { useAuth } from '@/contexts/AuthContext';
+const links = [
+  ['Inicio', '/'],
+  ['Catálogo', '/catalogo'],
+  ['Ofertas', '/ofertas'],
+  ['Ruleta', '/#ruleta'],
+  ['Vender en Polaris', '/vender'],
 ];
-
 export default function Header() {
-  const store = useStore();
-  const storeWA = whatsappLink(store.whatsapp) || '/#contacto';
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const { totalItems, openCart } = useCart();
+  const [open, setOpen] = useState(false),
+    [search, setSearch] = useState(false);
+  const { openCart, totalItems } = useCart();
   const { favorites } = useFavorites();
   const { user } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  const handleNavClick = (href: string) => {
-    setMenuOpen(false);
-
-    // Los enlaces del menú principal apuntan a secciones de la página de inicio.
-    // Si estamos en otra ruta (por ejemplo /pedidos), primero regresamos al inicio
-    // y conservamos el ancla para llevar al usuario exactamente a la sección solicitada.
-    if (pathname !== '/') {
-      router.push(`/${href}`);
-      return;
-    }
-
-    const el = document.querySelector(href);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      // Respaldo: si una sección aún no está montada, actualizamos el hash.
-      window.location.hash = href.replace('#', '');
-    }
-  };
-
   return (
     <>
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 nav-enter transition-all duration-500 ${
-          scrolled
-            ? 'bg-white/70 backdrop-blur-2xl border-b border-white/30 shadow-2xl shadow-slate-900/10'
-            : 'bg-gradient-to-b from-black/40 via-black/10 to-transparent'
-        }`}
-      >
-        <nav className="max-w-[1440px] mx-auto px-6 lg:px-10 h-[76px] flex items-center justify-between">
-          {/* Logo */}
-          <button
-            onClick={() => handleNavClick('#inicio')}
-            className="flex items-center gap-3 group transition-all duration-300 hover:scale-105"
-            aria-label="Ir al inicio"
-          >
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-teal-100 bg-white/95 text-slate-900 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+          <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Polaris, inicio">
             <AppLogo size={44} />
-            <span
-              className={`font-black text-2xl tracking-tight transition-colors duration-300 ${
-                scrolled ? 'text-slate-900' : 'text-white'
-              }`}
-            >
-              {store.name}
-            </span>
-          </button>
-
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-10">
-            {navLinks.map((link) => (
-              <button
-                key={link.href}
-                onClick={() => handleNavClick(link.href)}
-                className={`nav-link-underline text-[15px] tracking-wide font-semibold transition-colors duration-300 ${
-                  scrolled
-                    ? 'text-muted-foreground hover:text-foreground'
-                    : 'text-white/90 hover:text-white'
-                }`}
-              >
-                {link.label}
-              </button>
-            ))}
-            <Link
-              href="/catalogo"
-              className={`nav-link-underline text-sm font-semibold transition-colors duration-300 text-center ${
-                scrolled
-                  ? 'text-muted-foreground hover:text-foreground'
-                  : 'text-white/90 hover:text-white'
-              }`}
-            >
-              Ver Catálogo
-            </Link>
-            <a
-              href="/pedidos"
-              className={`nav-link-underline text-sm font-semibold transition-colors duration-300 text-center ${
-                scrolled
-                  ? 'text-muted-foreground hover:text-foreground'
-                  : 'text-white/90 hover:text-white'
-              }`}
-            >
-              Mis Pedidos
-            </a>
-
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${scrolled ? 'text-muted-foreground hover:bg-muted hover:text-foreground' : 'text-white/90 hover:bg-white/10 hover:text-white'}`}
-              aria-label="Buscar productos"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="m21 21-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"
-                />
-              </svg>
-            </button>
-
-            {/* Favorites */}
-            <a
-              href="/favoritos"
-              className={`relative flex items-center gap-1.5 transition-colors duration-300 ${
-                scrolled
-                  ? 'text-muted-foreground hover:text-foreground'
-                  : 'text-white/90 hover:text-white'
-              }`}
-              aria-label={`Favoritos${favorites.length > 0 ? `, ${favorites.length}` : ''}`}
-            >
-              <svg
-                className="w-6 h-6"
-                fill={favorites.length > 0 ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-                />
-              </svg>
-              {favorites.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center">
-                  {favorites.length > 9 ? '9+' : favorites.length}
-                </span>
-              )}
-            </a>
-
-            {/* Cart Button */}
-            <button
-              onClick={openCart}
-              className={`relative flex items-center gap-1.5 transition-colors duration-300 ${
-                scrolled
-                  ? 'text-muted-foreground hover:text-foreground'
-                  : 'text-white/90 hover:text-white'
-              }`}
-              aria-label={`Carrito${totalItems > 0 ? `, ${totalItems} productos` : ''}`}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-              {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center">
-                  {totalItems > 9 ? '9+' : totalItems}
-                </span>
-              )}
-            </button>
-
-            {/* Settings Gear */}
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 hover:scale-110 ${
-                scrolled
-                  ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  : 'text-white/90 hover:text-white hover:bg-white/10'
-              }`}
-              aria-label="Ajustes"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-            </button>
-
-            {/* Oferta Especial */}
-            <button
-              onClick={() => handleNavClick('#ruleta')}
-              className="relative flex items-center gap-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-extrabold hover:scale-105 transition-all duration-300 overflow-hidden"
-              style={{ boxShadow: '0 0 15px rgba(251,191,36,0.6)' }}
-            >
-              <span
-                className="absolute inset-0 bg-white/30 animate-ping rounded-full opacity-0"
-                style={{ animationDuration: '1.5s' }}
-              />
-              ✨ Oferta Especial
-            </button>
-            <a
-              href={storeWA}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-secondary text-secondary-foreground px-5 py-2.5 rounded-full text-sm font-bold hover:bg-secondary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-secondary/30"
-            >
-              <WhatsAppIcon className="w-4 h-4" />
-              Consultar
-            </a>
-          </div>
-
-          {/* Mobile hamburger + cart + settings */}
-          <div className="md:hidden flex items-center gap-3">
-            {/* Mobile Favorites */}
-            <a
-              href="/favoritos"
-              className={`relative transition-colors ${scrolled ? 'text-foreground' : 'text-white'}`}
-              aria-label="Favoritos"
-            >
-              <svg
-                className="w-6 h-6"
-                fill={favorites.length > 0 ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-                />
-              </svg>
-            </a>
-            {/* Mobile Cart Button */}
-            <button
-              onClick={openCart}
-              className={`relative transition-colors ${scrolled ? 'text-foreground' : 'text-white'}`}
-              aria-label={`Carrito${totalItems > 0 ? `, ${totalItems} productos` : ''}`}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-              {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center">
-                  {totalItems > 9 ? '9+' : totalItems}
-                </span>
-              )}
-            </button>
-            {/* Mobile Settings */}
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className={`transition-colors ${scrolled ? 'text-foreground' : 'text-white'}`}
-              aria-label="Ajustes"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-            </button>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className={`flex flex-col justify-center items-center w-10 h-10 gap-1.5 transition-colors ${
-                scrolled ? 'text-foreground' : 'text-white'
-              }`}
-              aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
-            >
-              <span
-                className={`block w-6 h-0.5 transition-all duration-300 origin-center ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? 'rotate-45 translate-y-2' : ''}`}
-              />
-              <span
-                className={`block w-6 h-0.5 transition-all duration-300 ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? 'opacity-0 scale-x-0' : ''}`}
-              />
-              <span
-                className={`block w-6 h-0.5 transition-all duration-300 origin-center ${scrolled ? 'bg-foreground' : 'bg-white'} ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`}
-              />
-            </button>
-          </div>
-        </nav>
-
-        {/* Mobile Menu */}
-        {menuOpen && (
-          <div className="md:hidden mobile-menu-enter bg-white/95 backdrop-blur-xl border-t border-border shadow-xl">
-            <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-2">
-              {navLinks.map((link) => (
-                <button
-                  key={link.href}
-                  onClick={() => handleNavClick(link.href)}
-                  className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200"
-                >
-                  {link.label}
-                </button>
-              ))}
-              <Link
-                href="/catalogo"
-                onClick={() => setMenuOpen(false)}
-                className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200"
-              >
-                Ver Catálogo Completo →
+            <span className="text-2xl font-black tracking-tight text-cyan-950">Polaris</span>
+          </Link>
+          <nav aria-label="Principal" className="hidden items-center gap-5 xl:flex">
+            {links.map(([name, url]) => (
+              <Link key={url} href={url} className="text-sm font-semibold hover:text-cyan-600">
+                {name}
               </Link>
-              <a
-                href="/pedidos"
-                onClick={() => setMenuOpen(false)}
-                className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200"
-              >
-                📦 Mis Pedidos
-              </a>
-              <a
-                href="/favoritos"
-                onClick={() => setMenuOpen(false)}
-                className="text-left px-4 py-3 text-base font-semibold text-foreground hover:text-primary hover:bg-muted rounded-xl transition-all duration-200"
-              >
-                ❤️ Mis Favoritos
-              </a>
-              <button
-                onClick={() => handleNavClick('#ruleta')}
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-full text-base font-extrabold mt-1 hover:opacity-90 transition-all animate-pulse"
-              >
-                ✨ Oferta Especial
-              </button>
-              <a
-                href={storeWA}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-center gap-2 bg-secondary text-secondary-foreground px-6 py-3 rounded-full text-base font-bold mt-2 hover:bg-secondary/90 transition-all"
-              >
-                <WhatsAppIcon className="w-5 h-5" />
-                Consultar por WhatsApp
-              </a>
-            </div>
+            ))}
+          </nav>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+            <button
+              onClick={() => setSearch(true)}
+              aria-label="Buscar productos"
+              className="rounded-full p-2 hover:bg-cyan-50"
+            >
+              <Search size={21} />
+            </button>
+            <Link
+              href="/favoritos"
+              aria-label={`Favoritos, ${favorites.length}`}
+              className="relative rounded-full p-2 hover:bg-cyan-50"
+            >
+              <Heart size={21} />
+              {favorites.length > 0 && (
+                <span className="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1 text-[10px] text-white">
+                  {favorites.length}
+                </span>
+              )}
+            </Link>
+            <button
+              onClick={openCart}
+              aria-label={`Carrito, ${totalItems} productos`}
+              className="relative rounded-full p-2 hover:bg-cyan-50"
+            >
+              <ShoppingCart size={21} />
+              {totalItems > 0 && (
+                <span className="absolute -right-1 -top-1 rounded-full bg-cyan-600 px-1 text-[10px] text-white">
+                  {totalItems}
+                </span>
+              )}
+            </button>
+            <Link
+              href="/acceso"
+              className="hidden items-center gap-2 rounded-full border px-3 py-2 text-xs font-bold sm:flex"
+            >
+              <UserRound size={17} />
+              {user ? 'Mi cuenta' : 'Ingresar'}
+            </Link>
+            <button
+              aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={open}
+              onClick={() => setOpen(!open)}
+              className="rounded-full p-2 xl:hidden"
+            >
+              {open ? <X /> : <Menu />}
+            </button>
           </div>
+        </div>
+        {open && (
+          <nav
+            aria-label="Menú móvil"
+            className="grid max-h-[75vh] gap-1 overflow-y-auto border-t p-4 xl:hidden"
+          >
+            {[
+              ...links,
+              ['Mis pedidos', '/pedidos'],
+              ['Mi cuenta / Ingresar', '/acceso'],
+              ['Panel del dueño', '/admin'],
+              ['Instalar aplicación', '/instalar'],
+            ].map(([name, url]) => (
+              <Link
+                key={url}
+                href={url}
+                onClick={() => setOpen(false)}
+                className="rounded-xl px-4 py-3 font-semibold hover:bg-cyan-50"
+              >
+                {name}
+              </Link>
+            ))}
+          </nav>
         )}
       </header>
-
-      {/* Floating WhatsApp Button */}
-      <a
-        href={storeWA}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-lg shadow-[#25D366]/40 pulse-ring hover:scale-110 transition-transform duration-300"
-        aria-label="Contactar por WhatsApp"
-      >
-        <WhatsAppIcon className="w-7 h-7" />
-      </a>
-
-      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <GlobalSearch open={search} onClose={() => setSearch(false)} />
     </>
   );
 }
-
 export function WhatsAppIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+      <path d="M20.52 3.48A11.85 11.85 0 0 0 12.05 0C5.5 0 .16 5.33.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.9 11.9 0 0 0 5.68 1.45h.01c6.55 0 11.89-5.34 11.89-11.9a11.82 11.82 0 0 0-3.42-8.42ZM12.05 21.8a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.83 9.83 0 0 1 2.89 6.99c0 5.45-4.44 9.88-9.89 9.88Zm5.42-7.42c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.18-.3-.02-.46.13-.61.13-.13.3-.35.44-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.91-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.87 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2-1.42.25-.69.25-1.29.18-1.41-.08-.13-.28-.2-.58-.35Z" />
     </svg>
   );
 }

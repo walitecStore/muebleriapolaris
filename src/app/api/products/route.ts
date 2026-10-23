@@ -32,6 +32,9 @@ type SupabaseProduct = {
   color?: string | null;
   material?: string | null;
   is_featured?: boolean | null;
+  promotion_eligible?: boolean;
+  delivery_vehicle?: string;
+  seller_id?: string | null;
 };
 
 type RelatedRow = Record<string, unknown> & { id: string; product_id?: string };
@@ -52,7 +55,7 @@ function formatPrice(value: unknown): string {
   }
 
   return `S/ ${number.toLocaleString('es-PE', {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 }
@@ -175,6 +178,9 @@ function transformProduct(
     price: formatPrice(priceValue),
 
     priceValue,
+    promotion_eligible: product.promotion_eligible ?? true,
+    delivery_vehicle: product.delivery_vehicle || 'truck',
+    seller_id: product.seller_id || null,
     regularPriceValue: Number(product.price ?? 0),
     salePriceValue: product.sale_price == null ? null : Number(product.sale_price),
 
@@ -268,6 +274,9 @@ export async function GET(request: NextRequest) {
     const id = request.nextUrl.searchParams.get('id');
     const category = request.nextUrl.searchParams.get('category');
     const search = request.nextUrl.searchParams.get('search');
+    const seller = request.nextUrl.searchParams.get('seller');
+    if (seller && !/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(seller))
+      return NextResponse.json({ error: 'Tienda no válida.' }, { status: 400 });
     if (
       !Number.isInteger(page) ||
       page < 0 ||
@@ -284,11 +293,14 @@ export async function GET(request: NextRequest) {
       slug: c.slug || normalizeText(c.name).replace(/\s+/g, '-'),
     }));
     let endpoint =
-      'products?select=id,name,slug,category_id,description,price,sale_price,image_url,images,stock,is_active,is_featured,sku,color,material,subcategory,subcategory_id,brand_id,brand,short_description,created_at,updated_at&is_active=eq.true&order=created_at.desc,id.asc';
+      'products?select=id,name,slug,category_id,description,price,sale_price,image_url,images,stock,is_active,is_featured,sku,color,material,subcategory,subcategory_id,brand_id,brand,short_description,created_at,updated_at,promotion_eligible,delivery_vehicle,seller_id&is_active=eq.true&order=created_at.desc,id.asc';
+    if (seller) endpoint += '&seller_id=eq.' + seller;
     if (id)
       endpoint += /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id)
         ? `&id=eq.${id}`
         : `&slug=eq.${encodeURIComponent(id)}`;
+    if (request.nextUrl.searchParams.get('onSale') === 'true')
+      endpoint += '&sale_price=not.is.null&stock=gt.0';
     if (request.nextUrl.searchParams.get('featured') === 'true') endpoint += '&is_featured=eq.true';
     if (category) {
       const ids = categories
@@ -304,10 +316,32 @@ export async function GET(request: NextRequest) {
         });
       endpoint += `&category_id=in.(${ids.join(',')})`;
     }
+    if (request.nextUrl.searchParams.get('offers') === 'true')
+      endpoint +=
+        '&stock=gt.0&promotion_eligible=eq.true&or=(and(sale_price.is.null,price.lte.60),and(sale_price.not.is.null,sale_price.lte.60))';
+    const idsParam = request.nextUrl.searchParams.get('ids');
+    if (idsParam) {
+      const ids = idsParam.split(',');
+      if (ids.length > 200 || ids.some((x) => !/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(x)))
+        return NextResponse.json({ error: 'Favoritos no válidos.' }, { status: 400 });
+      endpoint += '&id=in.(' + ids.join(',') + ')';
+    }
     if (search?.trim())
       endpoint += `&name=ilike.*${encodeURIComponent(search.trim().replace(/[%*]/g, ''))}*`;
     endpoint += `&limit=48&offset=${page * 48}`;
-    const rawProducts = await supabaseFetch<SupabaseProduct[]>(endpoint);
+    let rawProducts: SupabaseProduct[];
+    try {
+      rawProducts = await supabaseFetch<SupabaseProduct[]>(endpoint);
+    } catch (error) {
+      if (request.nextUrl.searchParams.get('offers') === 'true') throw error;
+      const message = error instanceof Error ? error.message : '';
+      if (!/column|schema cache/i.test(message)) throw error;
+      const legacy = endpoint.replace(',promotion_eligible,delivery_vehicle,seller_id', '');
+      rawProducts = (await supabaseFetch<SupabaseProduct[]>(legacy)).map((p) => ({
+        ...p,
+        promotion_eligible: false,
+      }));
+    }
     const productIds = rawProducts.map((p) => p.id);
     if (!productIds.length)
       return NextResponse.json({

@@ -13,7 +13,8 @@ type Product = {
   category_id: string | null;
   is_featured: boolean;
 };
-export default function ProductsManager() {
+export default function ProductsManager({ sellerId }: { sellerId?: string }) {
+  const base = sellerId ? '/vender/productos' : '/admin/productos';
   const [rows, setRows] = useState<Product[]>([]),
     [categories, setCategories] = useState<{ id: string; name: string }[]>([]),
     [category, setCategory] = useState(''),
@@ -51,6 +52,7 @@ export default function ProductsManager() {
       .order('created_at', { ascending: false })
       .order('id')
       .range(page * 24, page * 24 + 23);
+    if (sellerId) q = q.eq('seller_id', sellerId);
     if (category) q = q.eq('category_id', category);
     if (stock === 'low') q = q.lte('stock', 5).eq('is_active', true);
     if (stock === 'empty') q = q.eq('stock', 0);
@@ -68,7 +70,7 @@ export default function ProductsManager() {
     return () => {
       live = false;
     };
-  }, [category, stock, query, page, refresh]);
+  }, [category, stock, query, page, refresh, sellerId]);
   async function toggle(p: Product) {
     if (
       !confirm(
@@ -97,7 +99,7 @@ export default function ProductsManager() {
           </p>
         </div>
         <Link
-          href="/admin/productos/nuevo"
+          href={`${base}/nuevo`}
           className="self-start rounded-xl bg-slate-950 px-5 py-3 font-bold text-white"
         >
           ＋ Agregar producto
@@ -168,7 +170,7 @@ export default function ProductsManager() {
               {rows.map((p) => (
                 <tr key={p.id} className="border-b last:border-0">
                   <td className="p-4">
-                    <Link href={`/admin/productos/${p.id}`} className="font-bold text-cyan-800">
+                    <Link href={`${base}/${p.id}`} className="font-bold text-cyan-800">
                       {p.name}
                     </Link>
                     <p className="text-xs text-slate-500">
@@ -183,7 +185,7 @@ export default function ProductsManager() {
                   <td className="p-4">{p.is_active ? 'Publicado' : 'Oculto'}</td>
                   <td className="p-4">
                     <div className="flex gap-4">
-                      <Link href={`/admin/productos/${p.id}`} className="font-bold text-cyan-700">
+                      <Link href={`${base}/${p.id}`} className="font-bold text-cyan-700">
                         Editar
                       </Link>
                       <button onClick={() => void toggle(p)}>

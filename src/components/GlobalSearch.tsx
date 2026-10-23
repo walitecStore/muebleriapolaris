@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Loader2, Search, X } from 'lucide-react';
-import AppImage from '@/components/ui/AppImage';
+import { saveSearch } from '@/lib/discovery';
+import ProductCard, { type CatalogProduct } from '@/components/ProductCard';
 
-type SearchProduct = {
+type SearchProduct = CatalogProduct & {
   id: string;
   name: string;
   category: string;
@@ -44,6 +45,7 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
           { signal: controller.signal }
         );
         const data = await response.json();
+        if (response.ok) saveSearch(term);
         setResults(Array.isArray(data.products) ? data.products.slice(0, 6) : []);
       } catch (error) {
         if ((error as Error).name !== 'AbortError') setResults([]);
@@ -99,31 +101,11 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
               No encontramos productos para “{query}”.
             </p>
           )}
-          {results.map((product) => (
-            <Link
-              key={product.id}
-              href="/catalogo"
-              onClick={onClose}
-              className="flex items-center gap-4 rounded-2xl p-3 transition hover:bg-slate-50"
-            >
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-100">
-                <AppImage
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                  sizes="64px"
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-bold text-slate-900">{product.name}</p>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  {product.category} · {product.availability}
-                </p>
-                <p className="mt-1 text-sm font-extrabold text-cyan-700">{product.price}</p>
-              </div>
-            </Link>
-          ))}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {results.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
         </div>
         <div className="border-t border-slate-100 px-5 py-3 text-center text-xs text-slate-500">
           <Link

@@ -120,3 +120,54 @@ test('request limits apply without Content-Length and reject malformed JSON', as
     (e) => e.status === 413
   );
 });
+
+import { shippingLocationDetails } from '../src/lib/shipping-pricing.ts';
+import { eligibleDiscount } from '../src/lib/discovery.ts';
+test('Nominatim Lima cities use state_district to verify metropolitan coverage', () => {
+  const comas = shippingLocationDetails(
+    {
+      city: 'Comas',
+      suburb: 'Comas',
+      state_district: 'Lima Metropolitana',
+      region: 'Lima',
+      state: 'Lima',
+    },
+    'Comas, Lima'
+  );
+  assert.equal(comas.district, 'Comas');
+  assert.equal(comas.isLimaMetropolitana, true);
+  assert.equal(
+    shippingLocationDetails(
+      { city: 'Miraflores', state_district: 'Lima Metropolitana', state: 'Lima' },
+      'Miraflores'
+    ).isLimaMetropolitana,
+    true
+  );
+  assert.equal(
+    shippingLocationDetails({ city: 'Callao', state: 'Callao' }, 'Callao').isLimaMetropolitana,
+    false
+  );
+  assert.equal(
+    shippingLocationDetails({ city: 'Huacho', county: 'Huaura', state: 'Lima' }, 'Huacho')
+      .isLimaMetropolitana,
+    false
+  );
+});
+test('tier discounts are exact multiples of 150 and never apply to shipping', () => {
+  for (const [total, discount] of [
+    [0, 0],
+    [149.99, 0],
+    [150, 10],
+    [299.99, 10],
+    [300, 20],
+    [450, 30],
+  ])
+    assert.equal(eligibleDiscount(total), discount);
+  const body = {
+    checkoutKey: '11111111-1111-4111-8111-111111111111',
+    items: [{ productId: '22222222-2222-4222-8222-222222222222', quantity: 1 }],
+    shipping: { latitude: -12, longitude: -77 },
+    couponId: 'invalid',
+  };
+  assert.equal(validCheckoutBody(body), false);
+});

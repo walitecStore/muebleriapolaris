@@ -1,64 +1,13 @@
 import 'server-only';
-import {
-  calculateDistrictShipping,
-  interpolateCenterPrice,
-  nullableFiniteNumber,
-} from '@/lib/shipping-pricing';
-import {
-  drivingRoute,
-  geocodePublicReference,
-  verifyShippingDestination,
-  type StoreOrigin,
-} from './shipping';
-
-type QueryResult = { data: unknown; error: unknown };
+import { calculateDistrictShipping, nullableFiniteNumber } from '@/lib/shipping-pricing';
+import { verifyShippingDestination, type StoreOrigin } from './shipping';
 type SupabaseLike = { from: (table: string) => any };
-type CenterRow = {
-  district: string;
-  aliases: string[] | null;
-  province: string;
-  department: string;
-  center_lat: unknown;
-  center_lng: unknown;
-  center_reference_name: string;
-  center_route_distance_km: unknown;
-  base_shipping_price: unknown;
-  before_center_adjustment: unknown;
-  after_center_adjustment: unknown;
-  center_tolerance_km: unknown;
-  minimum_shipping_price: unknown;
-  maximum_shipping_price: unknown;
-  automatic_shipping: boolean;
-};
-
 const normalize = (value: unknown) =>
   String(value ?? '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toUpperCase();
-
-function requiredNumber(value: unknown, label: string) {
-  const number = nullableFiniteNumber(value);
-  if (number === null) throw new Error(`Configuración inválida: ${label}.`);
-  return number;
-}
-
-async function resolveCenterRoute(center: CenterRow, origin: StoreOrigin) {
-  const configuredDistance = nullableFiniteNumber(center.center_route_distance_km);
-  if (configuredDistance !== null) return configuredDistance;
-  let latitude = nullableFiniteNumber(center.center_lat);
-  let longitude = nullableFiniteNumber(center.center_lng);
-  if (latitude === null || longitude === null) {
-    const point = await geocodePublicReference(
-      `${center.center_reference_name}, ${center.district}, ${center.province}, ${center.department}, Perú`
-    );
-    latitude = point.latitude;
-    longitude = point.longitude;
-  }
-  return (await drivingRoute(latitude, longitude, origin)).distanceKm;
-}
-
 export async function buildShippingQuote(
   supabase: SupabaseLike,
   latitude: number,
@@ -78,49 +27,63 @@ export async function buildShippingQuote(
     address: store.origin_address,
   };
   const destination = await verifyShippingDestination(latitude, longitude, origin);
-  const districtKey = normalize(destination.district);
-  const result = (await supabase
+  const { data: centers, error } = await supabase
     .from('shipping_district_centers')
     .select('*')
-    .eq('active', true)) as QueryResult;
-  if (result.error) throw new Error('No se pudo consultar la cobertura de envíos.');
-  const centers = (result.data ?? []) as CenterRow[];
-  const center = centers.find((row) =>
-    [row.district, ...(row.aliases ?? [])].some((name) => normalize(name) === districtKey)
+    .eq('active', true);
+  if (error) throw new Error('No se pudo consultar la cobertura de envíos.');
+  const names = [destination.district, ...(destination.districtCandidates || [])]
+    .filter(Boolean)
+    .map(normalize);
+  const center = (centers || []).find(
+    (row: { district: string; aliases?: string[]; province: string }) =>
+      [row.district, ...(row.aliases || [])].some((name) => names.includes(normalize(name)))
   );
-  if (!center || !center.automatic_shipping) {
+  if (!center || !center.automatic_shipping || !destination.isLimaMetropolitana)
     return {
       status: 'requires_quote' as const,
-      message: 'Esta ubicación requiere cotización.',
+      message:
+        'Esta ubicación está fuera de la cobertura automática de Lima. Coordina una cotización.',
       destination,
     };
-  }
-
-  const centerDistanceKm = Number((await resolveCenterRoute(center, origin)).toFixed(2));
+  // Only verified, configured center distances influence before/after adjustments.
+  // Missing center data no longer launches dozens of geocoding and routing calls.
+  const centerDistanceKm =
+    nullableFiniteNumber(center.center_route_distance_km) ?? destination.distanceKm;
   let basePrice = nullableFiniteNumber(center.base_shipping_price);
   if (basePrice === null) {
-    const pricedCenters = centers.filter(
-      (row) => nullableFiniteNumber(row.base_shipping_price) !== null
+    const { data: bands, error: bandError } = await supabase
+      .from('shipping_distance_bands')
+      .select('min_distance_km,max_distance_km,base_cost,cost_per_extra_km,minimum_cost,priority')
+      .eq('is_active', true)
+      .order('priority', { ascending: false })
+      .order('min_distance_km', { ascending: false });
+    if (bandError) throw new Error('No se pudieron consultar las tarifas por distancia.');
+    const band = (bands || []).find(
+      (b: { min_distance_km: number; max_distance_km: number | null }) =>
+        destination.distanceKm >= Number(b.min_distance_km) &&
+        (b.max_distance_km === null || destination.distanceKm < Number(b.max_distance_km))
     );
-    const calibration = await Promise.all(
-      pricedCenters.map(async (row) => ({
-        distanceKm: await resolveCenterRoute(row, origin),
-        price: requiredNumber(row.base_shipping_price, `tarifa de ${row.district}`),
-      }))
+    if (!band) throw new Error('No hay una tarifa configurada para esta distancia.');
+    basePrice = Math.max(
+      Number(band.minimum_cost),
+      Number(band.base_cost) +
+        Math.max(0, destination.distanceKm - Number(band.min_distance_km)) *
+          Number(band.cost_per_extra_km)
     );
-    basePrice = interpolateCenterPrice(centerDistanceKm, calibration);
   }
-  basePrice = Number(basePrice.toFixed(2));
+  const price = Number(basePrice.toFixed(2));
+  const factor = Number.isFinite(productFactor) && productFactor >= 1 ? productFactor : 1;
   const pricing = calculateDistrictShipping({
     centerDistanceKm,
-    basePrice,
+    basePrice: price,
     userDistanceKm: destination.distanceKm,
-    toleranceKm: requiredNumber(center.center_tolerance_km, 'tolerancia'),
-    beforeAdjustment: requiredNumber(center.before_center_adjustment, 'ajuste anterior'),
-    afterAdjustment: requiredNumber(center.after_center_adjustment, 'ajuste posterior'),
-    minimumPrice: requiredNumber(center.minimum_shipping_price, 'tarifa mínima'),
+    toleranceKm: Number(center.center_tolerance_km),
+    beforeAdjustment: Number(center.before_center_adjustment),
+    afterAdjustment: Number(center.after_center_adjustment),
+    minimumPrice: Number(center.minimum_shipping_price),
     maximumPrice: nullableFiniteNumber(center.maximum_shipping_price),
-    productFactor: Number.isFinite(productFactor) && productFactor > 0 ? productFactor : 1,
+    productFactor: factor,
   });
   return {
     status: 'calculated' as const,
@@ -133,10 +96,10 @@ export async function buildShippingQuote(
     shippingCost: pricing.shippingCost,
     audit: {
       ...pricing,
-      centerDistanceKm: Number(centerDistanceKm.toFixed(2)),
-      basePrice: Number(basePrice.toFixed(2)),
-      productFactor,
-      pricingVersion: 'district-centers-v2',
+      centerDistanceKm,
+      basePrice: price,
+      productFactor: factor,
+      pricingVersion: 'lima-road-bands-v3',
     },
   };
 }

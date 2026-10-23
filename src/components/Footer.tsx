@@ -72,6 +72,15 @@ export default function Footer() {
       <div className="border-t border-white/10 px-6 py-5 text-center text-xs text-slate-400">
         © {new Date().getFullYear()} {store.name}. Todos los derechos reservados.
       </div>
+      <nav
+        aria-label="Plataforma"
+        className="mx-auto flex max-w-7xl flex-wrap gap-5 px-5 pb-8 text-sm"
+      >
+        <Link href="/acceso">Ingresar / Panel del dueño</Link>
+        <Link href="/vender">Vender en Polaris</Link>
+        <Link href="/instalar">Instalar aplicación</Link>
+        <Link href="/ofertas">Ofertas</Link>
+      </nav>
     </footer>
   );
 }
